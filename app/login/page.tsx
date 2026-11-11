@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import { ArrowLeft, ArrowRight, ArrowUpRight } from 'lucide-react'
 import { Brand } from '../../components/brand'
 import { roles, type Role } from '../../lib/roles'
+import accounts from '../../lib/demo-accounts.json'
 import { getRole, localPreview } from '../../lib/session'
 import { hasSupabase } from '../../lib/supabase/config'
 import { login } from './actions'
@@ -45,7 +46,14 @@ export default async function Login({
         )}
         {showRoles && (
           <form action={login} className="role-list">
-            {(Object.keys(roles) as Role[]).map((key) => (
+            {hasSupabase ? accounts.map(account => (
+              <button key={account.id} name="account" value={account.id} className="role-card">
+                <span><strong>{account.name}</strong>
+                  <small>{roleText(account.role as Role)}{account.category ? ' · ' + account.category : ''}</small>
+                </span>
+                <ArrowUpRight size={18} />
+              </button>
+            )) : (Object.keys(roles) as Role[]).map((key) => (
               <button key={key} name="role" value={key} className="role-card">
                 <span>
                   <strong>{roleText(key)}</strong>

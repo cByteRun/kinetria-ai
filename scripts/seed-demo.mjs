@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import accounts from '../lib/demo-accounts.json' with { type: 'json' }
 
 const { NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SECRET_KEY, KINETRIA_DEMO_PASSWORD } = process.env
 if (!NEXT_PUBLIC_SUPABASE_URL || !SUPABASE_SECRET_KEY || !KINETRIA_DEMO_PASSWORD) {
@@ -17,8 +18,8 @@ for (let page = 1; ; page += 1) {
   if (data.users.length < 200) break
 }
 
-for (const role of ['employee', 'handler', 'manager', 'admin', 'client']) {
-  const email = `${role}@kinetria.example`
+for (const { id: account, role, name: display_name } of accounts) {
+  const email = `${account}@kinetria.example`
   const user = existing.get(email)
   if (user && user.app_metadata.kinetria_demo !== true) {
     throw new Error(`Existing user ${email} is not a Kinetria demo account.`)
@@ -29,7 +30,7 @@ for (const role of ['employee', 'handler', 'manager', 'admin', 'client']) {
     ? await supabase.auth.admin.updateUserById(user.id, attributes)
     : await supabase.auth.admin.createUser({ ...attributes, email })
   if (error) throw error
-  const profile = await supabase.from('profiles').upsert({ id: data.user.id, role, active: true })
+  const profile = await supabase.from('profiles').upsert({ id: data.user.id, role, active: true, display_name })
   if (profile.error) throw profile.error
   console.log(`Prepared ${role}`)
 }

@@ -3,6 +3,7 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { isRole, roles } from '../../lib/roles'
+import accounts from '../../lib/demo-accounts.json'
 import {
   demoCookie,
   getRole,
@@ -14,6 +15,10 @@ import { createClient } from '../../lib/supabase/server'
 
 export async function login(form: FormData) {
   const selection = form.get('role')
+  const accountId = form.get('account')
+  const account = accounts.find(item => item.id === accountId)
+  if (accountId !== null && (!account || selection !== null || !process.env.KINETRIA_DEMO_PASSWORD))
+    redirect('/login?error=credentials')
   if (selection !== null && !isRole(selection))
     redirect('/login?error=credentials')
   if (localPreview && isRole(selection)) {
@@ -22,8 +27,8 @@ export async function login(form: FormData) {
   }
 
   if (!hasSupabase) redirect('/login?error=config')
-  const email = isRole(selection) ? roles[selection].email : form.get('email')
-  const password = isRole(selection)
+  const email = account ? account.id + '@kinetria.example' : isRole(selection) ? roles[selection].email : form.get('email')
+  const password = account || isRole(selection)
     ? process.env.KINETRIA_DEMO_PASSWORD
     : form.get('password')
   if (

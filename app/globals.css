@@ -930,3 +930,81 @@ h3 {
     margin-bottom: 8px;
   }
 }
+.request-panel {
+  margin-block: 1.5rem;
+  max-width: 52rem;
+}
+
+.request-fields,
+.request-fields fieldset,
+.request-fields label {
+  display: grid;
+  gap: .65rem;
+}
+
+.request-fields {
+  margin-block: 1.25rem;
+}
+
+.request-fields fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.request-fields :is(input, textarea, select) {
+  width: 100%;
+  padding: .75rem;
+  border-radius: .65rem;
+  border: 1px solid currentColor;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+}
+
+.request-fields .button {
+  justify-self: start;
+}
+
+.request-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: 1rem;
+  margin-block: 1.25rem;
+}
+
+.request-list a {
+  text-decoration: none;
+}
+
+.request-board {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  align-items: start;
+}
+
+.request-board > section {
+  display: grid;
+  gap: .65rem;
+}
+
+.request-board h2 {
+  font-size: 1rem;
+}
+
+.request-list a[aria-current='page'] {
+  outline: 1px solid currentColor;
+}
+
+.request-history li {
+  margin-block: 1rem;
+}
+
+.request-history small {
+  display: block;
+}
+
+.request-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

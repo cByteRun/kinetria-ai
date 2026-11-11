@@ -1,0 +1,11 @@
+[
+  {"id":"employee","role":"employee","name":"Алина Соколова"},
+  {"id":"handler","role":"handler","name":"Дмитрий Орлов","category":"Межотдельное взаимодействие"},
+  {"id":"handler-catalog","role":"handler","name":"Мария Ким","category":"Каталог и данные"},
+  {"id":"handler-training","role":"handler","name":"Ирина Белова","category":"Обучение"},
+  {"id":"manager","role":"manager","name":"Алексей Волков"},
+  {"id":"manager-it","role":"manager","name":"Максим Ли"},
+  {"id":"manager-people","role":"manager","name":"Елена Морозова"},
+  {"id":"admin","role":"admin","name":"Анна Кузнецова"},
+  {"id":"client","role":"client","name":"Сергей Павлов"}
+]

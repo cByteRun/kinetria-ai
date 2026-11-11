@@ -32,18 +32,18 @@ export async function startPreview(role: Role) {
   })
 }
 
-export async function getRole(): Promise<Role | null> {
+export async function getProfile(): Promise<{ role: Role; displayName: string | null } | null> {
   if (hasSupabase) {
     const supabase = await createClient()
     const { data } = await supabase.auth.getClaims()
     if (!data?.claims.sub) return null
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role,display_name')
       .eq('id', data.claims.sub)
       .eq('active', true)
       .maybeSingle()
-    return isRole(profile?.role) ? profile.role : null
+    return isRole(profile?.role) ? { role: profile.role, displayName: profile.display_name } : null
   }
 
   if (!localPreview) return null
@@ -62,12 +62,20 @@ export async function getRole(): Promise<Role | null> {
     Buffer.from(signature, 'hex'),
     Buffer.from(expected, 'hex'),
   )
-    ? role
+    ? { role, displayName: null }
     : null
 }
 
+export async function getRole(): Promise<Role | null> {
+  return (await getProfile())?.role ?? null
+}
+
+export async function requireProfile() {
+  const profile = await getProfile()
+  if (!profile) redirect('/login')
+  return profile
+}
+
 export async function requireRole() {
-  const role = await getRole()
-  if (!role) redirect('/login')
-  return role
+  return (await requireProfile()).role
 }
