@@ -1,14 +1,16 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Search, ArrowUpDown, Star, Inbox } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { statuses, type RequestStatus } from '../lib/requests'
+import { requestKindLabels, sentimentLabel, statuses, type RequestStatus } from '../lib/requests'
 
 export type RegistryRow = {
   id: string; number: number; source_ref: string | null; title: string;
   status: RequestStatus; category_id: string; assignee_id: string | null; updated_at?: string
+  kind: keyof typeof requestKindLabels; sentiment: number | null
 }
 
 function requestNumber(row: RegistryRow) {
@@ -19,6 +21,8 @@ export function RequestRegistry({ rows, categories, path }: {
   rows: RegistryRow[]; categories: Record<string, string>; path: string
 }) {
   const t = useTranslations('requestsMvp')
+  const router = useRouter()
+  const detailHref = (id: string) => path + '?view=registry&id=' + id
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('')
   const [category, setCategory] = useState('')
@@ -37,11 +41,15 @@ export function RequestRegistry({ rows, categories, path }: {
       <button aria-pressed={ascending} onClick={() => setAscending(!ascending)}><ArrowUpDown size={16} />По номеру</button>
       <button aria-pressed={onlyFavorites} onClick={() => setOnlyFavorites(!onlyFavorites)}><Star size={16} />Избранное</button>
     </div>
-    <div className="crm-table-scroll"><table><thead><tr><th aria-label="Избранное" /><th>ID</th><th>Тема обращения</th><th>Статус</th><th>Категория</th><th>Назначение</th></tr></thead>
-      <tbody>{filtered.map(row => <tr key={row.id}>
+    <div className="crm-table-scroll"><table><thead><tr><th aria-label="Избранное" /><th>ID</th><th>Тема обращения</th><th>Тип</th><th>Тональность</th><th>Статус</th><th>Категория</th><th>Назначение</th></tr></thead>
+      <tbody>{filtered.map(row => <tr key={row.id} className="crm-request-row" onClick={event => {
+        if (!(event.target as Element).closest('a, button')) router.push(detailHref(row.id), { scroll: false })
+      }}>
         <td><button className="crm-star" aria-label="В избранное" aria-pressed={favorites.includes(row.id)} onClick={() => setFavorites(previous => previous.includes(row.id) ? previous.filter(id => id !== row.id) : [...previous, row.id])}><Star size={15} fill={favorites.includes(row.id) ? 'currentColor' : 'none'} /></button></td>
-        <td><Link scroll={false} href={path + '?view=registry&id=' + row.id}>{requestNumber(row)}</Link></td>
-        <td><Link scroll={false} href={path + '?view=registry&id=' + row.id}>{row.title}</Link></td>
+        <td><Link scroll={false} href={detailHref(row.id)}>{requestNumber(row)}</Link></td>
+        <td><Link scroll={false} href={detailHref(row.id)}>{row.title}</Link></td>
+        <td>{requestKindLabels[row.kind]}</td>
+        <td>{sentimentLabel(row.sentiment)}</td>
         <td><span className={'crm-status status-' + row.status}>{t(row.status)}</span></td>
         <td>{categories[row.category_id]}</td><td>{row.assignee_id ? 'Назначен' : 'Резервная очередь'}</td>
       </tr>)}</tbody></table></div>

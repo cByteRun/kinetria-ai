@@ -2,7 +2,7 @@ import samples from '../lib/demo-requests.json'
 import { RequestDrawer } from './request-drawer'
 import { RequestForm } from './request-form'
 import { RequestRegistry } from './request-registry'
-import type { RequestStatus } from '../lib/requests'
+import { requestKindLabels, type RequestStatus } from '../lib/requests'
 import type { Role } from '../lib/roles'
 
 const names: Record<string, string> = {
@@ -25,6 +25,7 @@ export function PreviewWorkspace({ role, view, id }: { role: Role; view: string;
         <RequestRegistry path={'/workspace/' + role} categories={names} rows={samples.map((sample, index) => ({
           id: sample.id, number: index + 1, source_ref: sample.id, title: sample.title,
           status: sample.status as RequestStatus, category_id: sample.category, assignee_id: null,
+          kind: sample.kind as keyof typeof requestKindLabels, sentiment: null,
         }))} />}
     {selected && <RequestDrawer closeHref={'/workspace/' + role + '?view=registry'}>
       <section className="workspace-panel request-panel">

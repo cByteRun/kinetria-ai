@@ -2,7 +2,29 @@ export const statuses = ['new', 'review', 'clarification', 'in_progress', 'imple
 
 export type RequestStatus = (typeof statuses)[number]
 export type Category = { id: string; name_ru: string; name_en: string; name_kk: string }
+export const requestKinds = ['problem', 'idea'] as const
+export type RequestKind = (typeof requestKinds)[number]
+export const requestKindLabels = { problem: 'Проблема', idea: 'Пожелание', praise: 'Отзыв' }
+
+const typeTags = new Set([
+  'проблема', 'пожелание', 'идея', 'отзыв',
+  'problem', 'issue', 'idea', 'suggestion', 'wish', 'praise',
+  'мәселе', 'ұсыныс', 'тілек', 'пікір',
+])
+
+export function topicTags(tags: string[]) {
+  return [...new Set(tags.map(tag => tag.trim()).filter(tag => tag && !typeTags.has(tag.toLowerCase())))]
+}
+
+export function sentimentLabel(score: number | null) {
+  if (score === null) return 'Нет оценки'
+  return (score < 5 ? 'Негативная' : score > 5 ? 'Позитивная' : 'Нейтральная') + ' · ' + score + '/10'
+}
+
 export type Draft = {
+  kind: RequestKind
+  sentiment: number
+  tags: string[]
   category: string
   title: string
   description: string

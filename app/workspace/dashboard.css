@@ -103,3 +103,6 @@
   .crm-sidebar-bottom { display: flex; padding: 8px 16px; }
   .crm-drawer-inner { padding: 12px; }
 }
+.crm-request-row { cursor: pointer; }
+.crm-request-tags { display: flex; flex-wrap: wrap; gap: 6px; padding: 0; list-style: none; }
+.crm-request-tags li { border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; overflow-wrap: anywhere; }

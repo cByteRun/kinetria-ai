@@ -4,23 +4,15 @@ import { aiConfig } from '../lib/ai'
 import { getFormatter, getLocale, getTranslations } from 'next-intl/server'
 import { updateRequest, saveRouting } from '../app/workspace/actions'
 import { isLocale } from '../i18n/settings'
-import { terminalStatuses, transitions, uuidPattern, type Category, type RequestStatus } from '../lib/requests'
+import { requestKindLabels, sentimentLabel, terminalStatuses, topicTags, transitions, uuidPattern, type Category, type RequestStatus } from '../lib/requests'
 import { isRole } from '../lib/roles'
 import { createClient } from '../lib/supabase/server'
 import { RequestForm } from './request-form'
-import { RequestRegistry } from './request-registry'
+import { RequestRegistry, type RegistryRow } from './request-registry'
 import { RequestSummary } from './request-summary'
 import { RequestDrawer } from './request-drawer'
 
-type RequestRow = {
-  id: string
-  number: number
-  source_ref: string | null
-  category_id: string
-  title: string
-  status: RequestStatus
-  assignee_id: string | null
-}
+type RequestRow = RegistryRow
 
 type Assignee = { id: string; role: string; display_name: string | null }
 
@@ -40,7 +32,7 @@ export async function RequestWorkspace({ role, id, error, view = 'registry' }: {
   if (id && (typeof id !== 'string' || !uuidPattern.test(id))) notFound()
   const supabase = await createClient()
   const [list, categoryList] = await Promise.all([
-    supabase.from('requests').select('id,number,source_ref,category_id,title,status,assignee_id')
+    supabase.from('requests').select('id,number,source_ref,category_id,title,status,assignee_id,kind,sentiment')
       .order('updated_at', { ascending: false }).order('id').returns<RequestRow[]>(),
     supabase.from('request_categories').select('id,name_ru,name_en,name_kk,active')
       .returns<(Category & { active: boolean })[]>(),
@@ -102,10 +94,10 @@ async function RequestDetail({ id, role, error, categoryNames }: {
   const format = await getFormatter()
   const supabase = await createClient()
   const [detail, history, assignees] = await Promise.all([
-    supabase.from('requests').select('id,number,source_ref,category_id,title,status,assignee_id,description,proposal,decision,next_step,version')
+    supabase.from('requests').select('id,number,source_ref,category_id,title,status,assignee_id,kind,sentiment,tags,description,proposal,decision,next_step,version')
       .eq('id', id).returns<(RequestRow & {
         description: string; proposal: string | null; decision: string | null;
-        next_step: string | null; version: number
+        next_step: string | null; version: number; tags: string[]
       })[]>().maybeSingle(),
     supabase.from('request_events').select('id,actor_role,event_type,status,message,next_step,created_at')
       .eq('request_id', id).order('id').returns<{
@@ -130,6 +122,12 @@ async function RequestDetail({ id, role, error, categoryNames }: {
       <div className="crm-detail-content">
       <p>{reference(request)} · {categoryNames[request.category_id]}</p>
       <h2>{request.title}</h2>
+      <p>{requestKindLabels[request.kind]} · {sentimentLabel(request.sentiment)}</p>
+      <h3>Теги</h3>
+      <ul className="crm-request-tags">
+        <li>{requestKindLabels[request.kind]}</li>
+        {topicTags(request.tags).map(tag => <li key={tag}>{tag}</li>)}
+      </ul>
       <p><strong>{t(request.status)}</strong> · {t(request.assignee_id ? 'hasAssignee' : 'unassigned')}</p>
       <p className="request-text">{request.description}</p>
       {role !== 'employee' && aiConfig() && <RequestSummary id={id} />}

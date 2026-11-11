@@ -3,9 +3,13 @@
 import { useActionState, useRef, useState, useTransition } from 'react'
 import { useTranslations } from 'next-intl'
 import { prepareDraft, submitRequest } from '../app/workspace/actions'
-import type { Draft } from '../lib/requests'
+import { requestKinds, requestKindLabels, type Draft, type RequestKind } from '../lib/requests'
 import samples from '../lib/demo-requests.json'
 import { Sparkles, Send, RotateCcw } from 'lucide-react'
+
+const emptyDraft: Draft = {
+  title: '', description: '', proposal: '', category: '', kind: 'idea', sentiment: 5, tags: [],
+}
 
 export function RequestForm({ categories, aiEnabled, routes = {}, preview = false }: {
   categories: { id: string; name: string }[]
@@ -18,9 +22,7 @@ export function RequestForm({ categories, aiEnabled, routes = {}, preview = fals
   const [mode, setMode] = useState('ai')
   const [message, setMessage] = useState('')
   const [chat, setChat] = useState<{ text: string; user?: boolean }[]>([])
-  const [draft, setDraft] = useState<Draft>({
-    title: '', description: '', proposal: '', category: '',
-  })
+  const [draft, setDraft] = useState<Draft>(emptyDraft)
   const [aiError, setAiError] = useState<'invalid' | 'aiUnavailable'>()
   const [isDrafting, startDraft] = useTransition()
   const [result, submit, isSubmitting] = useActionState(async (_: unknown, form: FormData) => {
@@ -36,7 +38,8 @@ export function RequestForm({ categories, aiEnabled, routes = {}, preview = fals
   function loadSample(id: string) {
     const sample = samples.find(item => item.id === id)
     if (!sample) return
-    setDraft({ title: sample.title, description: sample.description, proposal: '', category: sample.category })
+    setDraft({ ...emptyDraft, title: sample.title, description: sample.description, category: sample.category,
+      kind: sample.kind === 'problem' ? 'problem' : 'idea' })
     setChat([{ text: sample.description, user: true }, { text: 'Пример добавлен в карточку. Проверьте категорию и получателя перед регистрацией.' }])
   }
 
@@ -92,6 +95,18 @@ export function RequestForm({ categories, aiEnabled, routes = {}, preview = fals
           <option value="" disabled>{t('chooseCategory')}</option>
           {categories.map(category => <option key={category.id} value={category.id}>{category.name}</option>)}
         </select></label>
+        <label>Тип обращения<select name="kind" value={draft.kind}
+          onChange={event => update('kind', event.target.value as RequestKind)}>
+          {requestKinds.map(kind => <option key={kind} value={kind}>{requestKindLabels[kind]}</option>)}
+        </select></label>
+        <label>Тональность<select name="sentiment" value={draft.sentiment}
+          onChange={event => update('sentiment', Number(event.target.value))}>
+          {Array.from({ length: 11 }, (_, score) => <option key={score} value={score}>
+            {score}{score === 0 ? ' — негативная' : score === 5 ? ' — нейтральная' : score === 10 ? ' — позитивная' : ''}
+          </option>)}
+        </select></label>
+        <label>Теги через запятую<input name="tags" value={draft.tags.join(',')} maxLength={400}
+          onChange={event => update('tags', event.target.value.split(','))} /></label>
         <label>{t('title')}<input name="title" maxLength={120} required value={draft.title}
           onChange={event => update('title', event.target.value)} /></label>
         <label>{t('description')}<textarea name="description" rows={5} maxLength={4000} required
@@ -121,7 +136,7 @@ export function RequestForm({ categories, aiEnabled, routes = {}, preview = fals
         {result?.error && <p className="error" role="alert">{t(result.error)}</p>}
         <button className="button button-primary" disabled={preview}>{isSubmitting ? t('saving') : 'Зарегистрировать обращение'}</button>
         <button type="button" className="button button-outline" onClick={() => {
-          setDraft({ title: '', description: '', proposal: '', category: '' })
+          setDraft(emptyDraft)
           setChat([]); setMessage(''); key.current = null; setAiError(undefined)
         }}><RotateCcw size={14} />Очистить и начать заново</button>
       </fieldset>
