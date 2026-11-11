@@ -43,16 +43,18 @@ export function RequestForm({ categories, aiEnabled, routes = {}, preview = fals
   function sendMessage() {
     const text = message.trim()
     if (!text) return
+    setAiError(undefined)
+    const description = [draft.description, text].filter(Boolean).join('\n').slice(0, 4000)
+    setDraft(previous => ({ ...previous, description }))
     setMessage('')
     setChat(previous => [...previous, { text, user: true }])
     startDraft(async () => {
       if (!aiEnabled) {
-        setDraft(previous => ({ ...previous, description: [previous.description, text].filter(Boolean).join('\n').slice(0, 4000) }))
         setChat(previous => [...previous, { text: 'Описание добавлено. Заполните тему и выберите категорию в карточке справа. Для автоматического заполнения требуется подключение AI.' }])
         return
       }
       try {
-        const response = await prepareDraft([draft.description, text].filter(Boolean).join('\n').slice(0, 4000))
+        const response = await prepareDraft(description)
         if ('draft' in response) {
           setDraft(previous => ({ ...response.draft, category: previous.category || response.draft.category, proposal: previous.proposal || response.draft.proposal }))
           setChat(previous => [...previous, { text: 'Карточка подготовлена. Проверьте описание, категорию и получателя. После подтверждения обращение появится в реестре.' }])

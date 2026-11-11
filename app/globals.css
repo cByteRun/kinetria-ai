@@ -548,6 +548,13 @@ h3 {
 .credentials {
   gap: 10px;
 }
+.login-credentials {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+.login-credentials summary { cursor: pointer; font-weight: 600; }
+.login-credentials > p { margin-top: 12px; font-size: 14px; }
 .credentials label {
   font-size: 14px;
   display: grid;

@@ -1,5 +1,9 @@
 export function aiConfig() {
-  const provider = process.env.AI_PROVIDER?.trim().toLowerCase() || 'openai'
+  if (process.env.VERCEL === '1' || process.env.VERCEL_ENV) return null
+  const provider = process.env.AI_PROVIDER?.trim().toLowerCase()
+  if (provider === 'ollama' && process.env.OLLAMA_MODEL) {
+    return { provider, model: process.env.OLLAMA_MODEL } as const
+  }
   if (provider === 'gemini' && process.env.GEMINI_API_KEY) {
     return { provider, key: process.env.GEMINI_API_KEY, model: process.env.GEMINI_MODEL || 'gemini-2.5-flash' } as const
   }
@@ -12,6 +16,31 @@ export function aiConfig() {
 export async function generateText(instructions: string, input: string, maxTokens: number, schema?: object) {
   const config = aiConfig()
   if (!config) throw new Error('AI provider is not configured')
+  if (config.provider === 'ollama') {
+    const response = await fetch('http://127.0.0.1:11434/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(90000),
+      body: JSON.stringify({
+        model: config.model,
+        messages: [
+          { role: 'system', content: instructions },
+          { role: 'user', content: input },
+        ],
+        stream: false,
+        think: false,
+        options: { num_ctx: 4096, num_predict: Math.min(maxTokens, schema ? 1536 : 512), temperature: 0 },
+        ...(schema && { format: schema }),
+      }),
+    })
+    if (!response.ok) throw new Error('Ollama request failed')
+    const result = await response.json()
+    const text = result.message?.content
+    if (!result.done || result.done_reason !== 'stop' || typeof text !== 'string' || !text.trim()) {
+      throw new Error('Ollama returned no complete text')
+    }
+    return text
+  }
   const gemini = config.provider === 'gemini'
   const response = await fetch(gemini
     ? 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(config.model) + ':generateContent'

@@ -65,6 +65,9 @@ export default async function Login({
           </form>
         )}
         {hasSupabase && (
+          <details className="login-credentials" open={!showRoles || Boolean(error)}>
+            <summary>{t('accountLogin')}</summary>
+            {showRoles && <p className="muted">{t('accountHint')}</p>}
           <form action={login} className="credentials">
             <label>
               {t('email')}
@@ -89,6 +92,7 @@ export default async function Login({
               <ArrowRight size={17} />
             </button>
           </form>
+          </details>
         )}
         {!hasSupabase && !localPreview && <p>{t('disabled')}</p>}
       </div>

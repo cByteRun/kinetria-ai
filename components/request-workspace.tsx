@@ -132,7 +132,7 @@ async function RequestDetail({ id, role, error, categoryNames }: {
       <h2>{request.title}</h2>
       <p><strong>{t(request.status)}</strong> · {t(request.assignee_id ? 'hasAssignee' : 'unassigned')}</p>
       <p className="request-text">{request.description}</p>
-      {role !== 'employee' && <RequestSummary id={id} />}
+      {role !== 'employee' && aiConfig() && <RequestSummary id={id} />}
       {request.proposal && <><h3>{t('proposal')}</h3><p className="request-text">{request.proposal}</p></>}
       {request.decision && <><h3>{t('decision')}</h3><p className="request-text">{request.decision}</p></>}
       {request.next_step && <><h3>{t('nextStep')}</h3><p className="request-text">{request.next_step}</p></>}

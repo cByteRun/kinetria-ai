@@ -158,6 +158,8 @@
     "briefDetails": "What we want to measure: {value}"
   },
   "login": {
+    "accountLogin": "Sign in with email and password",
+    "accountHint": "For an existing account. To try the demo, choose a user above — no password entry is needed.",
     "credentials": "Sign-in failed. Check the email and password or the demo account setup.",
     "config": "Set up Supabase Auth to sign in.",
     "profile": "This account needs an active profile with a role.",
