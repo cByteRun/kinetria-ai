@@ -1,8 +1,38 @@
-# 💡 IdeaRoute
+<p align="center">
+  <img src="docs/assets/idearoute-mark.svg" alt="Логотип IdeaRoute — маршрут от обращения к результату" width="88" height="88" />
+</p>
 
-**Проблема сотрудника → ответственный → решение → понятный ответ автору.**
+<h1 align="center">IdeaRoute</h1>
 
-Внутренняя CRM для проблем и предложений сотрудников ГК «Модус Трейд». Работающий MVP для хакатона Pavlodar Hub: веб-кабинеты и Telegram используют общий реестр, права и историю.
+<p align="center">
+  <strong>Каждое обращение — к результату.</strong><br/>
+  Проблемы и предложения сотрудников: от первого сообщения<br/>
+  до ответственного, решения и обратной связи автору.
+</p>
+
+<p align="center">
+  <a href="#scenarios"><strong>Сквозные сценарии →</strong></a>
+  &nbsp;&nbsp;·&nbsp;&nbsp;
+  <a href="#setup"><strong>Запустить MVP ↓</strong></a>
+  &nbsp;&nbsp;·&nbsp;&nbsp;
+  <a href="docs/README.md">Документация</a>
+  &nbsp;&nbsp;·&nbsp;&nbsp;
+  <a href="docs/ROADMAP.md">Roadmap</a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-16-18181B?style=flat-square&amp;logo=nextdotjs&amp;logoColor=white" alt="Next.js 16" />
+  <img src="https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&amp;logo=typescript&amp;logoColor=white" alt="TypeScript 5" />
+  <img src="https://img.shields.io/badge/PostgreSQL-RLS-4169E1?style=flat-square&amp;logo=postgresql&amp;logoColor=white" alt="PostgreSQL и Row Level Security" />
+  <img src="https://img.shields.io/badge/Web_+_Telegram-Closed_Loop-7452D6?style=flat-square" alt="Веб и Telegram — единый цикл обратной связи" />
+  <img src="https://img.shields.io/badge/Interface-RU_·_EN_·_KK-7452D6?style=flat-square" alt="Веб-интерфейс на русском, английском и казахском" />
+</p>
+
+<p align="center">
+  <sub>Внутренняя CRM для ГК «Модус Трейд» · MVP хакатона Pavlodar Hub</sub>
+</p>
+
+---
 
 ### Какую бизнес-задачу решает продукт и какую ценность он создаёт?
 
