@@ -77,3 +77,7 @@ Node.js 24+. Команды pnpm telegram:webhook / telegram:check / groq:check.
 ## Единая инструкция запуска и проверка конфигурации
 
 Актуальный порядок подготовки БД, тестовых аккаунтов, AI и webhook — [README](../README.md#setup). В Git хранится только пустой `.env.example`; локальные значения не меняются при очистке истории. `python3 scripts/check-repository-security.py --history` проверяет все локальные blobs/commits/tags, включая недостижимые объекты, и содержимое XML в DOCX. Сканирование изображений и неизвестных форматов секретов не гарантируется.
+
+## Telegram UX после ревью webhook
+
+Telegram API поддерживает редактирование коротких экранов, безопасный fallback для удалённых сообщений и прежнее разбиение длинного текста. Setup регистрирует также /login и /switch. Полный [UX-гайд и дерево роутов](TELEGRAM-UX.md); [проверки](VALIDATION.md#telegram-ux-после-ревью-webhook).

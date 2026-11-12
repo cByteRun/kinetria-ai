@@ -25,3 +25,16 @@ for(const [code,expected] of [['PT409','conflict'],['PT404','unavailable'],['220
  await assert.rejects(()=>bridge(42,'context'),error=>error.message.includes(expected)&&!error.message.includes('SENSITIVE'))
 }
 console.log('PASS RPC failures: only deterministic domain errors are acknowledged; network/gateway/timeout failures remain retryable and sanitized')
+const edits=[]
+globalThis.fetch=async(address,init)=>{edits.push({method:String(address).split('/').at(-1),...JSON.parse(init.body)});return Response.json({ok:true,result:{message_id:77}})}
+await say(42,'Главная',buttons,77)
+assert.equal(edits.length,1);assert.equal(edits[0].method,'editMessageText');assert.equal(edits[0].message_id,77)
+for (const [description,status,count] of [['Bad Request: message is not modified',400,1],['Bad Request: message to edit not found',400,2],["Bad Request: message can't be edited",400,2],['Bad Request: BUTTON_DATA_INVALID',400,1],['Too Many Requests',429,1]]) {
+ const calls=[]
+ globalThis.fetch=async(address,init)=>{const method=String(address).split('/').at(-1);calls.push({method,...JSON.parse(init.body)});return method==='editMessageText' ? Response.json({ok:false,error_code:status,description},{status}) : Response.json({ok:true,result:{message_id:78}})}
+ if(description.includes('BUTTON_DATA') || status===429) await assert.rejects(()=>say(42,'Экран',buttons,77))
+ else await say(42,'Экран',buttons,77)
+ assert.equal(calls.length,count)
+ if(count===2) assert.equal(calls[1].method,'sendMessage')
+}
+console.log('PASS edit transport: edit target, unchanged success, deleted/expired fallback, invalid buttons and rate limits remain retryable')

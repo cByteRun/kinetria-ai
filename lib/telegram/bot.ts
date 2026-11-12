@@ -1,13 +1,18 @@
+import { AsyncLocalStorage } from 'node:async_hooks'
 import { demoChoices, demoAllowed, switchDemoAccount } from './demo'
 import { randomUUID } from 'node:crypto'
 import { generateText, aiConfig } from '../ai'
-import { bridge, say, telegram, transcribe, downloadTelegramFile, type Button } from './api'
+import { bridge, say as sendMessage, telegram, transcribe, downloadTelegramFile, type Button } from './api'
 import { terminalStatuses, transitions, type Draft, type RequestStatus } from '../requests'
+
+// Each update owns its edit target, including overlapping webhook requests.
+const navigation = new AsyncLocalStorage<{ messageId?: number }>()
+const say = (tg: number, text: string, buttons: Button[][] = []) => sendMessage(tg, text, buttons, navigation.getStore()?.messageId)
 
 type FileData = { name: string; size: number; content: string }
 type State = { source?: 'voice' | 'text'; mode?: string; key?: string; draft?: Draft; files?: FileData[]; id?: string; number?: number; version?: number; assignee?: string; assigneeName?: string; due?: string; field?: string; status?: string }
 type Context = { role: string; name: string; state: State; categories: { id: string; name: string }[] }
-type Message = { chat: { id: number; type: string }; from?: { id: number }; text?: string; voice?: { file_id: string; duration: number; file_size?: number }; document?: { file_id: string; file_name?: string; file_size?: number }; photo?: { file_id: string; file_size?: number }[] }
+type Message = { message_id?: number; chat: { id: number; type: string }; from?: { id: number }; text?: string; voice?: { file_id: string; duration: number; file_size?: number }; document?: { file_id: string; file_name?: string; file_size?: number }; photo?: { file_id: string; file_size?: number }[] }
 export type Update = { update_id: number; message?: Message; callback_query?: { id: string; from: { id: number }; message?: Message; data?: string } }
 const button = (text: string, callback_data: string): Button => ({ text, callback_data })
 const state = (tg: number, value: State) => bridge(tg, 'state', value)
@@ -24,11 +29,26 @@ function websiteButtons(): Button[][] {
 
 async function showDraft(tg: number, c: Context, s: State) {
   const d = s.draft!
-  await say(tg, `📝 Черновик — ещё не отправлен\n${d.title}\n\n${d.description}\n\nПредложение: ${d.proposal || 'не указано'}\nКатегория: ${c.categories.find(x => x.id === d.category)?.name || '⚠️ выберите категорию'}\nТип: ${d.kind === 'problem' ? 'Проблема' : 'Предложение'}\nТеги: ${d.tags.join(', ')}\nФайлы: ${s.files?.length || 0}/3\n\nПроверьте распознавание и факты. Можно прикрепить файл до 1 МиБ.`, [
-    [button('Категория', 'category'), button('Проблема / предложение', 'kind')],
-    [button('Тема', 'edit:title'), button('Описание', 'edit:description')],
-    [button('Предложение', 'edit:proposal'), button('Теги', 'edit:tags')],
-    [button('✅ Отправить', 'submit:' + s.key), button('Отменить', 'cancel')],
+  await say(tg, `Черновик обращения — ещё не отправлен
+
+Тема: ${d.title}
+
+Текст обращения
+${d.description}
+
+Метаданные
+Тип: ${d.kind === 'problem' ? 'Проблема' : 'Предложение'}
+Категория: ${c.categories.find(x => x.id === d.category)?.name || 'не определена — выберите'}
+Теги: ${d.tags.join(', ') || 'не указаны'}
+Предлагаемое решение: ${d.proposal || 'не указано'}
+Вложения: ${s.files?.length || 0}/3
+
+Проверьте текст, тип и категорию. Если данные неверны или неполны, измените их кнопками ниже или запишите сообщение заново. Можно прикрепить до 3 файлов по 1 МиБ. Только «Отправить обращение» зарегистрирует запись.`, [
+    [button('Отправить обращение', 'submit:' + s.key)],
+    [button('Изменить тип', 'kind'), button('Изменить категорию', 'category')],
+    [button('Изменить тему', 'edit:title'), button('Изменить текст', 'edit:description')],
+    [button('Изменить предложение', 'edit:proposal'), button('Изменить теги', 'edit:tags')],
+    [button('Записать заново', 'rewrite'), button('Отменить обращение', 'cancel')],
   ])
 }
 async function draftMessage(tg: number, c: Context, text: string, source: 'voice' | 'text') {
@@ -50,7 +70,7 @@ async function draftMessage(tg: number, c: Context, text: string, source: 'voice
   }
   const s: State = { source, mode: 'draft', key: randomUUID(), draft: d, files: [] }
   await state(tg, s)
-  if (!ai) await say(tg, 'ИИ недоступен. Исходный текст сохранён; заполните тему и категорию вручную.')
+  if (!ai) await say(tg, 'ИИ недоступен. Исходный текст сохранён. Проверьте тему и тип (по умолчанию «Проблема»), выберите категорию вручную.')
   await showDraft(tg, c, s)
 }
 async function detail(tg: number, c: Context, id: string) {
@@ -69,15 +89,16 @@ async function detail(tg: number, c: Context, id: string) {
   const question = r.status === 'clarification'
     ? r.clarification_question || r.events?.find((e: { event_type: string; message?: string }) => e.event_type === 'reviewed' && e.message)?.message
     : null
-  await say(tg, `${ref(r.number)} · ${statusNames[r.status]}\n${r.title}\n\n${r.description}\n\nПредложение: ${r.proposal || '—'}\nНазначение: ${r.assignee_name || (r.assignee_id ? 'ответственный назначен' : 'резервная очередь, требуется назначение')}\nСрок: ${r.due_at || '—'}${question ? '\n\nВопрос автору: ' + question : ''}\nРешение: ${r.decision || '—'}\nСледующий шаг: ${r.next_step || '—'}`, controls)
+  await say(tg, `${ref(r.number)} · ${statusNames[r.status]}\n${r.title}\n\n${r.description}\n\nТип: ${r.kind === 'idea' ? 'Предложение' : r.kind === 'praise' ? 'Отзыв' : 'Проблема'}\nКатегория: ${c.categories.find(x => x.id === r.category_id)?.name || r.category_id || '—'}\nТеги: ${(r.tags || []).join(', ') || 'не указаны'}\nПредложение: ${r.proposal || '—'}\nНазначение: ${r.assignee_name || (r.assignee_id ? 'ответственный назначен' : 'резервная очередь, требуется назначение')}\nСрок: ${r.due_at || '—'}${question ? '\n\nВопрос автору: ' + question : ''}\nРешение: ${r.decision || '—'}\nСледующий шаг: ${r.next_step || '—'}`, controls)
 }
 const demoRoleNames: Record<string, string> = { employee: '👤 Сотрудник', handler: '🛠 Ответственный', manager: '👔 Руководитель', admin: '⚙️ Администратор' }
 const roleInstructions: Record<string, string> = {
-  employee: '👤 Инструкция сотрудника\n\n1. Нажмите «Новое обращение» или /new. Опишите проблему или предложение текстом либо голосом до 120 секунд / 3 МиБ.\n2. Проверьте черновик: тему, описание, категорию и предложение. Можно добавить до 3 файлов по 1 МиБ. Только кнопка «Отправить» регистрирует обращение и выдаёт R-номер.\n3. Откройте «Мои обращения» или /list: здесь только ваши записи. В карточке доступны история, комментарии и вложения.\n4. Если нужно уточнение — нажмите «Ответить». После решения прочитайте итог и нажмите «Ознакомлен с решением».\n\n/new создаёт обращение, /draft возвращает черновик, /cancel отменяет текущий шаг.',
+  employee: '👤 Инструкция сотрудника\n\n1. Нажмите «Новое обращение» или /new. Опишите проблему или предложение текстом либо голосом до 120 секунд / 3 МиБ.\n2. Проверьте черновик: тему, описание, категорию и предложение. Можно добавить до 3 файлов по 1 МиБ. Только кнопка «Отправить обращение» регистрирует обращение и выдаёт R-номер.\n3. Откройте «Мои обращения» или /list: здесь только ваши записи. В карточке доступны история, комментарии и вложения.\n4. Если нужно уточнение — нажмите «Ответить». После решения прочитайте итог и нажмите «Ознакомлен с решением».\n\n/new создаёт обращение, /draft возвращает черновик, /cancel отменяет текущий шаг.',
   handler: '🛠 Инструкция ответственного\n\n1. Откройте «Моя очередь» или /list. Вы видите только обращения, назначенные вам.\n2. Откройте карточку, изучите описание, историю и вложения. Примите обращение на рассмотрение.\n3. При необходимости запросите уточнение у автора. Для работы укажите содержательный следующий шаг.\n4. Зафиксируйте результат: реализацию, мотивированный отказ или закрытие. Решение и история доступны автору.\n\n/stats показывает сводку последних 30 доступных записей. Срок, приоритет и полная аналитика ваших назначений доступны в дашборде. /cancel отменяет текущий шаг.',
   manager: '👔 Инструкция руководителя\n\n1. Откройте «Моя очередь» или /list. Доступны обращения категорий вашего направления.\n2. В карточке нажмите «Назначить ответственного», выберите допустимого участника, укажите срок или «-» и подтвердите назначение.\n3. Рассматривайте обращения, запрашивайте уточнения и фиксируйте следующий шаг или содержательное решение. История сохраняется для автора.\n4. Контролируйте сроки, аналитику и повторяющиеся темы своего направления в дашборде.\n\n/stats показывает сводку последних 30 доступных записей. /cancel отменяет текущий шаг.',
   admin: '⚙️ Инструкция администратора\n\n1. Откройте «Моя очередь» или /list для общего внутреннего реестра; /stats — сводка последних 30 доступных записей.\n2. «Резервная очередь» или /reserve показывает открытые обращения без владельца. В карточке назначьте допустимого руководителя, укажите срок и подтвердите.\n3. История, комментарии и вложения помогают проверить маршрут. Решение по обращению публикует руководитель или ответственный.\n4. Категории, правила маршрутизации, срок, приоритет и общая аналитика доступны в дашборде.\n\n/cancel отменяет текущий шаг.',
 }
+const composeHint = 'Опишите обращение текстом или голосом до 120 секунд / 3 МиБ. В начале записи назовите тип: «Проблема» или «Предложение», затем категорию из списка: '
 const overview = '💡 IdeaRoute — проблемы и предложения сотрудников с понятным результатом.\n\n📝 Автор подтверждает обращение → 👔 команда назначает ответственного и срок → 🛠 фиксирует решение → ✅ автор получает итог.\n\n🌐 Бот и дашборд работают с одними обращениями и историей. В боте — быстрые действия и уведомления; на сайте — полный реестр, аналитика и настройки. На сайте войдите в тот же аккаунт.'
 function homeButtons(tg: number, role: string): Button[][] {
   const rows = role === 'employee'
@@ -89,16 +110,27 @@ function homeButtons(tg: number, role: string): Button[][] {
   rows.push(...websiteButtons())
   return rows
 }
+function commands(tg: number, role: string) {
+  return ['/start — главная и описание программы', '/home — главное меню', '/help — сценарии и помощь', '/list — обращения, доступные вашей роли', '/cancel — отменить текущий шаг', '/unlink — отключить аккаунт', ...(role === 'employee' ? ['/new — новое обращение', '/draft — продолжить черновик'] : ['/stats — сводка доступных обращений']), ...(role === 'admin' ? ['/reserve — обращения без владельца'] : []), ...(demoAllowed(tg) ? ['/demo — выбрать демоаккаунт', '/login — выбрать демоаккаунт', '/switch — сменить демоаккаунт'] : [])].join('\n')
+}
 async function showHome(tg: number, c: Pick<Context, 'role' | 'name'>) {
-  await say(tg, `${overview}\n\n${demoRoleNames[c.role] || c.role} · ${c.name}\nВыберите действие.\n\n🏠 /home — главное меню; /help — помощь; /cancel — отменить текущий шаг.${demoAllowed(tg) ? '\n🧪 Выбранный демоаккаунт остаётся активным до выбора другого через /demo или отвязки /unlink.' : ''}\nЧерновик сохраняется при переходе на главную и в помощь; /draft — продолжить.`, homeButtons(tg, c.role))
+  await say(tg, `${overview}\n\n${demoRoleNames[c.role] || c.role} · ${c.name}\n\n${commands(tg, c.role)}\n\nГлавная и помощь сохраняют текущий шаг.`, homeButtons(tg, c.role))
 }
 async function showInstructions(tg: number, c: Pick<Context, 'role'>) {
-  await say(tg, `${overview}\n\n${roleInstructions[c.role] || 'Инструкция для этой роли недоступна.'}\n\n🏠 /home — меню текущей роли без смены аккаунта. /help и /home сохраняют текущий шаг и черновик.${demoAllowed(tg) ? '\n🧪 /demo — выбрать другой демоаккаунт. Текущий действует до переключения или /unlink. Черновики разделены по аккаунтам.' : ''}`, homeButtons(tg, c.role))
+  await say(tg, `📖 Доступные сценарии\n\n🎙 Сотрудник: голос или текст → проверка черновика → отправка → номер обращения.\n👔 Руководитель: назначение владельца и срока; администратор разбирает резерв.\n🛠 Ответственный: рассмотрение → уточнение → работа → решение.\n✅ Автор: ответ на уточнение → чтение результата → ознакомление.\n🌐 Общие обращения и история доступны также в дашборде.\n\n${roleInstructions[c.role] || ''}\n\n${commands(tg, c.role)}\n\nПомощь и главная сохраняют текущий шаг.`, homeButtons(tg, c.role))
 }
-async function demoMenu(tg: number) {
-  await say(tg, `${overview}\n\n🧪 Вход в демо\nВыберите тестовый аккаунт, как на странице входа сайта. Он будет активен до выбора другого через /demo или отвязки /unlink. /home возвращает меню текущей роли.\n\n👥 Для совместного показа каждый участник выбирает отдельный аккаунт. Уже занятый аккаунт выбрать нельзя. Черновики сохраняются отдельно для каждого аккаунта.`, demoChoices.map(account => [button(`${demoRoleNames[account.role]} · ${account.name}`, 'demo:' + account.id)]).concat(websiteButtons()))
+async function demoMenu(tg: number, intro = false) {
+  await say(tg, `${intro ? overview + '\n\n' : ''}🧪 Выберите демоаккаунт\nДля совместного показа каждому нужен отдельный аккаунт. Занятые аккаунты недоступны. Черновики разделены по аккаунтам.\n/demo — выбор аккаунта\n/login — выбор аккаунта\n/switch — смена аккаунта\n/home — главная`, demoChoices.map(account => [button(`${demoRoleNames[account.role]} · ${account.name}`, 'demo:' + account.id)]).concat(websiteButtons()))
+}
+async function showRole(tg: number, c: Pick<Context, 'role' | 'name'>) {
+  const descriptions: Record<string, string> = { employee: 'Подаёт обращения, отвечает на уточнения и знакомится с решением.', handler: 'Рассматривает назначенные обращения, уточняет детали и фиксирует результат.', manager: 'Работает с обращениями своего направления, назначает владельца и срок.', admin: 'Контролирует общий реестр и назначает владельцев обращений из резерва.' }
+  const specific = c.role === 'employee' ? '/new — новое обращение\n/draft — продолжить черновик' : c.role === 'admin' ? '/reserve — резервная очередь' : ''
+  await say(tg, `Выбрана роль: ${demoRoleNames[c.role]?.replace(/^\S+\s/, '') || c.role}\n${c.name}\n\n${descriptions[c.role] || ''}${specific ? '\n\n' + specific : ''}`, [[button('Главная', 'menu:home')]])
 }
 export async function handleUpdate(update: Update) {
+  return navigation.run({ messageId: update.callback_query?.message?.message_id }, () => processUpdate(update))
+}
+async function processUpdate(update: Update) {
   const m = update.message || update.callback_query?.message
   const tg = update.callback_query?.from.id || m?.from?.id
   if (!m || m.chat.type !== 'private' || !tg || m.chat.id !== tg) return
@@ -112,12 +144,12 @@ export async function handleUpdate(update: Update) {
     const text = menuCommands[callback] || update.message?.text?.trim() || ''
     if (demoAllowed(tg) && text === '/start') {
       try { await showHome(tg, await bridge(tg, 'context')) }
-      catch (error) { if (error instanceof Error && error.message === 'unlinked') await demoMenu(tg); else throw error }
+      catch (error) { if (error instanceof Error && error.message === 'unlinked') await demoMenu(tg, true); else throw error }
     } else if (demoAllowed(tg) && (['/demo', '/login', '/switch'].includes(text) || callback === 'demoMenu')) {
       await demoMenu(tg)
     } else if (demoAllowed(tg) && callback.startsWith('demo:')) {
       const profile = await switchDemoAccount(tg, callback.slice(5))
-      await showHome(tg, profile)
+      await showRole(tg, profile)
     } else if (/^\/start [0-9a-f-]{36}$/i.test(text)) {
       await bridge(tg, 'link', { token: text.slice(7) })
       await say(tg, '✅ Аккаунт привязан. Один аккаунт — один Telegram. Для совместной работы каждый привязывает свой аккаунт.'); await showHome(tg, await bridge(tg, 'context'))
@@ -138,7 +170,7 @@ export async function handleUpdate(update: Update) {
       }
       else if (text === '/new') {
         if (c.role !== 'employee') await say(tg, 'Создание доступно сотруднику. /list — ваша очередь.')
-        else { await state(tg, { mode: 'compose' }); await say(tg, 'Опишите проблему или предложение текстом либо голосом (до 120 секунд / 3 МиБ). Укажите категорию, проявления и ожидаемое решение. Аудио передаётся в Groq для распознавания. До подтверждения обращение не регистрируется.') }
+        else { await state(tg, { mode: 'compose' }); await say(tg, composeHint + c.categories.map(x => x.name).join(', ') + '. Затем расскажите факты и ожидаемый результат. Аудио передаётся в Groq. До подтверждения запись не регистрируется.') }
       } else if (text === '/list' || text === '/stats' || (text === '/reserve' && c.role === 'admin')) {
         const rows = await bridge(tg, text === '/reserve' ? 'reserve' : text === '/stats' ? 'stats' : 'list') as { id: string; number: number; title: string; status: string; assignee_id: string | null }[]
         if (text === '/stats') await say(tg, `📊 Последние ${rows.length} доступных обращений\nОткрыто: ${rows.filter(r => !terminalStatuses.includes(r.status as RequestStatus)).length}\nБез владельца: ${rows.filter(r => !r.assignee_id).length}\nПолная аналитика и настройки — в дашборде.`, websiteButtons())
@@ -197,12 +229,17 @@ export async function handleUpdate(update: Update) {
       } else if (['decision', 'reply'].includes(s.mode || '') && text && !text.startsWith('/')) {
         if (text.length > (s.status === 'in_progress' ? 1000 : 2000)) await say(tg, 'Слишком длинный текст. Сократите сообщение.')
         else { await bridge(tg, 'review', { id: s.id, version: s.version, status: s.status || null, action: s.mode === 'reply' ? 'replied' : 'reviewed', message: text, next: s.status === 'in_progress' ? text : '' }); await state(tg, {}); await say(tg, '✅ Сохранено в истории.'); await detail(tg, c, s.id!) }
-      } else if (cb === 'category' && s.draft) await say(tg, 'Выберите категорию:', c.categories.map((x, i) => [button(x.name, 'cat:' + i)]))
+      } else if (cb === 'category' && s.draft) await say(tg, 'Выберите категорию:', [...c.categories.map((x, i) => [button(x.name, 'cat:' + i)]), [button('Назад к черновику', 'menu:draft')]])
       else if (cb.startsWith('cat:') && s.draft) {
         const category = c.categories[Number(cb.slice(4))]; if (!category) throw new Error('invalid')
         const next = { ...s, draft: { ...s.draft, category: category.id } }; await state(tg, next); await showDraft(tg, c, next)
+      } else if (cb === 'rewrite' && s.draft && c.role === 'employee') {
+        await state(tg, { ...s, mode: 'compose' })
+        await say(tg, composeHint + c.categories.map(x => x.name).join(', ') + '. Новая запись заменит текст, метаданные и вложения после распознавания. До этого прежний черновик доступен через /draft.', [[button('Вернуться к черновику', 'menu:draft')]])
       } else if (cb === 'kind' && s.draft) {
-        const next: State = { ...s, draft: { ...s.draft, kind: s.draft.kind === 'problem' ? 'idea' : 'problem' } }; await state(tg, next); await showDraft(tg, c, next)
+        await say(tg, 'Выберите тип обращения:', [[button('Проблема', 'kind:problem'), button('Предложение', 'kind:idea')], [button('Назад к черновику', 'menu:draft')]])
+      } else if (['kind:problem', 'kind:idea'].includes(cb) && s.draft) {
+        const next: State = { ...s, draft: { ...s.draft, kind: cb === 'kind:problem' ? 'problem' : 'idea' } }; await state(tg, next); await showDraft(tg, c, next)
       } else if (cb.startsWith('edit:') && s.draft && ['title','description','proposal','tags'].includes(cb.slice(5))) {
         await state(tg, { ...s, mode: 'edit', field: cb.slice(5) }); await say(tg, 'Отправьте исправленный текст (можно голосом). Для очистки предложения или тегов — «-».')
       } else if (cb.startsWith('submit:') && s.mode === 'submitted' && s.key === cb.slice(7)) {
@@ -254,7 +291,7 @@ export async function handleUpdate(update: Update) {
     const message = error instanceof Error ? error.message : ''
     if (['conflict', 'unavailable', 'unlinked', 'demoBusy'].includes(message)) {
       try {
-        await say(tg, message === 'demoBusy' ? 'Этот демоаккаунт уже привязан к другому Telegram. Выберите другой аккаунт или сначала отвяжите его через /unlink.' : message === 'unlinked' ? overview + '\n\n🔗 Откройте на сайте кабинет → «Как работает маршрут» → «Привязать аккаунт» и перейдите по одноразовой ссылке. Каждый участник привязывает свой аккаунт; повторная привязка одного веб-аккаунта заменит предыдущий Telegram.' : message === 'conflict' ? 'Карточка изменилась. Откройте /list и повторите действие с актуальной версией.' : 'Действие недоступно. Проверьте права, поля и срок ссылки. /cancel · /list', websiteButtons())
+        await say(tg, message === 'demoBusy' ? 'Этот демоаккаунт уже привязан к другому Telegram. Выберите другой аккаунт или сначала отвяжите его через /unlink.' : message === 'unlinked' ? (update.message?.text?.trim() === '/start' ? overview + '\n\n' : '') + '🔗 Откройте на сайте кабинет → «Как работает маршрут» → «Привязать аккаунт» и перейдите по одноразовой ссылке. Каждый участник привязывает свой аккаунт; повторная привязка одного веб-аккаунта заменит предыдущий Telegram.' : message === 'conflict' ? 'Карточка изменилась. Откройте /list и повторите действие с актуальной версией.' : 'Действие недоступно. Проверьте права, поля и срок ссылки. /cancel · /list', websiteButtons())
         await bridge(tg, 'finish', { update: update.update_id, done: true })
       } catch (replyError) {
         await bridge(tg, 'finish', { update: update.update_id, done: false })

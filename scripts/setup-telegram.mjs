@@ -26,6 +26,8 @@ const commands = [
   {command:'start',description:'О боте и начало работы'},
   {command:'home',description:'Главная · меню текущей роли'},
   {command:'help',description:'Как работает бот · помощь по роли'},
+  {command:'login',description:'Выбрать аккаунт закрытого демо'},
+  {command:'switch',description:'Сменить аккаунт закрытого демо'},
   {command:'demo',description:'Сменить аккаунт закрытого демо'},
   {command:'new',description:'Новое обращение · сотрудник'},
   {command:'draft',description:'Продолжить черновик · сотрудник'},

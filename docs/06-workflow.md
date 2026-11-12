@@ -65,3 +65,7 @@
 ## Проверка перед коммитом и после очистки истории
 
 Перед коммитом выполнять `python3 scripts/check-repository-security.py`; при проверке истории добавлять `--history`. Не помещать реальные инфраструктурные идентификаторы в отчёты. После переписывания истории использовать свежий clone и не вливать старые ветки обратно. Сохранять настроенного автора Git; ответы на вопросы ТЗ и runbook поддерживать в [README](../README.md).
+
+## Telegram UX после ревью webhook
+
+Для проверки Telegram UX используйте check-telegram.mjs, check-telegram-api.mjs, check-telegram-webhook.mjs и check-telegram-webhook-workflow.mjs; последний требует локальную тестовую PostgreSQL и выполняет ROLLBACK. Полный [UX-гайд и дерево роутов](TELEGRAM-UX.md); [проверки](VALIDATION.md#telegram-ux-после-ревью-webhook).

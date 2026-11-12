@@ -59,11 +59,13 @@ export async function telegram<T = unknown>(method: string, body: object): Promi
   if (!response.ok || !result.ok) {
     // Idempotent edits are successful even when Telegram reports unchanged content.
     if (method === 'editMessageText' && result.description?.includes('message is not modified')) return result.result
-    throw new Error('Telegram delivery failed: HTTP ' + response.status + ', code ' + (result.error_code || 'unknown'))
+    const error = new Error('Telegram delivery failed: HTTP ' + response.status + ', code ' + (result.error_code || 'unknown'))
+    Object.assign(error, { editUnavailable: method === 'editMessageText' && result.error_code === 400 && /message to edit not found|message can't be edited/i.test(result.description || '') })
+    throw error
   }
   return result.result
 }
-export async function say(chat: number | string, text: string, buttons: Button[][] = []) {
+export async function say(chat: number | string, text: string, buttons: Button[][] = [], messageId?: number) {
   const chunks: string[] = []
   let remaining = text
   while (remaining.length > 3800) {
@@ -75,6 +77,15 @@ export async function say(chat: number | string, text: string, buttons: Button[]
     remaining = remaining.slice(end).replace(/^\n/, '')
   }
   chunks.push(remaining || ' ')
+  if (messageId && chunks.length === 1) {
+    try {
+      return await telegram<{ message_id: number }>('editMessageText', { chat_id: chat, message_id: messageId, text: chunks[0], reply_markup: { inline_keyboard: buttons } })
+    } catch (error) {
+      // An expired/deleted message can no longer be edited. Network and server
+      // failures must reach the webhook retry rather than duplicate messages.
+      if (!(error instanceof Error) || !('editUnavailable' in error) || !error.editUnavailable) throw error
+    }
+  }
   let result!: { message_id: number }
   for (const [index, chunk] of chunks.entries()) {
     result = await telegram<{ message_id: number }>('sendMessage', { chat_id: chat, text: chunk, protect_content: true, reply_markup: { inline_keyboard: index === chunks.length - 1 ? buttons : [] } })

@@ -44,7 +44,7 @@ async function setupRun({healthy=true,match=true}={}) {
   if(target==='https://app.example/api/telegram/webhook'){calls.push('probe');return Response.json({ok:healthy,username:'synthetic_bot',database:healthy?'ready':'unavailable'},{status:healthy?200:502})}
   const method=target.split('/').at(-1);calls.push(method)
   const body=JSON.parse(options.body)
-  if(method==='setMyCommands') { globalThis.registeredTestCommands=body.commands; assert(body.commands.some(c=>c.command==='demo')); assert(body.commands.some(c=>c.command==='home')); assert(body.commands.some(c=>c.command==='draft')); assert(body.commands.some(c=>c.command==='reserve')) }
+  if(method==='setMyCommands') { globalThis.registeredTestCommands=body.commands; for (const command of ['start','new','help','demo','login','switch']) assert(body.commands.some(c=>c.command===command)); assert(body.commands.some(c=>c.command==='home')); assert(body.commands.some(c=>c.command==='draft')); assert(body.commands.some(c=>c.command==='reserve')) }
   const results={getMe:{id:1,username:'synthetic_bot'},getChat:{type:'channel'},getChatMember:{status:'administrator',can_post_messages:true,can_edit_messages:true},setMyCommands:true,getMyCommands:globalThis.registeredTestCommands,setWebhook:true,getWebhookInfo:{url:match?'https://app.example/api/telegram/webhook':'https://wrong.example',max_connections:1}}
   if(method==='setWebhook'){assert.equal(body.secret_token,'a'.repeat(24));assert.equal(body.max_connections,1);assert(!body.drop_pending_updates)}
   return Response.json({ok:true,result:results[method]})

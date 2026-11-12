@@ -122,3 +122,7 @@ Telegram bridge выбирает list/reserve по created_at DESC, number DESC 
 ## Конфигурация без инфраструктурных данных в Git
 
 Реальные URL, project ref, deployment ID, Telegram ID и ключи задаются через окружение. В примерах используются placeholders. Проверка tracked-файлов и всех локальных объектов Git: `python3 scripts/check-repository-security.py`, затем `--history`. Значения совпадений не выводятся. [Правила и границы проверки](../README.md#security).
+
+## Telegram UX после ревью webhook
+
+Инлайн-навигация использует editMessageText; цель сообщения изолирована на update через AsyncLocalStorage. Сбои сети остаются retryable, удалённое сообщение допускает новую отправку. Полный [UX-гайд и дерево роутов](TELEGRAM-UX.md); [проверки](VALIDATION.md#telegram-ux-после-ревью-webhook).

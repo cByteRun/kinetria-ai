@@ -18,7 +18,7 @@ globalThis.telegramHarness = {
     if (['list','stats'].includes(op)) return listRows
     throw new Error('Unexpected bridge operation: ' + op)
   },
-  async say(tg,text,buttons) { messages.push({tg,text,buttons}); return {message_id:messages.length} },
+  async say(tg,text,buttons,messageId) { messages.push({tg,text,buttons,messageId}); return {message_id:messages.length} },
   async telegram() {return true}, async transcribe() {throw new Error('Speech unavailable')}, async downloadTelegramFile() {return Buffer.from('test')},
 }
 const api = url(`export const {bridge,say,telegram,transcribe,downloadTelegramFile} = globalThis.telegramHarness;`)
@@ -30,7 +30,7 @@ source = source.replace("'./demo'", `'${demo}'`).replace("'../ai'", `'${ai}'`).r
 const {handleUpdate} = await import(url(transpile(source)))
 let n=0
 const send = async(text, extra={}) => handleUpdate({update_id:++n,message:{chat:{id:42,type:'private'},from:{id:42},text,...extra}})
-const callback = async(data) => handleUpdate({update_id:++n,callback_query:{id:String(n),from:{id:42},message:{chat:{id:42,type:'private'}},data}})
+const callback = async(data) => handleUpdate({update_id:++n,callback_query:{id:String(n),from:{id:42},message:{message_id:77,chat:{id:42,type:'private'}},data}})
 await send('/new')
 assert.equal(states.get(42).mode,'compose')
 await send('В каталоге SYN-001 и SYN001 приходится сверять вручную. Нужен единый артикул.')
@@ -67,10 +67,10 @@ assert.equal(calls.length,beforeCalls,'No employee data in group chats')
 globalThis.telegramHarness.demoEnabled=true
 globalThis.telegramHarness.switchDemo=async(tg,id)=>{assert.equal(tg,42);const account=accounts.find(a=>a.id===id);assert(account);currentRole=account.role;return {name:account.name,role:account.role}}
 await send('/demo');assert.equal(messages.at(-1).buttons.length,9)
-await callback('demo:manager-it');assert.equal(currentRole,'manager');assert(messages.at(-1).text.includes('Максим Ли'));assert(messages.at(-1).buttons.some(row=>row.some(b=>b.callback_data==='demoMenu')))
+await callback('demo:manager-it');assert.equal(currentRole,'manager');assert(messages.at(-1).text.includes('Максим Ли'));assert(messages.at(-1).text.includes('Выбрана роль: Руководитель'));assert.equal(messages.at(-1).messageId,77)
 await callback('demoMenu');assert.equal(messages.at(-1).buttons.length,9)
-await callback('demo:admin');assert.equal(currentRole,'admin');assert(messages.at(-1).buttons.some(row=>row.some(b=>b.callback_data==='menu:reserve')))
-await callback('demo:employee');assert.equal(currentRole,'employee');assert(messages.at(-1).buttons.some(row=>row.some(b=>b.callback_data==='menu:draft')))
+await callback('demo:admin');assert.equal(currentRole,'admin');assert(messages.at(-1).text.includes('/reserve —'))
+await callback('demo:employee');assert.equal(currentRole,'employee');assert(messages.at(-1).text.includes('/draft —'))
 console.log('PASS Telegram demo dialog: website account menu, named greeting, manager/admin/employee actions, return to account picker')
 console.log('PASS Telegram transport: draft confirmation, manual category/editing, attachments, stale submit, duplicate update, voice limits/fallback, role guard, private chats only')
 
@@ -91,6 +91,8 @@ process.env.APP_URL='https://idearoute.example'
 for (const [account, role, scope] of [['employee','employee','только ваши записи'],['handler','handler','назначенные вам'],['manager-it','manager','вашего направления'],['admin','admin','общего внутреннего реестра']]) {
  await callback('demo:'+account)
  assert.equal(currentRole,role)
+ assert(!messages.at(-1).text.includes('IdeaRoute'))
+ await callback('menu:home')
  assert(messages.at(-1).buttons.flat().some(b=>b.callback_data==='help'))
  assert(messages.at(-1).buttons.flat().some(b=>b.url==='https://idearoute.example/login'))
  const saved=JSON.stringify(states.get(42))
@@ -114,3 +116,27 @@ assert(!messages.at(-1).buttons.flat().some(b=>b.callback_data==='demoMenu'))
 globalThis.telegramHarness.demoEnabled=true
 await send('/start');assert(messages.at(-1).text.includes('/demo'));assert.equal(currentRole,'handler')
 console.log('PASS role instructions: all four roles, current identity scope, draft preserved, help and dashboard links for demo/linked accounts and stats')
+
+currentRole='employee'
+await send('/new')
+assert(messages.at(-1).text.includes('назовите тип'))
+await send('Проблема в каталоге SYN-002')
+assert(!/\p{Extended_Pictographic}/u.test(messages.at(-1).text))
+for (const label of ['Текст обращения','Метаданные','Тип:','Категория:','Теги:','Проверьте текст, тип и категорию']) assert(messages.at(-1).text.includes(label))
+await callback('kind'); assert.equal(states.get(42).draft.kind,'problem')
+await callback('kind:idea'); assert.equal(states.get(42).draft.kind,'idea'); assert.equal(messages.at(-1).messageId,77)
+const original=structuredClone(states.get(42))
+await callback('rewrite'); assert.equal(states.get(42).mode,'compose'); assert.deepEqual(states.get(42).draft,original.draft)
+await send('',{voice:{file_id:'voice',duration:10}}); assert.deepEqual(states.get(42).draft,original.draft)
+await callback('menu:draft'); assert.equal(states.get(42).mode,'draft')
+await callback('rewrite'); await send('Предложение: обновить каталог SYN-003')
+assert.notEqual(states.get(42).key,original.key); assert(states.get(42).draft.description.includes('SYN-003'))
+await callback('submit:'+original.key); assert.equal(calls.filter(c=>c.op==='submit').length,1)
+await send('/help'); assert(!messages.at(-1).text.includes('IdeaRoute')); assert.equal(messages.at(-1).messageId,undefined)
+console.log('PASS UX: explicit type picker, plain preview, rewrite recovery/replacement, stale confirmation, callback edit targets, help without project introduction')
+
+await Promise.all(['menu:home','help'].map((data,index)=>handleUpdate({update_id:++n,callback_query:{id:String(n),from:{id:42},message:{message_id:101+index,chat:{id:42,type:'private'}},data}})))
+const concurrent=messages.slice(-2)
+assert.equal(concurrent.find(m=>m.text.includes('Доступные сценарии')).messageId,102)
+assert.equal(concurrent.find(m=>m.text.includes('IdeaRoute')).messageId,101)
+console.log('PASS navigation isolation: overlapping updates keep their own edit targets')
