@@ -5,7 +5,7 @@ import { bridge, say, telegram, transcribe, downloadTelegramFile, type Button } 
 import { terminalStatuses, transitions, type Draft, type RequestStatus } from '../requests'
 
 type FileData = { name: string; size: number; content: string }
-type State = { source?: 'voice' | 'text'; mode?: string; key?: string; draft?: Draft; files?: FileData[]; id?: string; version?: number; assignee?: string; assigneeName?: string; due?: string; field?: string; status?: string }
+type State = { source?: 'voice' | 'text'; mode?: string; key?: string; draft?: Draft; files?: FileData[]; id?: string; number?: number; version?: number; assignee?: string; assigneeName?: string; due?: string; field?: string; status?: string }
 type Context = { role: string; name: string; state: State; categories: { id: string; name: string }[] }
 type Message = { chat: { id: number; type: string }; from?: { id: number }; text?: string; voice?: { file_id: string; duration: number; file_size?: number }; document?: { file_id: string; file_name?: string; file_size?: number }; photo?: { file_id: string; file_size?: number }[] }
 export type Update = { update_id: number; message?: Message; callback_query?: { id: string; from: { id: number }; message?: Message; data?: string } }
@@ -66,7 +66,10 @@ async function detail(tg: number, c: Context, id: string) {
   controls.push([button('История', 'history:' + r.id), button('Комментарий', 'comment:' + r.id)])
   for (const f of r.files || []) controls.push([button('📎 ' + f.name, 'file:' + f.id)])
   await state(tg, { mode: 'detail', id: r.id, version: r.version })
-  await say(tg, `${ref(r.number)} · ${statusNames[r.status]}\n${r.title}\n\n${r.description}\n\nПредложение: ${r.proposal || '—'}\nСрок: ${r.due_at || '—'}\nРешение: ${r.decision || '—'}\nСледующий шаг: ${r.next_step || '—'}`, controls)
+  const question = r.status === 'clarification'
+    ? r.clarification_question || r.events?.find((e: { event_type: string; message?: string }) => e.event_type === 'reviewed' && e.message)?.message
+    : null
+  await say(tg, `${ref(r.number)} · ${statusNames[r.status]}\n${r.title}\n\n${r.description}\n\nПредложение: ${r.proposal || '—'}\nНазначение: ${r.assignee_name || (r.assignee_id ? 'ответственный назначен' : 'резервная очередь, требуется назначение')}\nСрок: ${r.due_at || '—'}${question ? '\n\nВопрос автору: ' + question : ''}\nРешение: ${r.decision || '—'}\nСледующий шаг: ${r.next_step || '—'}`, controls)
 }
 const demoRoleNames: Record<string, string> = { employee: '👤 Сотрудник', handler: '🛠 Ответственный', manager: '👔 Руководитель', admin: '⚙️ Администратор' }
 const roleInstructions: Record<string, string> = {
@@ -116,7 +119,10 @@ export async function handleUpdate(update: Update) {
       else if (text === '/cancel' || cb === 'cancel') { await state(tg, {}); await say(tg, 'Действие отменено. /new · /list') }
       else if (text === '/start' || text === '/help' || cb === 'help') await showInstructions(tg, c)
       else if (text === '/draft') {
-        if (c.role === 'employee' && s.draft) await showDraft(tg, c, s)
+        if (c.role === 'employee' && s.draft) {
+          const next = { ...s, mode: 'draft', field: undefined }
+          await state(tg, next); await showDraft(tg, c, next)
+        }
         else await say(tg, 'Сохранённого черновика нет. /new — создать обращение; /demo — выбор демоаккаунта.')
       }
       else if (text === '/new') {
@@ -128,8 +134,12 @@ export async function handleUpdate(update: Update) {
         else await say(tg, rows.length ? 'Ваша очередь · последние 10 по дате создания. Самые новые внизу. Полный реестр — на сайте.' : 'Доступных обращений пока нет.', [...rows].reverse().map(r => [button(`${ref(r.number)} · ${statusNames[r.status]} · ${r.title.slice(0, 35)}`, 'open:' + r.id)]).concat(websiteButtons()))
       } else if (cb.startsWith('open:')) await detail(tg, c, cb.slice(5))
       else if (cb.startsWith('history:')) {
-        const r = await bridge(tg, 'detail', { id: cb.slice(8) })
-        await say(tg, 'История · ' + ref(r.number) + '\n' + (r.events || []).map((e: {event_type: string; created_at: string; message?: string}) => `${e.created_at} · ${e.event_type}\n${(e.message || '').slice(0,400)}`).join('\n'))
+        const [, id, page] = cb.split(':'), offset = Number(page || 0)
+        const r = await bridge(tg, 'history', { id, offset })
+        const pages: Button[] = []
+        if (offset > 0) pages.push(button('Новее', `history:${id}:${Math.max(0, offset - 8)}`))
+        if (r.more) pages.push(button('Ранее', `history:${id}:${offset + 8}`))
+        await say(tg, 'История · ' + ref(r.number) + '\n' + (r.events || []).map((e: {event_type: string; actor_role: string; created_at: string; message?: string; next_step?: string}) => `${e.created_at} · ${e.actor_role} · ${e.event_type}\n${e.message || ''}${e.next_step && e.next_step !== e.message ? '\nСледующий шаг: ' + e.next_step : ''}`).join('\n'), [...(pages.length ? [pages] : []), [button('Открыть карточку', 'open:' + id)]])
       }
       else if (cb.startsWith('comment:')) {
         const r = await bridge(tg, 'detail', { id: cb.slice(8) }); await state(tg, {mode: 'comment', id: r.id, version: r.version}); await say(tg, 'Напишите комментарий до 2000 символов. /cancel — отмена.')
@@ -147,21 +157,29 @@ export async function handleUpdate(update: Update) {
         if (!response.ok || !(await response.json()).ok) throw new Error('delivery')
       } else if (cb.startsWith('assign:')) {
         const id = cb.slice(7), r = await bridge(tg, 'detail', { id })
+        if (!['manager', 'admin'].includes(c.role) || terminalStatuses.includes(r.status) || (c.role === 'admin' && r.assignee_id)) throw new Error('unavailable')
         const people = await bridge(tg, 'assignees', { id }) as { id: string; display_name: string }[]
-        await state(tg, { mode: 'assign', id, version: r.version })
-        await say(tg, 'Выберите активного ответственного. Список показывает допустимые назначения, доступность по загрузке не рассчитывается.', people.map(p => [button(p.display_name || p.id, 'person:' + p.id)]))
+        const key = randomUUID().slice(0, 8)
+        await state(tg, { mode: 'assign', id, version: r.version, key })
+        await say(tg, 'Выберите активного ответственного. Список показывает допустимые назначения, доступность по загрузке не рассчитывается.', people.filter(p => p.id !== r.assignee_id).map(p => [button(p.display_name || p.id, 'person:' + key + ':' + p.id)]))
       } else if (cb.startsWith('person:') && s.mode === 'assign' && s.id) {
+        if (cb.split(':')[1] !== s.key) throw new Error('conflict')
         const people = await bridge(tg, 'assignees', { id: s.id }) as { id: string; display_name: string }[]
-        const p = people.find(p => p.id === cb.slice(7)); if (!p) throw new Error('unavailable')
+        const p = people.find(p => p.id === cb.split(':')[2]); if (!p) throw new Error('unavailable')
         await state(tg, { ...s, mode: 'due', assignee: p.id, assigneeName: p.display_name })
         await say(tg, 'Срок: YYYY-MM-DD или «-», чтобы сохранить текущий. Затем появится подтверждение.')
       } else if (s.mode === 'due' && text && !text.startsWith('/')) {
         if (text !== '-' && (!/^\d{4}-\d{2}-\d{2}$/.test(text) || Number.isNaN(Date.parse(text)) || new Date(text).toISOString().slice(0, 10) !== text)) await say(tg, 'Введите существующую дату YYYY-MM-DD или «-».')
-        else { await state(tg, { ...s, mode: 'confirmAssign', due: text === '-' ? '' : text }); await say(tg, `Назначить: ${s.assigneeName}\nСрок: ${text === '-' ? 'сохранить текущий' : text}?`, [[button('✅ Подтвердить', 'confirmAssign'), button('Отмена', 'cancel')]]) }
-      } else if (cb === 'confirmAssign' && s.mode === 'confirmAssign') {
+        else { await state(tg, { ...s, mode: 'confirmAssign', due: text === '-' ? '' : text }); await say(tg, `Назначить: ${s.assigneeName}\nСрок: ${text === '-' ? 'сохранить текущий' : text}?`, [[button('✅ Подтвердить', 'confirmAssign:' + s.key), button('Отмена', 'cancel')]]) }
+      } else if (cb.startsWith('confirmAssign:') && s.mode === 'confirmAssign') {
+        if (cb.slice(14) !== s.key) throw new Error('conflict')
         await bridge(tg, 'assign', s); await state(tg, {}); await say(tg, '✅ Назначение и срок сохранены.'); await detail(tg, c, s.id!)
       } else if (cb.startsWith('review:') || cb.startsWith('reply:') || cb.startsWith('ack:')) {
         const parts = cb.split(':'), id = parts[parts.length - 1], r = await bridge(tg, 'detail', { id })
+        if (s.mode !== 'detail' || s.id !== id || s.version !== r.version) throw new Error('conflict')
+        if (parts[0] === 'review' && (!['manager', 'handler'].includes(c.role) || !transitions[r.status as RequestStatus]?.includes(parts[1] as RequestStatus))) throw new Error('unavailable')
+        if (parts[0] === 'reply' && (c.role !== 'employee' || r.status !== 'clarification')) throw new Error('unavailable')
+        if (parts[0] === 'ack' && (c.role !== 'employee' || !terminalStatuses.includes(r.status))) throw new Error('unavailable')
         if (parts[0] === 'ack') { await bridge(tg, 'ack', { id, version: r.version }); await say(tg, 'Ознакомление сохранено.') }
         else if (parts[1] === 'review') { await bridge(tg, 'review', { id, version: r.version, status: 'review' }); await detail(tg, c, id) }
         else { await state(tg, { mode: parts[0] === 'reply' ? 'reply' : 'decision', id, version: r.version, status: parts[0] === 'reply' ? undefined : parts[1] }); await say(tg, parts[0] === 'reply' ? 'Напишите ответ на уточнение.' : 'Напишите содержательное решение, вопрос или следующий шаг. /cancel — отмена.') }
@@ -176,9 +194,19 @@ export async function handleUpdate(update: Update) {
         const next: State = { ...s, draft: { ...s.draft, kind: s.draft.kind === 'problem' ? 'idea' : 'problem' } }; await state(tg, next); await showDraft(tg, c, next)
       } else if (cb.startsWith('edit:') && s.draft && ['title','description','proposal','tags'].includes(cb.slice(5))) {
         await state(tg, { ...s, mode: 'edit', field: cb.slice(5) }); await say(tg, 'Отправьте исправленный текст (можно голосом). Для очистки предложения или тегов — «-».')
+      } else if (cb.startsWith('submit:') && s.mode === 'submitted' && s.key === cb.slice(7)) {
+        // A failed Telegram reply must not hide an already registered request
+        // when Telegram retries the original update after a cold start.
+        await say(tg, `✅ Зарегистрировано ${ref(s.number!)}. /list — статус и результат.`, [[button('Открыть обращение', 'open:' + s.id)]])
       } else if (cb.startsWith('submit:') && s.draft && s.key === cb.slice(7)) {
-        if (!s.draft.category) await say(tg, 'Выберите категорию перед отправкой.')
-        else { const result = await bridge(tg, 'submit', { ...s.draft, key: s.key, files: s.files || [] }); await state(tg, {}); await say(tg, `✅ Зарегистрировано ${ref(result.number)}. /list — статус и результат.`) }
+        if (c.role !== 'employee') throw new Error('unavailable')
+        if (!s.draft.title.trim() || !s.draft.description.trim()) await say(tg, 'Заполните тему и описание перед отправкой.')
+        else if (!c.categories.some(x => x.id === s.draft!.category)) await say(tg, 'Выберите категорию перед отправкой.')
+        else {
+          const result = await bridge(tg, 'submit', { ...s.draft, key: s.key, files: s.files || [] })
+          await state(tg, { mode: 'submitted', key: s.key, id: result.id, number: result.number })
+          await say(tg, `✅ Зарегистрировано ${ref(result.number)}. /list — статус и результат.`, [[button('Открыть обращение', 'open:' + result.id)]])
+        }
       } else if (c.role === 'employee' && update.message && (text || update.message.voice) && (s.mode === 'compose' || s.mode === 'edit')) {
         let content = text
         if (update.message.voice) {

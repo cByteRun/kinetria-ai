@@ -54,3 +54,19 @@ let result=await setupRun();assert(!result.error);assert.equal(result.calls[0],'
 result=await setupRun({healthy:false});assert(result.error);assert(!result.calls.includes('setWebhook'),'Never switch Telegram to an unhealthy deployment')
 result=await setupRun({match:false});assert(result.error)
 console.log('PASS webhook setup: APP_URL default, health before registration, secret and serialized delivery, no dropped updates, registration readback')
+
+let delivered=0
+globalThis.webhookHarness.deliverOutbox=async()=>{delivered++;return {sent:1}}
+let worker=await readFile(new URL('../app/api/telegram/deliver/route.ts',import.meta.url),'utf8')
+worker=worker.replace("'../../../../lib/telegram/api'","'"+url('export const {secretMatches}=globalThis.webhookHarness;')+"'")
+worker=worker.replace("'../../../../lib/telegram/delivery'","'"+url('export const deliverOutbox=(...args)=>globalThis.webhookHarness.deliverOutbox(...args);')+"'")
+const deliveryRoute=await import(url(transpile(worker)))
+delete process.env.CRON_SECRET
+assert.equal((await deliveryRoute.GET(new Request('https://app.example/api/telegram/deliver'))).status,401)
+process.env.CRON_SECRET='synthetic-cron-secret'
+for(const method of ['GET','POST']){
+ assert.equal((await deliveryRoute[method](new Request('https://app.example/api/telegram/deliver',{method,headers:{authorization:'Bearer wrong'}}))).status,401)
+ assert.equal((await deliveryRoute[method](new Request('https://app.example/api/telegram/deliver',{method,headers:{authorization:'Bearer synthetic-cron-secret'}}))).status,200)
+}
+assert.equal(delivered,2,'Only authenticated scheduler requests may drain the outbox')
+console.log('PASS scheduler delivery endpoint: authenticated GET/POST, missing/wrong secrets denied')

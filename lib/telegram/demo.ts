@@ -15,10 +15,12 @@ export async function switchDemoAccount(telegramId: number, accountId: string): 
   })
   // Use the same pre-provisioned accounts and Auth credentials as the web login.
   const { data, error } = await client.auth.signInWithPassword({ email: accountId + '@kinetria.example', password: process.env.KINETRIA_DEMO_PASSWORD })
-  if (error || !data.user) throw new Error('unavailable')
+  if (error) throw new Error(error.status && [400, 401, 403, 422].includes(error.status) ? 'unavailable' : 'Telegram database temporarily unavailable')
+  if (!data.user) throw new Error('unavailable')
   try {
     const result = await telegramDb().rpc('telegram_demo_login', { p_tg: telegramId, p_user: data.user.id })
-    if (result.error || !result.data) throw new Error(result.error?.code === 'PT409' ? 'demoBusy' : 'unavailable')
+    if (result.error) throw new Error(result.error.code === 'PT409' ? 'demoBusy' : ['42501', '22023'].includes(result.error.code) ? 'unavailable' : 'Telegram database temporarily unavailable')
+    if (!result.data) throw new Error('unavailable')
     return result.data
   } finally {
     await client.auth.signOut({ scope: 'local' }).catch(() => undefined)

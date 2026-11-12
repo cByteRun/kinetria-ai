@@ -3,8 +3,8 @@ import {readFile} from 'node:fs/promises'
 import ts from 'typescript'
 const url=s=>'data:text/javascript;base64,'+Buffer.from(s).toString('base64')
 let source=await readFile(new URL('../lib/telegram/api.ts',import.meta.url),'utf8')
-source=source.replace("'@supabase/supabase-js'",`'${url('export const createClient=()=>{throw new Error("DB must not be called")};')}'`)
-const {say,secretMatches}=await import(url(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText))
+source=source.replace("'@supabase/supabase-js'",`'${url('export const createClient=()=>globalThis.apiDbHarness;')}'`)
+const {say,secretMatches,bridge}=await import(url(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText))
 assert(secretMatches('abc','abc'));assert(!secretMatches('ab','abc'));assert(!secretMatches(null,'abc'));assert(!secretMatches('abc',undefined))
 process.env.TELEGRAM_BOT_TOKEN='synthetic'
 const messages=[]
@@ -18,3 +18,10 @@ assert(messages.slice(0,-1).every(m=>m.reply_markup.inline_keyboard.length===0))
 assert.deepEqual(messages.at(-1).reply_markup.inline_keyboard,buttons,'Confirmation appears after all draft content')
 assert(messages.every(m=>!/[\ud800-\udbff]$/.test(m.text)&&!/^[\udc00-\udfff]/.test(m.text)),'Never split surrogate pairs')
 console.log('PASS Telegram API: constant-time secret checks, complete long drafts, character limits, intact emoji, confirmation after content')
+process.env.NEXT_PUBLIC_SUPABASE_URL='https://synthetic.example'
+process.env.SUPABASE_SECRET_KEY='synthetic'
+for(const [code,expected] of [['PT409','conflict'],['PT404','unavailable'],['22023','unavailable'],['42501','unlinked'],['','temporarily unavailable'],['57014','temporarily unavailable'],['PGRST002','temporarily unavailable'],['08006','temporarily unavailable']]){
+ globalThis.apiDbHarness={rpc:async()=>({data:null,error:{code,message:'SENSITIVE internal message'}})}
+ await assert.rejects(()=>bridge(42,'context'),error=>error.message.includes(expected)&&!error.message.includes('SENSITIVE'))
+}
+console.log('PASS RPC failures: only deterministic domain errors are acknowledged; network/gateway/timeout failures remain retryable and sanitized')

@@ -16,6 +16,10 @@ begin
  assert not has_function_privilege('anon','public.telegram_bridge(bigint,text,jsonb)','EXECUTE'),'Bridge must not be exposed to anon';
  assert has_function_privilege('service_role','public.telegram_bridge(bigint,text,jsonb)','EXECUTE');
  assert not has_table_privilege('authenticated','public.telegram_links','SELECT');
+ -- Existing local demo links must not make this rollback-only test depend on
+ -- who last opened the bot. All removed links are restored by ROLLBACK.
+ delete from public.telegram_links where telegram_id between 900001 and 900006 or user_id in(emp,mgr,handler,other_handler,admin_id,other_mgr);
+ delete from public.telegram_updates where id in(900001,900002);
  perform set_config('request.jwt.claim.sub',emp::text,true);
  token:=public.telegram_link_token();
  perform public.telegram_bridge(900001,'link',jsonb_build_object('token',token));
@@ -87,6 +91,11 @@ begin
  assert public.telegram_bridge(900001,'claim','{"update":900001}')='true'::jsonb;
  assert public.telegram_bridge(900001,'claim','{"update":900001}')='"busy"'::jsonb;
  assert public.telegram_bridge(900001,'claim','{"update":900002}')='"busy"'::jsonb;
+ perform public.telegram_bridge(900001,'finish','{"update":900001,"done":false}');
+ -- now() is fixed inside this test transaction; a real HTTP retry starts a
+ -- later transaction. Move the released lease into the past to model that.
+ update public.telegram_updates set leased_until=now()-interval '1 microsecond' where id=900001;
+ assert public.telegram_bridge(900001,'claim','{"update":900001}')='true'::jsonb,'Failed webhook must be claimable again';
  perform public.telegram_bridge(900001,'finish','{"update":900001,"done":true}');
  assert public.telegram_bridge(900001,'claim','{"update":900001}')='false'::jsonb;
  perform public.telegram_bridge(900001,'unlink');

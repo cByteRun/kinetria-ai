@@ -239,3 +239,10 @@ Cookie браузера нельзя установить обычной Telegra
 Сайт: https://app.example.invalid, вход: https://app.example.invalid/login. Telegram webhook зарегистрирован. Используется интеграционная Supabase `SUPABASE_PROJECT_REF`; все 11 миграций, 9 демопрофилей и 20 синтетических обращений подготовлены. Проверены webhook и веб-вход четырёх ролей.
 
 Изменение `.env.local` само по себе не меняет Vercel: синхронизируйте нужные production-переменные и выполните redeploy. URL, publishable key и secret должны относиться к одному project ref. Разовая подготовка новой интеграционной базы — `scripts/bootstrap-hosted.mjs` с PostgreSQL URL интеграции, проверкой project ref и сертификата Supabase; обычный build остаётся `pnpm build`. Скрипт требует pg 8.16.3 через BOOTSTRAP_PG_MODULE (путь к pg/lib/index.js); в разовом облачном bootstrap пакет устанавливался в /tmp/idearoute-db. Для read-only проверки готового production используйте `node --env-file=.env.local scripts/check-hosted-deployment.mjs`. [Подробный результат](docs/VALIDATION.md#подключение-интеграционной-базы-и-живой-webhook).
+
+
+### Регрессия миграции Telegram на webhook
+
+`node scripts/check-telegram-webhook-workflow.mjs` запускает настоящий webhook и бот против SQL-функций локального Docker Supabase в транзакции с ROLLBACK. Нужны существующие миграции и синтетические профили сотрудника, руководителя категории `catalog`, ответственного и администратора. Контейнер по умолчанию `supabase_db_modus_IDEA`; имя переопределяется через `TELEGRAM_TEST_DB`. Telegram/Groq заменены заглушками; реальных сообщений тест не отправляет. Он проверяет цикл P0, резерв, роли, конфликты, страницы истории, 503/повторы и сохранение подтверждения регистрации.
+
+Периодический outbox worker принимает **GET или POST** `/api/telegram/deliver` с `Authorization: Bearer <CRON_SECRET>`; настроенное внешнее расписание по-прежнему обязательно. После исправлений нужен redeploy. [Отчёт ревью](docs/CODE-REVIEW.md#ревью-миграции-telegram-polling--webhook).

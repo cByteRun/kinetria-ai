@@ -31,10 +31,11 @@ process.env.TELEGRAM_BOT_TOKEN='synthetic';process.env.TELEGRAM_CHANNEL_ID='-100
 globalThis.deliveryHarness={
  telegramDb:()=>({from:table=>new Query(table)}),
  async say(chat,text){
+  if((chat===11&&globalThis.deliveryHarness.failAuthor)||(chat==='-100123'&&globalThis.deliveryHarness.failChannel))throw new Error('Synthetic destination failure')
   if(chat===12&&failHandler){failHandler=false;throw new Error('Synthetic network failure')}
   calls.push({method:'send',chat,text});return {message_id:calls.length}
  },
- async telegram(method,body){calls.push({method,...body});return true},
+ async telegram(method,body){if(globalThis.deliveryHarness.failChannel)throw new Error('Synthetic channel failure');calls.push({method,...body});return true},
 }
 let source=await readFile(new URL('../lib/telegram/delivery.ts',import.meta.url),'utf8')
 const api=toUrl('export const {telegramDb,say,telegram}=globalThis.deliveryHarness;')
@@ -56,4 +57,22 @@ assert.equal(calls.filter(c=>c.chat===12).length,1)
 assert.equal(calls.filter(c=>c.chat==='-100123').length,2,'Original channel card + assignment event, no duplicates on retry')
 assert(!calls.some(c=>JSON.stringify(c).includes('SECRET')))
 assert.deepEqual(await deliverOutbox(),{sent:0},'Completed job must not be replayed')
+// A channel outage must not prevent the closed loop in private chats, and a
+// blocked author must not prevent the current assignee's notification.
+rows.telegram_outbox.push({id:2,request_id:'r',version:3,event:'status',actor_id:'handler',snapshot:{},done:false,delivered:{},attempts:0,next_attempt_at:'2020-01-01',leased_until:null})
+globalThis.deliveryHarness.failChannel=true
+globalThis.deliveryHarness.failAuthor=true
+const beforeHandler=calls.filter(c=>c.chat===12).length
+assert.deepEqual(await deliverOutbox(),{sent:0})
+assert.equal(calls.filter(c=>c.chat===12).length,beforeHandler+1)
+assert.equal(rows.telegram_outbox[1].delivered.handler,true)
+assert(!rows.telegram_outbox[1].delivered.author)
+assert(!rows.telegram_outbox[1].delivered.channel)
+globalThis.deliveryHarness.failChannel=false
+globalThis.deliveryHarness.failAuthor=false
+rows.telegram_outbox[1].next_attempt_at='2020-01-01'
+assert.deepEqual(await deliverOutbox(),{sent:1})
+assert.equal(calls.filter(c=>c.chat===12).length,beforeHandler+1,'Successful assignee must not be repeated while retrying channel/author')
+assert.equal(rows.telegram_outbox[1].done,true)
 console.log('PASS Telegram delivery: safe channel fields, assignment event, author/current-assignee-only, partial receipts, backoff, retry without repeating successful sends')
+console.log('PASS independent destinations: channel/author failures do not block assignee; retries preserve successful receipts')

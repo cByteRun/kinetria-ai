@@ -15,8 +15,37 @@ export function telegramDb() {
   })
 }
 export async function bridge(tg: number, op: string, data: object = {}) {
-  const { data: result, error } = await telegramDb().rpc('telegram_bridge', { p_tg: tg, p_op: op, p_data: data })
-  if (error) throw new Error(error.code === 'PT409' ? 'conflict' : error.code === '42501' ? 'unlinked' : 'unavailable')
+  // History pages reuse the existing detail authorization before the service
+  // client reads events. No new privileged SQL endpoint is needed.
+  const { data: result, error } = await telegramDb().rpc('telegram_bridge', { p_tg: tg, p_op: op === 'history' ? 'detail' : op, p_data: data })
+  if (error) {
+    if (error.code === 'PT409') throw new Error('conflict')
+    if (error.code === '42501') throw new Error('unlinked')
+    // Only deterministic domain rejections may acknowledge the update. Network,
+    // gateway, schema and database failures must reach the webhook as HTTP 503.
+    if (['PT404', '22023', '22P02', '22007', '22008', '23514', 'P0001'].includes(error.code)) throw new Error('unavailable')
+    throw new Error('Telegram database temporarily unavailable')
+  }
+  if (op === 'history' && result) {
+    const offset = Number((data as { offset?: number }).offset || 0)
+    if (!Number.isSafeInteger(offset) || offset < 0 || offset > 100000) throw new Error('unavailable')
+    const { data: events, error: readError } = await telegramDb().from('request_events')
+      .select('event_type,actor_role,created_at,status,message,next_step').eq('request_id', result.id)
+      .order('id', { ascending: false }).range(offset, offset + 8)
+    if (readError) throw new Error('Telegram database temporarily unavailable')
+    return { id: result.id, number: result.number, events: events?.slice(0, 8) || [], more: (events?.length || 0) > 8 }
+  }
+  if (op === 'detail' && result) {
+    // Resolve only participants of the request AFTER the bridge scope check.
+    // The question must survive more than eight subsequent comments.
+    const db = telegramDb()
+    const [owner, question] = await Promise.all([
+      result.assignee_id ? db.from('profiles').select('display_name').eq('id', result.assignee_id).maybeSingle() : null,
+      result.status === 'clarification' ? db.from('request_events').select('message').eq('request_id', result.id).eq('event_type', 'reviewed').eq('status', 'clarification').order('id', { ascending: false }).limit(1).maybeSingle() : null,
+    ])
+    if (owner?.error || question?.error) throw new Error('Telegram database temporarily unavailable')
+    return { ...result, assignee_name: owner?.data?.display_name, clarification_question: question?.data?.message }
+  }
   return result
 }
 export type Button = { text: string; callback_data?: string; url?: string }

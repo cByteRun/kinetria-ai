@@ -49,7 +49,7 @@ assert.equal(states.get(42).files[0].content,'dGVzdA==')
 const key=states.get(42).key
 await callback('submit:'+key)
 assert.equal(calls.filter(c=>c.op==='submit').length,1)
-assert.equal(states.get(42).mode,undefined)
+assert.equal(states.get(42).mode,'submitted')
 await callback('submit:'+key)
 assert.equal(calls.filter(c=>c.op==='submit').length,1,'Stale submit button must not submit again')
 const before=messages.length

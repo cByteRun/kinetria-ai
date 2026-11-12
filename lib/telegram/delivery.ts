@@ -40,7 +40,8 @@ export async function deliverOutbox() {
         const { error } = await db.from('telegram_outbox').update({ delivered }).eq('id', job.id)
         if (error) throw new Error('Delivery receipt failed')
       }
-      if (!delivered.channel) {
+      let failed = false
+      if (!delivered.channel) try {
         const channel = process.env.TELEGRAM_CHANNEL_ID!
         const { data: existing, error: existingError } = await db.from('telegram_channel_messages').select('message_id').eq('request_id', r.id).maybeSingle()
         if (existingError) throw new Error('Channel receipt unavailable')
@@ -57,7 +58,7 @@ export async function deliverOutbox() {
           await say(channel, `👔 R-${String(r.number).padStart(3, '0')} · назначение\nИнициатор: ${name(job.actor_id)}\nОтветственный: ${job.snapshot.assignee_id ? name(job.snapshot.assignee_id) : 'не назначен'}\nСрок: ${job.snapshot.due_at || '—'}`, buttons)
         }
         await saveProgress('channel')
-      }
+      } catch { failed = true }
       // Only author and CURRENT assignee. No broadcast to uninvolved handlers.
       const recipients = [...new Set([r.author_id, r.assignee_id].filter(Boolean))]
       const { data: links, error: linkError } = await db.from('telegram_links').select('telegram_id,user_id').in('user_id', recipients)
@@ -66,9 +67,12 @@ export async function deliverOutbox() {
       if (profileError) throw new Error('Recipients unavailable')
       for (const link of links || []) {
         if (delivered[link.user_id] || !profiles?.some(p => p.id === link.user_id)) continue
-        await say(link.telegram_id, `🔔 R-${String(r.number).padStart(3, '0')} · ${job.event}\nТекущий статус: ${r.status}\n${link.user_id === r.assignee_id ? 'Вы назначены ответственным. ' : ''}Откройте /list, чтобы посмотреть обращение и результат.`)
-        await saveProgress(link.user_id)
+        try {
+          await say(link.telegram_id, `🔔 R-${String(r.number).padStart(3, '0')} · ${job.event}\nТекущий статус: ${r.status}\n${link.user_id === r.assignee_id ? 'Вы назначены ответственным. ' : ''}Откройте /list, чтобы посмотреть обращение и результат.`, [[{ text: 'Открыть обращение', callback_data: 'open:' + r.id }]])
+          await saveProgress(link.user_id)
+        } catch { failed = true }
       }
+      if (failed) throw new Error('Partial delivery')
       const { error: doneError } = await db.from('telegram_outbox').update({ done: true, leased_until: null }).eq('id', job.id)
       if (doneError) throw new Error('Delivery receipt failed')
       sent++
