@@ -83,7 +83,7 @@ export async function RequestWorkspace({
           .select(
             'id,number,source_ref,category_id,title,status,assignee_id,kind,sentiment,description,next_step,decision,updated_at,created_at,due_at,department,priority,first_response_at,resolved_at,acknowledged_at,is_demo,version,tags',
           )
-          .order('updated_at', { ascending: false })
+          .order('created_at', { ascending: false })
           .order('id')
           .returns<RequestRow[]>(),
     supabase

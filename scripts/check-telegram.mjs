@@ -6,6 +6,7 @@ const transpile = source => ts.transpileModule(source, { compilerOptions: { modu
 const requests = url(transpile(await readFile(new URL('../lib/requests.ts', import.meta.url), 'utf8')))
 const messages = [], calls = [], states = new Map(), updates = new Set()
 let currentRole = 'employee'
+let listRows = []
 globalThis.telegramHarness = {
   async bridge(tg, op, data = {}) {
     calls.push({tg,op,data})
@@ -14,7 +15,7 @@ globalThis.telegramHarness = {
     if (op === 'state') { states.set(tg,data); return true }
     if (op === 'submit') return {id:'f0000000-0000-4000-8000-000000000000',number:123}
     if (op === 'finish') return true
-    if (op === 'list') return []
+    if (op === 'list') return listRows
     throw new Error('Unexpected bridge operation: ' + op)
   },
   async say(tg,text,buttons) { messages.push({tg,text,buttons}); return {message_id:messages.length} },
@@ -72,3 +73,16 @@ await callback('demo:admin');assert.equal(currentRole,'admin');assert(messages.a
 await callback('demo:employee');assert.equal(currentRole,'employee');assert(messages.at(-1).buttons.some(row=>row.some(b=>b.callback_data==='menu:draft')))
 console.log('PASS Telegram demo dialog: website account menu, named greeting, manager/admin/employee actions, return to account picker')
 console.log('PASS Telegram transport: draft confirmation, manual category/editing, attachments, stale submit, duplicate update, voice limits/fallback, role guard, private chats only')
+
+process.env.APP_URL='https://idearoute.example/path'
+listRows=[{id:'new',number:12,status:'new',title:'Newest'}, {id:'old',number:11,status:'review',title:'Older'}]
+await send('/list')
+assert.deepEqual(messages.at(-1).buttons.slice(0,2).map(row=>row[0].callback_data),['open:old','open:new'])
+assert.equal(messages.at(-1).buttons.at(-1)[0].url,'https://idearoute.example/login')
+await send('/demo')
+assert.equal(messages.at(-1).buttons.at(-1)[0].url,'https://idearoute.example/login')
+process.env.APP_URL='javascript:alert(1)'
+await send('/list')
+assert(!messages.at(-1).buttons.some(row=>row.some(b=>b.url)))
+delete process.env.APP_URL
+console.log('PASS Telegram list: newest at bottom, website login link, unsafe URL excluded')

@@ -103,3 +103,7 @@ RLS ограничивает прямой Data API, а RPC дополнител�
 После действия `after()` запускает доставку; повторы — `POST /api/telegram/deliver` с `CRON_SECRET` и внешним планировщиком. Exactly-once отправки Telegram не гарантируется; возможны дубли при разрыве между API и подтверждением в БД. Настройка и границы данных: [TELEGRAM](TELEGRAM.md), статус проверки: [VALIDATION](VALIDATION.md).
 
 Демо-расширение: `telegram_demo_sessions` хранит отдельный диалог по Telegram/user ID; `telegram_demo_login` закрыта для anon/authenticated и принимает только существующий активный внутренний синтетический аккаунт. JS-транспорт дополнительно требует `TELEGRAM_DEMO_ENABLED=true` и allowlist Telegram ID; настоящий user ID получает через Supabase Auth вход в тот же демоаккаунт, что на сайте. Чужая занятая привязка не перехватывается. Локальный Node.js 24+ poller вызывает общие обработчики напрямую: исходящий Telegram fetch из текущего Next.js даёт timeout, это ограничение окружения и отдельный gate облачного webhook.
+
+## Уточнение запуска и навигации после b3137ef
+
+Telegram bridge выбирает list/reserve по created_at DESC, number DESC LIMIT 10; stats — LIMIT 30. Бот переворачивает список для показа новых внизу. APP_URL формирует URL /login; перенос cookie или автологин отсутствует. Миграция 20261112114318_telegram_recent_requests.sql сохраняет scope и grants.

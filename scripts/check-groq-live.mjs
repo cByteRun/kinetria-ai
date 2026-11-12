@@ -1,10 +1,10 @@
 // Synthetic content only. No employee data or keys are printed.
 const key=process.env.GROQ_API_KEY
 if(!key)throw new Error('Set GROQ_API_KEY')
-const model=process.env.GROQ_TEXT_MODEL||'openai/gpt-oss-20b'
+const model=process.env.GROQ_TEXT_MODEL||'qwen/qwen3.8-27b'
 const response=await fetch('https://api.groq.com/openai/v1/chat/completions',{
  method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+key},signal:AbortSignal.timeout(20000),
- body:JSON.stringify({model,temperature:0,max_completion_tokens:3500,response_format:{type:'json_object'},messages:[{role:'system',content:'Return JSON only: title (Russian, short precise subject), category (catalog), hasExistingProblem (boolean), description (detailed factual description), proposal (explicitly proposed solution only), sentiment (integer 0..10), tags (short topical strings). Preserve identifiers and never invent facts.'},{role:'user',content:'Синтетическая проверка. В каталоге SYN-001 и SYN001 обозначают один товар. Приходится сверять вручную. Предлагаю единый артикул.'}]})
+ body:JSON.stringify({model,...(model.startsWith('qwen/')?{reasoning_format:'hidden',reasoning_effort:'none'}:{}),temperature:0,max_completion_tokens:3500,response_format:{type:'json_object'},messages:[{role:'system',content:'Catalog: [{"id":"catalog","name":"Каталог и данные"}]. Return JSON only: title (Russian, short precise subject), category (must be the catalog ID "catalog", the only supplied category), hasExistingProblem (boolean), description (detailed factual description), proposal (explicitly proposed solution only), sentiment (integer 0..10), tags (short topical strings). Preserve identifiers and never invent facts.'},{role:'user',content:'Синтетическая проверка. В каталоге SYN-001 и SYN001 обозначают один товар. Приходится сверять вручную. Предлагаю единый артикул.'}]})
 })
 if(!response.ok)throw new Error('Groq text HTTP '+response.status)
 const data=await response.json(),choice=data.choices?.[0]

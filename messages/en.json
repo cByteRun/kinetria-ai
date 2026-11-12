@@ -598,6 +598,7 @@
     "requestOrder": "Request order",
     "recurringFirst": "Recurring first",
     "byPriority": "By priority",
+    "newestFirst": "Newest first",
     "recentlyUpdatedFirst": "Recently updated first",
     "reset": "Reset",
     "theCountAppearsOncePerTopicGroupsShare": "The count appears once per topic. Groups share a category and tag and may represent recurrence. One card can belong to several topics. Counts reflect the current filters.",

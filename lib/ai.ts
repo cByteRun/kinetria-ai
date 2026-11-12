@@ -1,7 +1,7 @@
 export function aiConfig() {
   const provider = process.env.AI_PROVIDER?.trim().toLowerCase()
   if (provider === 'groq' && process.env.GROQ_API_KEY) {
-    return { provider, key: process.env.GROQ_API_KEY, model: process.env.GROQ_TEXT_MODEL || 'openai/gpt-oss-20b' } as const
+    return { provider, key: process.env.GROQ_API_KEY, model: process.env.GROQ_TEXT_MODEL || 'qwen/qwen3.8-27b' } as const
   }
   if (process.env.VERCEL === '1' || process.env.VERCEL_ENV) return null
   if (provider === 'ollama' && process.env.OLLAMA_MODEL) {
@@ -49,6 +49,7 @@ export async function generateText(instructions: string, input: string, maxToken
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + config.key },
       signal: AbortSignal.timeout(12000),
       body: JSON.stringify({ model: config.model, temperature: 0, max_completion_tokens: maxTokens,
+        ...(config.model.startsWith('qwen/') && { reasoning_format: 'hidden', reasoning_effort: 'none' }),
         messages: [{ role: 'system', content: instructions + (schema ? '\nReturn JSON matching this schema: ' + JSON.stringify(schema) : '') }, { role: 'user', content: input }],
         ...(schema && { response_format: { type: 'json_object' } }),
       }),

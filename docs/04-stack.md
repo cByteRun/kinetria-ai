@@ -58,3 +58,7 @@
 Миграция `20261112105311_telegram.sql` применена к локальной тестовой базе. Не сбрасывать базу ради интеграции; миграция добавочная, существующие обращения сохраняются. Подготовка окружения, получение chat_id, webhook и планировщик — [TELEGRAM](TELEGRAM.md). Проверки: `node scripts/check-telegram.mjs` и откатываемый `scripts/check-telegram.sql`. Внешний E2E отмечается отдельно от локального SQL.
 
 Для локального живого бота используется `node --env-file=.env.local scripts/poll-telegram.mjs` на Node.js 24+; он загружает общие TypeScript handlers через локальный resolver без дополнительной зависимости. Добавочная демомиграция — `20261112112646_telegram_demo_accounts.sql`. Включение gate/allowlist, команды `/demo` и ограничения — в [TELEGRAM](TELEGRAM.md). R-067 проверил реальную доставку; отдельные отчёты не подменяют полный человеческий сценарий.
+
+## Уточнение запуска и навигации после b3137ef
+
+Node.js 24+ для polling. Команды pnpm telegram:poll / telegram:check / groq:check. Groq Qwen: qwen/qwen3.8-27b, Whisper: whisper-large-v3-turbo; Free Plan ограничен квотами. APP_URL — серверный origin сайта для /login. Полный запуск и восстановление — в README.

@@ -31,6 +31,10 @@ begin
  assert (public.telegram_bridge(900001,'submit',draft)->>'id')::uuid=request_uuid,'Submission must be idempotent';
  assert (select count(*) from public.request_attachments where request_id=request_uuid)=1;
  assert (select count(*) from public.telegram_outbox where request_id=request_uuid)=1;
+ result:=public.telegram_bridge(900001,'list');
+ assert jsonb_array_length(result)<=10,'Telegram list limit';
+ assert (select jsonb_agg(e->>'id' order by ord) from jsonb_array_elements(result) with ordinality as a(e,ord)) =
+  (select jsonb_agg(id::text order by created_at desc,number desc) from (select id,created_at,number from public.requests where author_id=emp order by created_at desc,number desc limit 10) x), 'Telegram list must select latest created in deterministic order';
  result:=public.telegram_bridge(900001,'detail',jsonb_build_object('id',request_uuid)); v:=(result->>'version')::integer;
  begin
    perform public.telegram_bridge(900004,'detail',jsonb_build_object('id',request_uuid));

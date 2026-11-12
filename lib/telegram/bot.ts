@@ -14,6 +14,14 @@ const state = (tg: number, value: State) => bridge(tg, 'state', value)
 const ref = (n: number) => 'R-' + String(n).padStart(3, '0')
 const statusNames: Record<string, string> = { new: 'Новое', review: 'На рассмотрении', clarification: 'Нужно уточнение', in_progress: 'В работе', implemented: 'Реализовано', rejected: 'Отклонено', closed: 'Закрыто' }
 
+function websiteButtons(): Button[][] {
+  try {
+    const url = new URL(process.env.APP_URL || '')
+    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) return []
+    return [[{ text: '🌐 Открыть сайт · вход / демо', url: new URL('/login', url.origin).href }]]
+  } catch { return [] }
+}
+
 async function showDraft(tg: number, c: Context, s: State) {
   const d = s.draft!
   await say(tg, `📝 Черновик — ещё не отправлен\n${d.title}\n\n${d.description}\n\nПредложение: ${d.proposal || 'не указано'}\nКатегория: ${c.categories.find(x => x.id === d.category)?.name || '⚠️ выберите категорию'}\nТип: ${d.kind === 'problem' ? 'Проблема' : 'Предложение'}\nТеги: ${d.tags.join(', ')}\nФайлы: ${s.files?.length || 0}/3\n\nПроверьте распознавание и факты. Можно прикрепить файл до 1 МиБ.`, [
@@ -54,6 +62,7 @@ async function detail(tg: number, c: Context, id: string) {
   }
   if (c.role === 'employee' && r.status === 'clarification') controls.push([button('Ответить', 'reply:' + r.id)])
   if (c.role === 'employee' && terminalStatuses.includes(r.status) && !r.acknowledged_at) controls.push([button('Ознакомлен с решением', 'ack:' + r.id)])
+  controls.push(...websiteButtons())
   controls.push([button('История', 'history:' + r.id), button('Комментарий', 'comment:' + r.id)])
   for (const f of r.files || []) controls.push([button('📎 ' + f.name, 'file:' + f.id)])
   await state(tg, { mode: 'detail', id: r.id, version: r.version })
@@ -61,7 +70,7 @@ async function detail(tg: number, c: Context, id: string) {
 }
 const demoRoleNames: Record<string, string> = { employee: '👤 Сотрудник', handler: '🛠 Ответственный', manager: '👔 Руководитель', admin: '⚙️ Администратор' }
 async function demoMenu(tg: number) {
-  await say(tg, '🧪 IdeaRoute · Вход в демо\nВыберите тестовый аккаунт, как на странице входа сайта. Роль и доступы изменятся; черновики сохраняются отдельно для каждого аккаунта.', demoChoices.map(account => [button(`${demoRoleNames[account.role]} · ${account.name}`, 'demo:' + account.id)]))
+  await say(tg, '🧪 IdeaRoute · Вход в демо\nВыберите тестовый аккаунт, как на странице входа сайта. Роль и доступы изменятся; черновики сохраняются отдельно для каждого аккаунта.', demoChoices.map(account => [button(`${demoRoleNames[account.role]} · ${account.name}`, 'demo:' + account.id)]).concat(websiteButtons()))
 }
 export async function handleUpdate(update: Update) {
   const m = update.message || update.callback_query?.message
@@ -83,7 +92,7 @@ export async function handleUpdate(update: Update) {
         ? [[button('Новое обращение', 'menu:new'), button('Мои обращения', 'menu:list')], [button('Продолжить черновик', 'menu:draft')]]
         : [[button('Моя очередь', 'menu:list'), button('Сводка', 'menu:stats')]]
       if (profile.role === 'admin') buttons.push([button('Резервная очередь', 'menu:reserve')])
-      buttons.push([button('🔄 Сменить демоаккаунт', 'demoMenu')])
+      buttons.push([button('🔄 Сменить демоаккаунт', 'demoMenu')], ...websiteButtons())
       await say(tg, `🧪 Демоаккаунт\nЗдравствуйте, ${profile.name}!\n${demoRoleNames[profile.role]}\nВыберите действие. /demo — сменить аккаунт; /cancel — отменить текущий шаг.`, buttons)
     } else if (/^\/start [0-9a-f-]{36}$/i.test(text)) {
       await bridge(tg, 'link', { token: text.slice(7) })
@@ -102,9 +111,9 @@ export async function handleUpdate(update: Update) {
         if (c.role !== 'employee') await say(tg, 'Создание доступно сотруднику. /list — ваша очередь.')
         else { await state(tg, { mode: 'compose' }); await say(tg, 'Опишите проблему или предложение текстом либо голосом (до 120 секунд / 3 МиБ). Укажите категорию, проявления и ожидаемое решение. Аудио передаётся в Groq для распознавания. До подтверждения обращение не регистрируется.') }
       } else if (text === '/list' || text === '/stats' || (text === '/reserve' && c.role === 'admin')) {
-        const rows = await bridge(tg, text === '/reserve' ? 'reserve' : 'list') as { id: string; number: number; title: string; status: string; assignee_id: string | null }[]
+        const rows = await bridge(tg, text === '/reserve' ? 'reserve' : text === '/stats' ? 'stats' : 'list') as { id: string; number: number; title: string; status: string; assignee_id: string | null }[]
         if (text === '/stats') await say(tg, `📊 Последние ${rows.length} доступных обращений\nОткрыто: ${rows.filter(r => !terminalStatuses.includes(r.status as RequestStatus)).length}\nБез владельца: ${rows.filter(r => !r.assignee_id).length}\nПолная аналитика и настройки — в Web Dashboard.`)
-        else await say(tg, rows.length ? 'Ваша очередь · последние 30. Полный реестр — на сайте.' : 'Доступных обращений пока нет.', rows.map(r => [button(`${ref(r.number)} · ${statusNames[r.status]} · ${r.title.slice(0, 35)}`, 'open:' + r.id)]))
+        else await say(tg, rows.length ? 'Ваша очередь · последние 10 по дате создания. Самые новые внизу. Полный реестр — на сайте.' : 'Доступных обращений пока нет.', [...rows].reverse().map(r => [button(`${ref(r.number)} · ${statusNames[r.status]} · ${r.title.slice(0, 35)}`, 'open:' + r.id)]).concat(websiteButtons()))
       } else if (cb.startsWith('open:')) await detail(tg, c, cb.slice(5))
       else if (cb.startsWith('history:')) {
         const r = await bridge(tg, 'detail', { id: cb.slice(8) })

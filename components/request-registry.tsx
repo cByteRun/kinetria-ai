@@ -256,9 +256,9 @@ function RegistryFilters({
     [department, setDepartment] = useState(''),
     [deadline, setDeadline] = useState(''),
     [mode, setMode] = useState(
-      showRecurrence ? params.get('mode') || 'groups' : 'table',
+      showRecurrence ? params.get('mode') || 'table' : 'table',
     ),
-    [sort, setSort] = useState(showRecurrence ? 'recurrence' : 'priority')
+    [sort, setSort] = useState('newest')
   const tag = params.get('tag') || ''
   const kind = params.get('kind') || ''
   const period = params.get('period') || 'all'
@@ -304,11 +304,15 @@ function RegistryFilters({
         .includes(query.trim().toLocaleLowerCase()),
   )
   const sorted =
-    sort === 'recent'
+    sort === 'newest'
       ? [...filtered].sort((a, b) =>
-          (b.updated_at || '').localeCompare(a.updated_at || ''),
+          (b.created_at || '').localeCompare(a.created_at || '') || b.number - a.number,
         )
-      : prioritizeRequests(filtered, showRecurrence && sort === 'recurrence')
+      : sort === 'recent'
+        ? [...filtered].sort((a, b) =>
+            (b.updated_at || '').localeCompare(a.updated_at || ''),
+          )
+        : prioritizeRequests(filtered, showRecurrence && sort === 'recurrence')
   const groups = showRecurrence ? recurringProblems(sorted) : []
   if (sort === 'priority')
     groups.sort(
@@ -491,6 +495,7 @@ function RegistryFilters({
           value={sort}
           onChange={(e) => setSort(e.target.value)}
         >
+          <option value="newest">{ui('newestFirst')}</option>
           {showRecurrence && (
             <option value="recurrence">{ui('recurringFirst')}</option>
           )}

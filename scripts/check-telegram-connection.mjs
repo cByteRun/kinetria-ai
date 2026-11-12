@@ -17,7 +17,7 @@ try {
   const response=await fetch('https://api.groq.com/openai/v1/models',{headers:{Authorization:'Bearer '+process.env.GROQ_API_KEY},signal:AbortSignal.timeout(10000)})
   if(!response.ok)throw new Error('Groq models: HTTP '+response.status)
   const data=await response.json()
-  console.log('Groq alternatives: '+(data.data||[]).map(m=>m.id).filter(id=>/gpt-oss-20b|llama-3.1-8b-instant/.test(id)).join(', '))
-  for(const model of [process.env.GROQ_WHISPER_MODEL||'whisper-large-v3-turbo',process.env.GROQ_TEXT_MODEL||'openai/gpt-oss-20b'])console.log('Groq '+model+': '+(data.data?.some(m=>m.id===model)?'available':'unavailable; select a different model'))
+  console.log('Groq alternatives: '+(data.data||[]).map(m=>m.id).filter(id=>/qwen|gpt-oss-20b|llama-3.1-8b-instant/.test(id)).join(', '))
+  for(const model of [process.env.GROQ_WHISPER_MODEL||'whisper-large-v3-turbo',process.env.GROQ_TEXT_MODEL||'qwen/qwen3.8-27b'])console.log('Groq '+model+': '+(data.data?.some(m=>m.id===model)?'available':'unavailable; select a different model'))
  }
 }catch(error){console.error(error instanceof Error?error.message:'Connection failed');process.exitCode=1}
