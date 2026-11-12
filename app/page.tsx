@@ -3,13 +3,14 @@ import { getTheme } from '../i18n/theme'
 import Link from 'next/link'
 import {
   ArrowDown,
-  ArrowRight,
+  ClipboardCheck,
+  ListChecks,
   ArrowUpRight,
   Check,
   GitBranch,
   MessageSquare,
   Plus,
-  Sparkles,
+  Settings2,
 } from 'lucide-react'
 import { Brand } from '../components/brand'
 import { LandingHeader } from '../components/landing-header'
@@ -28,28 +29,25 @@ export default async function Home() {
     {
       title: t('step2'),
       text: t('step2Text'),
-      icon: Sparkles,
+      icon: GitBranch,
     },
     {
       title: t('step3'),
       text: t('step3Text'),
-      icon: GitBranch,
+      icon: ClipboardCheck,
     },
+    { title: t('step4'), text: t('step4Text'), icon: ListChecks },
   ]
 
   const plans = [
     {
       name: t('pilot'),
       cta: t('pilotCta'),
-      price: t('pilotPrice'),
-      period: t('pilotPeriod'),
       features: [t('pilot1'), t('pilot2'), t('pilot3')],
     },
     {
       name: t('deployment'),
       cta: t('deploymentCta'),
-      price: t('deploymentPrice'),
-      period: t('deploymentPeriod'),
       features: [t('deployment1'), t('deployment2'), t('deployment3')],
     },
   ]
@@ -78,13 +76,13 @@ export default async function Home() {
       </a>
       <LandingHeader theme={theme} />
       <main>
-        <section className="landing-hero" id="product">
+        <section className="landing-hero idea-dot-field" id="product">
           <div className="container landing-hero-grid">
             <div>
-              <p className="landing-label">{t('label')}</p>
+              <p className="landing-label idea-product-mark">KINETRIA AI <span>Idea Hub</span></p>
               <h1>
                 {t('headlineStart')}
-                <br />
+                {' '}
                 {t.rich('headlineEnd', {
                   accent: (chunks) => <em>{chunks}</em>,
                 })}
@@ -107,60 +105,6 @@ export default async function Home() {
                 </a>
               </div>
             </div>
-            <aside className="landing-audience" aria-label={t('audience')}>
-              <div>
-                <MessageSquare size={22} />
-                <div>
-                  <h2>{t('employeeTitle')}</h2>
-                  <p>{t('employeeText')}</p>
-                </div>
-              </div>
-              <div>
-                <GitBranch size={22} />
-                <div>
-                  <h2>{t('managerTitle')}</h2>
-                  <p>{t('managerText')}</p>
-                </div>
-              </div>
-            </aside>
-          </div>
-        </section>
-
-        <section className="landing-section" id="how">
-          <div className="container">
-            <p className="landing-label">{t('process')}</p>
-            <h2>{t('processTitle')}</h2>
-            <ol className="landing-steps">
-              {steps.map(({ title, text, icon: Icon }) => (
-                <li key={title}>
-                  <Icon size={22} />
-                  <h3>{title}</h3>
-                  <p>{text}</p>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </section>
-
-        <section
-          className="landing-section landing-example"
-          aria-labelledby="example-heading"
-        >
-          <div className="container landing-example-grid">
-            <div>
-              <p className="landing-label">{t('example')}</p>
-              <h2 id="example-heading">{t('exampleTitle')}</h2>
-              <p className="landing-lead">{t('exampleText')}</p>
-              <div className="landing-actions">
-                <Link
-                  className="landing-button landing-button-secondary"
-                  href="/login"
-                >
-                  {t('openDemo')}
-                  <ArrowUpRight size={16} />
-                </Link>
-              </div>
-            </div>
             <aside className="landing-case" aria-labelledby="case-title">
               <div className="case-heading">
                 <span>{t('caseLabel')}</span>
@@ -177,29 +121,61 @@ export default async function Home() {
                   <dd>{t('catalogOwner')}</dd>
                 </div>
                 <div>
-                  <dt>{t('resolution')}</dt>
-                  <dd>{t('caseResolution')}</dd>
+                  <dt>{t('nextStep')}</dt>
+                  <dd>{t('caseNextStep')}</dd>
                 </div>
               </dl>
               <span className="case-status">
-                <Check size={15} />
-                {t('outcome')}
+                <GitBranch size={15} />
+                {t('caseStatus')}
               </span>
             </aside>
           </div>
         </section>
 
+        <section className="landing-section" id="how">
+          <div className="container">
+            <h2>{t('processTitle')}</h2>
+            <ol className="landing-steps">
+              {steps.map(({ title, text, icon: Icon }) => (
+                <li key={title}>
+                  <Icon size={22} />
+                  <h3>{title}</h3>
+                  <p>{text}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        <section className="landing-section landing-roles" aria-labelledby="roles-heading">
+          <div className="container">
+            <h2 id="roles-heading">{t('audience')}</h2>
+            <ul className="landing-steps landing-role-grid">
+              {[
+                { title: t('employeeTitle'), text: t('employeeText'), icon: MessageSquare },
+                { title: t('managerTitle'), text: t('managerText'), icon: ClipboardCheck },
+                { title: t('handlerTitle'), text: t('handlerText'), icon: ListChecks },
+                { title: t('adminTitle'), text: t('adminText'), icon: Settings2 },
+              ].map(({ title, text, icon: Icon }) => (
+                <li key={title}>
+                  <Icon size={22} />
+                  <h3>{title}</h3>
+                  <p>{text}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
         <section className="landing-section landing-pricing" id="pricing">
           <div className="container">
             <p className="landing-label">{t('rollout')}</p>
             <h2>{t('pricingTitle')}</h2>
             <p className="landing-lead">{t('pricingText')}</p>
             <div className="landing-plan-grid">
-              {plans.map(({ name, price, period, features, cta }) => (
+              {plans.map(({ name, features, cta }) => (
                 <article className="landing-plan" key={name}>
                   <h3>{name}</h3>
-                  <p className="landing-price">{price}</p>
-                  <p>{period}</p>
                   <ul>
                     {features.map((feature) => (
                       <li key={feature}>

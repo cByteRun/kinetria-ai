@@ -17,7 +17,7 @@ export default async function RoleWorkspace({ params, searchParams }: {
   const { role } = await params
   if (!isRole(role) || role !== profile.role) notFound()
   const { error, id, view: selection } = await searchParams
-  const view = selection || (id ? 'registry' : role === 'employee' ? 'new' : 'overview')
+  const view = selection || (id ? 'registry' : 'overview')
   const theme = await getTheme()
   const name = profile.displayName || (localPreview ? accounts.find(account => account.id === role)?.name : undefined)
   return <DashboardShell role={role} view={view} theme={theme} name={name}>

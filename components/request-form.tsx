@@ -19,7 +19,7 @@ export function RequestForm({ categories, aiEnabled, routes = {}, preview = fals
 }) {
   const t = useTranslations('requestsMvp')
   const key = useRef<string | null>(null)
-  const [mode, setMode] = useState('ai')
+  const [mode, setMode] = useState('manual')
   const [message, setMessage] = useState('')
   const [chat, setChat] = useState<{ text: string; user?: boolean }[]>([])
   const [draft, setDraft] = useState<Draft>(emptyDraft)
@@ -69,7 +69,7 @@ export function RequestForm({ categories, aiEnabled, routes = {}, preview = fals
   return (
     <div>
     <div className="crm-mode-tabs"><button aria-pressed={mode === 'ai'} onClick={() => setMode('ai')}>С помощью AI</button><button aria-pressed={mode === 'manual'} onClick={() => setMode('manual')}>Заполнить вручную</button></div>
-    <div className={mode === 'ai' ? 'crm-compose' : ''}>
+    <div className={mode === 'ai' ? 'crm-compose' : 'idea-form-layout'}>
     {mode === 'ai' && <section className="crm-chat">
       <div className="crm-chat-head"><Sparkles size={20} /><div><strong>Помощник Kinetria</strong><small style={{ display: 'block', marginTop: 4 }}>От идеи до зарегистрированного обращения</small></div></div>
       <div className="crm-chat-body" aria-live="polite">
@@ -87,7 +87,7 @@ export function RequestForm({ categories, aiEnabled, routes = {}, preview = fals
       </div>
     </section>}
     <form action={submit} className="request-fields workspace-panel request-panel" style={{ margin: 0 }}>
-      <h2>Карточка обращения</h2>
+      <h2>Что можно улучшить?</h2><p className="muted">Выберите категорию, опишите ситуацию и проверьте получателя. Предполагаемое решение — по желанию.</p>
       <div className="crm-routing-preview"><small>Будет направлено</small><br /><strong>{draft.category ? routes[draft.category] || 'Резервная очередь · администратор' : 'Выберите категорию обращения'}</strong></div>
       <fieldset disabled={isDrafting || isSubmitting}>
         <label>{t('category')}<select name="category" required value={draft.category}
@@ -99,14 +99,6 @@ export function RequestForm({ categories, aiEnabled, routes = {}, preview = fals
           onChange={event => update('kind', event.target.value as RequestKind)}>
           {requestKinds.map(kind => <option key={kind} value={kind}>{requestKindLabels[kind]}</option>)}
         </select></label>
-        <label>Тональность<select name="sentiment" value={draft.sentiment}
-          onChange={event => update('sentiment', Number(event.target.value))}>
-          {Array.from({ length: 11 }, (_, score) => <option key={score} value={score}>
-            {score}{score === 0 ? ' — негативная' : score === 5 ? ' — нейтральная' : score === 10 ? ' — позитивная' : ''}
-          </option>)}
-        </select></label>
-        <label>Теги через запятую<input name="tags" value={draft.tags.join(',')} maxLength={400}
-          onChange={event => update('tags', event.target.value.split(','))} /></label>
         <label>{t('title')}<input name="title" maxLength={120} required value={draft.title}
           onChange={event => update('title', event.target.value)} /></label>
         <label>{t('description')}<textarea name="description" rows={5} maxLength={4000} required
@@ -118,7 +110,7 @@ export function RequestForm({ categories, aiEnabled, routes = {}, preview = fals
               try {
                 const response = await prepareDraft(draft.description)
                 if ('draft' in response) {
-                  setDraft(previous => ({ ...response.draft, proposal: previous.proposal || response.draft.proposal }))
+                  setDraft(previous => ({ ...response.draft, category: previous.category || response.draft.category, proposal: previous.proposal || response.draft.proposal }))
                 } else {
                   setAiError(response.error)
                 }
@@ -133,6 +125,16 @@ export function RequestForm({ categories, aiEnabled, routes = {}, preview = fals
         </div>}
         <label>{t('proposal')}<textarea name="proposal" rows={3} maxLength={2000}
           value={draft.proposal} onChange={event => update('proposal', event.target.value)} /></label>
+        <details className="idea-metadata"><summary>Дополнительно: теги и тональность</summary>
+        <label>Тональность<select name="sentiment" value={draft.sentiment}
+          onChange={event => update('sentiment', Number(event.target.value))}>
+          {Array.from({ length: 11 }, (_, score) => <option key={score} value={score}>
+            {score}{score === 0 ? ' — негативная' : score === 5 ? ' — нейтральная' : score === 10 ? ' — позитивная' : ''}
+          </option>)}
+        </select></label>
+        <label>Теги через запятую<input name="tags" value={draft.tags.join(',')} maxLength={400}
+          onChange={event => update('tags', event.target.value.split(','))} /></label>
+        </details>
         {result?.error && <p className="error" role="alert">{t(result.error)}</p>}
         <button className="button button-primary" disabled={preview}>{isSubmitting ? t('saving') : 'Зарегистрировать обращение'}</button>
         <button type="button" className="button button-outline" onClick={() => {
@@ -140,7 +142,7 @@ export function RequestForm({ categories, aiEnabled, routes = {}, preview = fals
           setChat([]); setMessage(''); key.current = null; setAiError(undefined)
         }}><RotateCcw size={14} />Очистить и начать заново</button>
       </fieldset>
-    </form>
+    </form>{mode === 'manual' && <aside className="idea-form-guide"><p className="idea-eyebrow">КАК ЭТО РАБОТАЕТ</p><h2>У обращения есть путь</h2><ol><li><strong>Опишите ситуацию</strong>Что происходит, где и как влияет на работу.</li><li><strong>Проверьте получателя</strong>Категория определяет маршрут рассмотрения.</li><li><strong>Следите за результатом</strong>Статус, уточнения и решение доступны в «Моих обращениях».</li></ol><p>Обращение подаётся от вашего имени. Его видят автор, ответственный, руководитель направления и администратор.</p><details className="idea-metadata"><summary>Попробовать пример из датасета</summary><select aria-label="Пример из датасета" value="" onChange={e => loadSample(e.target.value)}><option value="">Выберите пример</option>{samples.map(sample => <option key={sample.id} value={sample.id}>{sample.id} · {sample.title}</option>)}</select></details></aside>}
     </div></div>
   )
 }

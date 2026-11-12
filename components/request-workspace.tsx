@@ -7,6 +7,7 @@ import { isLocale } from '../i18n/settings'
 import { requestKindLabels, sentimentLabel, terminalStatuses, topicTags, transitions, uuidPattern, type Category, type RequestStatus } from '../lib/requests'
 import { isRole } from '../lib/roles'
 import { createClient } from '../lib/supabase/server'
+import { IdeaOverview } from './idea-overview'
 import { RequestForm } from './request-form'
 import { RequestRegistry, type RegistryRow } from './request-registry'
 import { RequestSummary } from './request-summary'
@@ -32,7 +33,7 @@ export async function RequestWorkspace({ role, id, error, view = 'registry' }: {
   if (id && (typeof id !== 'string' || !uuidPattern.test(id))) notFound()
   const supabase = await createClient()
   const [list, categoryList] = await Promise.all([
-    supabase.from('requests').select('id,number,source_ref,category_id,title,status,assignee_id,kind,sentiment')
+    supabase.from('requests').select('id,number,source_ref,category_id,title,status,assignee_id,kind,sentiment,description,next_step,decision,updated_at')
       .order('updated_at', { ascending: false }).order('id').returns<RequestRow[]>(),
     supabase.from('request_categories').select('id,name_ru,name_en,name_kk,active')
       .returns<(Category & { active: boolean })[]>(),
@@ -43,7 +44,6 @@ export async function RequestWorkspace({ role, id, error, view = 'registry' }: {
     name: category[`name_${isLocale(locale) ? locale : 'ru'}`],
     active: category.active,
   })).sort((a, b) => a.name.localeCompare(b.name, locale))
-  const categoryName = (category: string) => categories.find(item => item.id === category)?.name ?? category
   const { data: routing } = await supabase.rpc('routing_preview')
   const managers = role === 'admin' ? await supabase.rpc('routing_managers') : null
   const routes = Object.fromEntries((Array.isArray(routing) ? routing : []).map((route: { category_id: string; recipient: string }) => [route.category_id, route.recipient]))
@@ -51,25 +51,13 @@ export async function RequestWorkspace({ role, id, error, view = 'registry' }: {
     categoryNames={Object.fromEntries(categories.map(item => [item.id, item.name]))} />
   return (
     <>
-      <h1>{view === 'overview' && !id ? 'Обзор обращений' : t(role === 'employee' ? 'mine' : role === 'handler' ? 'assignedQueue' : 'queue')}</h1>
+      {view !== 'overview' && <h1>{view === 'new' ? 'Новое обращение' : view === 'routing' ? 'Маршрутизация' : view === 'categories' ? 'Категории' : t(role === 'employee' ? 'mine' : role === 'handler' ? 'assignedQueue' : 'queue')}</h1>}
       {!id && role === 'employee' && view === 'new' && <section>
         <RequestForm categories={categories.filter(category => category.active)}
           aiEnabled={Boolean(aiConfig())} routes={routes} />
       </section>}
       {(id || view !== 'new') && <>
-        <div className="crm-metrics">{[
-          ['Всего обращений', list.data.length],
-          ['Ожидают рассмотрения', list.data.filter(item => item.status === 'new').length],
-          ['В работе', list.data.filter(item => ['review', 'in_progress', 'clarification'].includes(item.status)).length],
-          ['Реализовано', list.data.filter(item => item.status === 'implemented').length],
-        ].map(([label, value]) => <div className="crm-metric" key={label}><span>{label}</span><strong>{value}</strong></div>)}</div>
-        {view === 'overview' && !id ? <section className="workspace-panel request-panel">
-          <h2>Последние обновления</h2>
-          {list.data.length ? <ul>{list.data.slice(0, 5).map(item => <li key={item.id}>
-            <Link href={path + '?view=registry&id=' + item.id}>{reference(item)} · {item.title}</Link> — {t(item.status)}
-          </li>)}</ul> : <p>В вашей очереди пока нет обращений.</p>}
-          <Link className="button button-outline" href={path + '?view=registry'}>Открыть реестр обращений</Link>
-        </section> : view === 'routing' || view === 'categories' ? <section className="crm-registry">
+        {view === 'overview' && !id ? <IdeaOverview rows={list.data} categories={Object.fromEntries(categories.map(item => [item.id, item.name]))} role={role} path={path} /> : view === 'routing' || view === 'categories' ? <section className="crm-registry">
           {error && <p role="alert">{t('saveError')}</p>}
           <table><thead><tr><th>Категория</th><th>Получатель</th>{view === 'routing' && <th>Изменить маршрут</th>}</tr></thead><tbody>{categories.map(category => <tr key={category.id}><td>{category.name}</td><td>{routes[category.id] || 'Резервная очередь'}</td>{view === 'routing' && <td><form action={saveRouting}>
             <input type="hidden" name="category" value={category.id} />
@@ -120,6 +108,8 @@ async function RequestDetail({ id, role, error, categoryNames }: {
   return (
     <article className="workspace-panel request-panel crm-detail">
       <div className="crm-detail-content">
+      {(error === 'conflict' || error === 'invalid' || error === 'saveError') &&
+        <p role="alert" className="error">{t(error)}</p>}
       <p>{reference(request)} · {categoryNames[request.category_id]}</p>
       <h2>{request.title}</h2>
       <p>{requestKindLabels[request.kind]} · {sentimentLabel(request.sentiment)}</p>
@@ -129,26 +119,23 @@ async function RequestDetail({ id, role, error, categoryNames }: {
         {topicTags(request.tags).map(tag => <li key={tag}>{tag}</li>)}
       </ul>
       <p><strong>{t(request.status)}</strong> · {t(request.assignee_id ? 'hasAssignee' : 'unassigned')}</p>
+      {(request.decision || request.next_step) && <section className="crm-outcome">
+        {request.decision && <><h3>{t('decision')}</h3><p className="request-text">{request.decision}</p></>}
+        {request.next_step && <><h3>{t('nextStep')}</h3><p className="request-text">{request.next_step}</p></>}
+      </section>}
       <p className="request-text">{request.description}</p>
       {role !== 'employee' && aiConfig() && <RequestSummary id={id} />}
       {request.proposal && <><h3>{t('proposal')}</h3><p className="request-text">{request.proposal}</p></>}
-      {request.decision && <><h3>{t('decision')}</h3><p className="request-text">{request.decision}</p></>}
-      {request.next_step && <><h3>{t('nextStep')}</h3><p className="request-text">{request.next_step}</p></>}
-      <h3>{t('history')}</h3>
-      <ol className="request-history">
-        {history.data.map(event => <li key={event.id}>
-          <strong>{t(event.event_type)} · {t(event.status)}</strong>
-          <small>{format.dateTime(new Date(event.created_at), { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Qyzylorda' })}</small>
-          {event.message && <p className="request-text">{event.message}</p>}
-          {event.next_step && <p className="request-text">{event.next_step}</p>}
-        </li>)}
-      </ol>
-      </div><aside className="crm-detail-actions"><h3>Рассмотрение</h3>
-      {(error === 'conflict' || error === 'invalid' || error === 'saveError') &&
-        <p role="alert" className="error">{t(error)}</p>}
+
+
+      </div>{((role === 'employee' && request.status === 'clarification') || ((role === 'manager' || role === 'handler') && !terminalStatuses.includes(request.status))) && <aside className="crm-detail-actions"><h3>{role === 'employee' ? 'Нужен ваш ответ' : 'Рассмотрение'}</h3>
       {(role === 'manager' || role === 'handler') && available.length > 0 && <form action={updateRequest} className="request-fields">
         {versionFields}
         <input type="hidden" name="action" value="reviewed" />
+        {request.status === 'new' ? <>
+          <input type="hidden" name="status" value="review" />
+          <button className="button button-primary">Взять на рассмотрение</button>
+        </> : <>
         <label>{t('nextStatus')}<select name="status" required>
           {available.map(status => <option key={status} value={status}>{t(status)}</option>)}
         </select></label>
@@ -156,6 +143,7 @@ async function RequestDetail({ id, role, error, categoryNames }: {
         <label>{t('nextStep')}<input name="nextStep" maxLength={1000} /></label>
         <p className="muted">{t('reviewHint')}</p>
         <button className="button button-primary">{t('save')}</button>
+        </>}
       </form>}
       {role === 'employee' && request.status === 'clarification' &&
         <form action={updateRequest} className="request-fields">
@@ -177,8 +165,18 @@ async function RequestDetail({ id, role, error, categoryNames }: {
           <button className="button button-outline">{t('saveAssignee')}</button>
         </form>}
       {assignees?.error && <p role="alert">{t('loadError')}</p>}
-      {role === 'employee' && request.status !== 'clarification' && <p className="muted">Статус и решение обновляются после рассмотрения обращения.</p>}
-      </aside>
+      </aside>}
+      <section className="crm-detail-history">
+      <h3>{t('history')}</h3>
+      <ol className="request-history">
+        {history.data.map(event => <li key={event.id}>
+          <strong>{t(event.event_type)} · {t(event.status)}</strong>
+          <small>{format.dateTime(new Date(event.created_at), { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Qyzylorda' })}</small>
+          {event.message && <p className="request-text">{event.message}</p>}
+          {event.next_step && <p className="request-text">{event.next_step}</p>}
+        </li>)}
+      </ol>
+      </section>
     </article>
   )
 }

@@ -1,6 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Tektur:wght@600;700&display=swap');
 
 :root {
+  --hub-bg: #f7f5fc;
+  --hub-panel: #fff;
+  --hub-primary: #603ac2;
+  --hub-primary-hover: #5030a8;
+  --hub-on-primary: #fff;
+  --hub-radius: 14px;
+  --hub-body: Inter, Arial, sans-serif;
+  --hub-heading: Manrope, Inter, Arial, sans-serif;
   --ink: #19142a;
   --muted: #625a71;
   --purple: #603ac2;
@@ -51,7 +59,7 @@ h1,
 h2,
 h3,
 .brand {
-  font-family: Manrope, 'DM Sans', Arial, sans-serif;
+  font-family: var(--hub-heading);
   line-height: 1.12;
 }
 p,
@@ -853,6 +861,11 @@ h3 {
 
 :root[data-theme='dark'] {
   color-scheme: dark;
+  --hub-bg: #111017;
+  --hub-panel: #191622;
+  --hub-primary: #c3a6ff;
+  --hub-primary-hover: #d4beff;
+  --hub-on-primary: #211432;
   --ink: #f7f4fc;
   --muted: #b8b0c7;
   --purple: #c3a6ff;
@@ -1014,4 +1027,29 @@ h3 {
 .request-text {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+/* Shared accent field on the public and workspace entry screens. */
+.idea-dot-field {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.idea-dot-field::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 0 32%;
+  z-index: -1;
+  pointer-events: none;
+  background-image: radial-gradient(circle, var(--purple) 1px, transparent 1.4px);
+  background-size: 14px 14px;
+  mask-image: linear-gradient(100deg, transparent 6%, #000 88%);
+  opacity: .26;
+  animation: hub-dot-glow 7s ease-in-out 2 alternate;
+}
+@keyframes hub-dot-glow {
+  to { opacity: .43; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .idea-dot-field::before { animation: none; }
 }
