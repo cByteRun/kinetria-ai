@@ -1,12 +1,19 @@
 'use client'
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 export function WorkspaceLive({ path }: { path: string }) {
   const router = useRouter()
+  const params = useSearchParams()
+  const screen = `${params.get('view') || 'overview'}:${params.get('id') || ''}`
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [screen])
+  useEffect(() => {
+    let authPending = false
+    const pauseForAuth = () => { authPending = true }
     const refresh = () => {
       if (
-        document.visibilityState === 'visible' &&
+        !authPending && document.visibilityState === 'visible' &&
         !document.querySelector('form:focus-within')
       )
         router.refresh()
@@ -30,10 +37,12 @@ export function WorkspaceLive({ path }: { path: string }) {
         )
       }
     }
+    window.addEventListener('idearoute:auth-pending', pauseForAuth)
     document.addEventListener('keydown', search)
     document.addEventListener('visibilitychange', refresh)
     return () => {
       clearInterval(timer)
+      window.removeEventListener('idearoute:auth-pending', pauseForAuth)
       document.removeEventListener('keydown', search)
       document.removeEventListener('visibilitychange', refresh)
     }

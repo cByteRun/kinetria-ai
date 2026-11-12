@@ -1070,3 +1070,9 @@ h3 {
   background: var(--hub-primary);
 }
 .route-brand-word { color: var(--purple); }
+
+/* Auth submission keeps its payload intact while preventing repeated submissions. */
+form[aria-busy='true'] { cursor: progress; }
+form[aria-busy='true'] button { pointer-events: none; opacity: .6; }
+.auth-progress { display: block; font-size: 13px; line-height: 1.6; color: inherit; padding: 10px 0; }
+.side-user .auth-progress { position: fixed; inset: auto 16px 20px auto; z-index: 100; padding: 12px 18px; border-radius: 9px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); }

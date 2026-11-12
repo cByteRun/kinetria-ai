@@ -16,7 +16,7 @@ import accounts from '../../lib/demo-accounts.json'
 import { getRole, localPreview } from '../../lib/session'
 import { hasSupabase } from '../../lib/supabase/config'
 import { roles, type Role } from '../../lib/roles'
-import { login } from './actions'
+import { AuthForm } from '../../components/auth-form'
 import '../workspace/prototype.css'
 import './login.css'
 const errors = ['credentials', 'config', 'profile'] as const
@@ -115,11 +115,11 @@ export default async function Login({
           </p>
           {error && (
             <p className="form-error" role="alert">
-              {t(errors.find((k) => k === error) || 'fallback')}
+              {error === 'connection' ? 'Не удалось связаться с сервером. Попробуйте войти ещё раз.' : t(errors.find((k) => k === error) || 'fallback')}
             </p>
           )}
           {hasSupabase && (
-            <form action={login} className="ir-login-form">
+            <AuthForm action="/auth/login" className="ir-login-form" pendingLabel="Входим в рабочее пространство…">
               <label>
                 Рабочая почта
                 <input
@@ -145,7 +145,7 @@ export default async function Login({
               <button className="btn primary">
                 Войти в рабочее пространство <ArrowRight size={16} />
               </button>
-            </form>
+            </AuthForm>
           )}
           {showRoles && (
             <details className="ir-demo-login" open>
@@ -153,7 +153,7 @@ export default async function Login({
                 <span className="tiny-pill">Демо</span> Попробовать по роли
               </summary>
               <p>Тестовые аккаунты и синтетические обращения.</p>
-              <form action={login} className="ir-demo-accounts">
+              <AuthForm action="/auth/login" className="ir-demo-accounts" pendingLabel="Открываем выбранный кабинет…">
                 {hasSupabase
                   ? accounts
                       .filter((a) => a.role !== 'client')
@@ -177,7 +177,7 @@ export default async function Login({
                           <ArrowUpRight size={15} />
                         </button>
                       ))}
-              </form>
+              </AuthForm>
             </details>
           )}
           {!hasSupabase && !localPreview && <p>{t('disabled')}</p>}

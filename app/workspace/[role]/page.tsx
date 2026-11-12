@@ -11,6 +11,7 @@ import '../dashboard.css'
 import '../prototype.css'
 import '../live-dashboard.css'
 import '../adaptive.css'
+import '../feedback.css'
 
 export default async function RoleWorkspace({
   params,

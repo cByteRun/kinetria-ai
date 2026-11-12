@@ -15,7 +15,7 @@ import {
   Search,
   ChevronsUpDown,
 } from 'lucide-react'
-import { logout } from '../app/login/actions'
+import { AuthForm } from './auth-form'
 import { canViewInsights, type Role } from '../lib/roles'
 import type { Theme } from '../i18n/settings'
 import { getTranslations } from 'next-intl/server'
@@ -101,6 +101,7 @@ export async function DashboardShell({
   const nav = (item: (typeof items)[number]) => (
     <Link
       key={item.id}
+      prefetch={false}
       href={base + '?view=' + item.id}
       className={'nav-link ' + (view === item.id ? 'active' : '')}
       aria-current={view === item.id ? 'page' : undefined}
@@ -192,11 +193,11 @@ export async function DashboardShell({
               <strong>{name || t(role)}</strong>
               <small>{t(role)}</small>
             </div>
-            <form action={logout}>
+            <AuthForm action="/auth/logout" pendingLabel="Выходим…">
               <button className="ir-logout" aria-label="Выйти">
                 <LogOut size={16} />
               </button>
-            </form>
+            </AuthForm>
           </div>
         </div>
       </aside>
@@ -229,9 +230,10 @@ export async function DashboardShell({
           </div>
         </header>
         <nav className="mobile-tabs" aria-label="Разделы кабинета">
-          {items.map((item) => (
+          {[...items.filter(item => ['overview', 'registry', 'new', 'results'].includes(item.id)), {id: 'notifications', label: 'Уведомления', icon: Bell}].map((item) => (
             <Link
               key={item.id}
+              prefetch={false}
               href={base + '?view=' + item.id}
               aria-current={view === item.id ? 'page' : undefined}
             >
@@ -241,7 +243,7 @@ export async function DashboardShell({
                   ? 'Создать'
                   : item.id === 'insights'
                     ? 'Повторы'
-                    : item.label}
+                    : item.id === 'registry' ? 'Обращения' : item.id === 'notifications' ? 'События' : item.label}
               </span>
             </Link>
           ))}

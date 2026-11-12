@@ -2,16 +2,15 @@
 import Link from 'next/link'
 import { Heading } from './workspace-heading'
 import { RecurringAnalytics } from './recurring-analytics'
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import {
-  Bell,
   CheckCheck,
   CircleCheck,
   Clock3,
   ArrowUpRight,
   Info,
 } from 'lucide-react'
-import { markSeen } from '../app/workspace/actions'
+import { FeedbackNotifications } from './feedback-notifications'
 import { dateLabel, hasResult, isDone, isOverdue } from '../lib/dashboard'
 import {
   StatusBadge,
@@ -32,9 +31,7 @@ export function DashboardViews({
   view: string
   receipts?: Record<string, number>
 }) {
-  const [period, setPeriod] = useState('all'),
-    [pending, start] = useTransition(),
-    [error, setError] = useState('')
+  const [period, setPeriod] = useState('all')
   const data = rows.filter(
     (r) =>
       period === 'all' ||
@@ -42,7 +39,8 @@ export function DashboardViews({
         Date.parse(r.created_at) >=
           Date.now() - Number(period) * 86400000),
   )
-  const done = data.filter(hasResult)
+  const done = data.filter(hasResult).sort((a, b) =>
+    Date.parse(b.resolved_at || b.updated_at || '') - Date.parse(a.resolved_at || a.updated_at || ''))
   const registryLink = (params: Record<string, string>) =>
     path +
     '?' +
@@ -124,104 +122,7 @@ export function DashboardViews({
       </>
     )
   if (view === 'notifications')
-    return (
-      <>
-        <Heading
-          title="Уведомления"
-          description="Изменения и следующий шаг по вашим обращениям."
-        />
-        <section className="card">
-          <div className="card-head">
-            <div>
-              <h2>Лента обращений</h2>
-              <p>Обновления, которые вы ещё не отметили прочитанными</p>
-            </div>
-            <button
-              className="btn sm"
-              disabled={pending || !rows.length}
-              onClick={() =>
-                start(async () => {
-                  const result = await markSeen(
-                    rows.map((r) => ({
-                      id: r.id,
-                      version: r.version || 1,
-                    })),
-                  )
-                  setError(result.error || '')
-                })
-              }
-            >
-              <CheckCheck />
-              {pending ? 'Сохраняем…' : 'Прочитать все'}
-            </button>
-          </div>
-          {error && <p role="alert">{error}</p>}
-          {rows.map((r) => (
-            <div
-              key={r.id}
-              className={
-                'notification ' +
-                ((receipts[r.id] || 0) < (r.version || 1) ? 'unread' : '')
-              }
-            >
-              <Bell className="brand" />
-              <div className="ir-grow">
-                <Link href={path + '?view=registry&id=' + r.id}>
-                  <div className="ir-flex ir-between">
-                    <h3>
-                      {hasResult(r)
-                        ? 'Результат доступен'
-                        : r.status === 'clarification'
-                          ? 'Нужен ответ автора'
-                          : !r.assignee_id
-                            ? 'Нужен ответственный'
-                            : 'Обращение обновлено'}
-                    </h3>
-                    <time>{dateLabel(r.updated_at)}</time>
-                  </div>
-                  <p>
-                    {requestNumber(r)} · {r.title}
-                  </p>
-                  <p>
-                    {r.decision ||
-                      r.next_step ||
-                      'Откройте карточку, чтобы посмотреть статус и историю.'}
-                  </p>
-                </Link>
-                {(receipts[r.id] || 0) < (r.version || 1) && (
-                  <button
-                    className="btn ghost sm"
-                    disabled={pending}
-                    onClick={() =>
-                      start(async () => {
-                        const result = await markSeen([
-                          { id: r.id, version: r.version || 1 },
-                        ])
-                        setError(result.error || '')
-                      })
-                    }
-                  >
-                    Отметить прочитанным
-                  </button>
-                )}
-              </div>
-              <Link
-                href={path + '?view=registry&id=' + r.id}
-                aria-label={'Открыть ' + requestNumber(r)}
-              >
-                <ArrowUpRight />
-              </Link>
-            </div>
-          ))}
-          {!rows.length && (
-            <div className="empty">
-              <Bell />
-              <h3>Уведомлений пока нет</h3>
-            </div>
-          )}
-        </section>
-      </>
-    )
+    return <FeedbackNotifications rows={rows} receipts={receipts} path={path} />
   if (view === 'results')
     return (
       <>
@@ -253,13 +154,14 @@ export function DashboardViews({
                 </small>
               </div>
               <h3>{r.title}</h3>
-              <p>{r.decision}</p>
+              <p className="result-decision">{r.decision}</p>
               {r.next_step && <p>Действия: {r.next_step}</p>}
               <div className="ir-result-meta">
                 <CheckCheck />
                 {r.acknowledged_at
                   ? 'Автор ознакомился ' + dateLabel(r.acknowledged_at)
-                  : 'Ответ доступен автору'}
+                  : 'Решение готово · автор ещё не подтвердил ознакомление'}
+                <span className="result-open">{path.endsWith('/employee') && !r.acknowledged_at ? 'Прочитать и подтвердить' : 'Открыть результат'} <ArrowUpRight /></span>
               </div>
             </Link>
           ))}

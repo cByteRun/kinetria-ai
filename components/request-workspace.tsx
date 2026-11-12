@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { CheckCheck, ClipboardList, Clock3, MessageCircle } from 'lucide-react'
+import { CheckCheck, Circle, ClipboardList, Clock3, MessageCircle } from 'lucide-react'
 import { aiConfig } from '../lib/ai'
 import { getFormatter, getLocale, getTranslations } from 'next-intl/server'
 import {
@@ -38,7 +38,7 @@ import {
   CaseStatus,
 } from './case-labels'
 import { DashboardViews, Heading } from './dashboard-views'
-import { dateLabel, isDone } from '../lib/dashboard'
+import { dateLabel, isDone, isOverdue } from '../lib/dashboard'
 import { CaseReviewFields } from './case-review-fields'
 
 type RequestRow = RegistryRow
@@ -67,7 +67,7 @@ export async function RequestWorkspace({
   if (id && (typeof id !== 'string' || !uuidPattern.test(id))) notFound()
   const supabase = await createClient()
   const [list, categoryList] = await Promise.all([
-    supabase
+    id || view === 'new' || view === 'help' ? {data: [] as RequestRow[], error: null} : supabase
       .from('requests')
       .select(
         'id,number,source_ref,category_id,title,status,assignee_id,kind,sentiment,description,next_step,decision,updated_at,created_at,due_at,department,priority,first_response_at,resolved_at,acknowledged_at,is_demo,version,tags',
@@ -93,9 +93,10 @@ export async function RequestWorkspace({
       days: category.sla_days,
     }))
     .sort((a, b) => a.name.localeCompare(b.name, locale))
-  const { data: routing } = await supabase.rpc('routing_preview')
-  const managers =
-    role === 'admin' ? await supabase.rpc('routing_managers') : null
+  const [{data: routing}, managers] = await Promise.all([
+    view === 'new' || view === 'routing' ? supabase.rpc('routing_preview') : {data: []},
+    role === 'admin' && view === 'routing' ? supabase.rpc('routing_managers') : null,
+  ])
   const routes = Object.fromEntries(
     (Array.isArray(routing) ? routing : []).map(
       (route: { category_id: string; recipient: string }) => [
@@ -443,7 +444,7 @@ async function RequestDetail({
       <article className="workspace-panel request-panel crm-detail ir-detail">
         <header className="case-detail-heading">
           <span className="case-ref">{reference(request)}</span>
-          <h2>{request.title}</h2>
+          <h1>{request.title}</h1>
           <div className="case-labels">
             <StatusBadge row={request} />
             <CaseKind kind={request.kind} />
@@ -455,34 +456,20 @@ async function RequestDetail({
             <span className="tiny-pill">Демо · синтетическое обращение</span>
           )}
         </header>
-        <div className="detail-route">
+        <div className="detail-route" aria-label="Этапы рассмотрения">
           {[
-            'Получено',
-            'Рассмотрение',
-            'Уточнение',
-            'Действия',
-            'Результат',
-          ].map((label, i) => (
-            <div
-              key={label}
-              className={
-                'detail-step ' +
-                (i ===
-                (['new', 'review', 'clarification', 'in_progress'].indexOf(
-                  request.status,
-                ) === -1
-                  ? 4
-                  : ['new', 'review', 'clarification', 'in_progress'].indexOf(
-                      request.status,
-                    ))
-                  ? 'current'
-                  : '')
-              }
-            >
-              <CheckCheck size={14} />
-              {label}
+            ['new', 'Получено'], ['review', 'Рассмотрение'],
+            ['clarification', 'Уточнение'], ['in_progress', 'Действия'],
+            ['result', 'Результат'],
+          ].map(([status, label]) => {
+            const current = status === 'result' ? isDone(request) : request.status === status
+            const completed = !current && (status === 'new' || history.data.some(event => event.status === status))
+            const Icon = completed ? CheckCheck : current ? Clock3 : Circle
+            return <div key={status} className={'detail-step ' + (current ? 'current' : completed ? 'done' : '')}
+              aria-current={current ? 'step' : undefined}>
+              <Icon size={14} aria-hidden="true" />{label}
             </div>
-          ))}
+          })}
         </div>
         <div className="crm-detail-content">
           {!isDone(request) && (
@@ -510,7 +497,7 @@ async function RequestDetail({
             </section>
           )}
           {(request.decision || request.next_step) && (
-            <section className="crm-outcome">
+            <section className={'crm-outcome ' + (isDone(request) ? 'is-result' : 'is-next-step')}>
               {request.decision && (
                 <>
                   <h3>
@@ -536,7 +523,7 @@ async function RequestDetail({
             <p className="request-text">{request.description}</p>
             {request.proposal && (
               <>
-                <h4>{t('proposal')}</h4>
+                <h4>Предложение автора</h4>
                 <p className="request-text">{request.proposal}</p>
               </>
             )}
@@ -588,6 +575,60 @@ async function RequestDetail({
               </section>
             )}
           {role !== 'employee' && aiConfig() && <RequestSummary id={id} />}
+        <section className="crm-detail-history">
+          <h3>
+            <Clock3 size={17} aria-hidden="true" />
+            История обращения
+          </h3>
+          <p className="history-description">Последние изменения сверху: решения, ответы и следующие шаги.</p>
+          <ol className="request-history">
+            {[...history.data].reverse().map((event) => (
+              <li key={event.id}>
+                <strong>
+                  {(
+                    {
+                      commented: 'Комментарий',
+                      metadata: 'Параметры обновлены',
+                      acknowledged: 'Автор ознакомился',
+                    } as Record<string, string>
+                  )[event.event_type] || t(event.event_type)}
+                  <span className="history-status">{t(event.status)}</span>
+                </strong>
+                <small>
+                  {isRole(event.actor_role)
+                    ? roleText(event.actor_role) + ' · '
+                    : ''}
+                  {format.dateTime(new Date(event.created_at), {
+                    dateStyle: 'medium',
+                    timeStyle: 'short',
+                    timeZone: 'Asia/Qyzylorda',
+                  })}
+                </small>
+                {event.message && (
+                  <p className="request-text">{event.event_type === 'metadata' ? event.message.replace(/Приоритет: high/g, 'Приоритет: высокий').replace(/Приоритет: normal/g, 'Приоритет: обычный').replace(/Приоритет: low/g, 'Приоритет: низкий') : event.message}</p>
+                )}
+                {event.next_step && (
+                  <p className="request-text history-next-step"><strong>Следующий шаг</strong>{event.next_step}</p>
+                )}
+              </li>
+            ))}
+          </ol>
+          <form action={dashboardAction} className="request-fields comment-box">
+            {versionFields}
+            <input type="hidden" name="action" value="commented" />
+            <label>
+              Комментарий
+              <textarea
+                name="message"
+                rows={3}
+                maxLength={2000}
+                required
+                placeholder="Дополните обращение или обсудите следующий шаг"
+              />
+            </label>
+            <button className="btn primary">Добавить комментарий</button>
+          </form>
+        </section>
         </div>
         <aside className="crm-detail-actions">
           <h3>Ответственность и срок</h3>
@@ -605,8 +646,9 @@ async function RequestDetail({
               <dd>{request.department}</dd>
             </div>
             <div>
-              <dt>Срок</dt>
-              <dd>{dateLabel(request.due_at)}</dd>
+              <dt>{isDone(request) ? 'Результат опубликован' : 'Срок рассмотрения'}</dt>
+              <dd className={isOverdue(request) ? 'red' : ''}>{dateLabel(isDone(request) ? request.resolved_at : request.due_at)}</dd>
+              {isOverdue(request) && <small className="red">Срок прошёл · ожидается ответ ответственного</small>}
             </div>
             <div>
               <dt>Приоритет</dt>
@@ -747,59 +789,7 @@ async function RequestDetail({
               </section>
             )}
         </aside>
-        <section className="crm-detail-history">
-          <h3>
-            <Clock3 size={17} aria-hidden="true" />
-            {t('history')}
-          </h3>
-          <ol className="request-history">
-            {history.data.map((event) => (
-              <li key={event.id}>
-                <strong>
-                  {(
-                    {
-                      commented: 'Комментарий',
-                      metadata: 'Параметры обновлены',
-                      acknowledged: 'Автор ознакомился',
-                    } as Record<string, string>
-                  )[event.event_type] || t(event.event_type)}{' '}
-                  · {t(event.status)}
-                </strong>
-                <small>
-                  {isRole(event.actor_role)
-                    ? roleText(event.actor_role) + ' · '
-                    : ''}
-                  {format.dateTime(new Date(event.created_at), {
-                    dateStyle: 'medium',
-                    timeStyle: 'short',
-                    timeZone: 'Asia/Qyzylorda',
-                  })}
-                </small>
-                {event.message && (
-                  <p className="request-text">{event.message}</p>
-                )}
-                {event.next_step && (
-                  <p className="request-text">{event.next_step}</p>
-                )}
-              </li>
-            ))}
-          </ol>
-          <form action={dashboardAction} className="request-fields comment-box">
-            {versionFields}
-            <input type="hidden" name="action" value="commented" />
-            <label>
-              Комментарий
-              <textarea
-                name="message"
-                rows={3}
-                maxLength={2000}
-                required
-                placeholder="Дополните обращение или обсудите следующий шаг"
-              />
-            </label>
-            <button className="btn primary">Добавить комментарий</button>
-          </form>
-        </section>
+
       </article>
     </>
   )

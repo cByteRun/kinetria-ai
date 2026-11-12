@@ -1,4 +1,5 @@
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
+import { cache } from 'react'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { isRole, type Role } from './roles'
@@ -32,7 +33,7 @@ export async function startPreview(role: Role) {
   })
 }
 
-export async function getProfile(): Promise<{ role: Role; displayName: string | null } | null> {
+export const getProfile = cache(async (): Promise<{ role: Role; displayName: string | null } | null> => {
   if (hasSupabase) {
     const supabase = await createClient()
     const { data } = await supabase.auth.getClaims()
@@ -64,7 +65,7 @@ export async function getProfile(): Promise<{ role: Role; displayName: string | 
   )
     ? { role, displayName: null }
     : null
-}
+})
 
 export async function getRole(): Promise<Role | null> {
   return (await getProfile())?.role ?? null

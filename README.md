@@ -138,3 +138,16 @@ node --env-file=.env.local scripts/check-insights-access.mjs
 ```
 
 Использует те же `PLAYWRIGHT_MODULE`, `PLAYWRIGHT_EXECUTABLE_PATH` и `P0_BASE_URL`, что и P0. Проверяет существующие тестовые записи без создания новых, сохраняет отчёт и скриншоты в `docs/evidence/mobile-review/`. Синхронизация по коммитам и результаты code review — [docs/CODE-REVIEW.md](docs/CODE-REVIEW.md).
+
+### Вход, выход и проверка обратной связи
+
+Формы входа и выхода используют POST → 303 и работают без JavaScript. Выход очищает cookie текущего проекта даже при недоступном Auth; удалённый отзыв токена в таком случае не гарантируется. `pnpm dev` использует фиксированный порт 3000: если он занят, используйте существующий сервер. Автоматического открытия браузера в проекте нет.
+
+```bash
+node scripts/check-auth-flow.mjs
+# С уже запущенным сервером, Playwright и Chromium:
+node scripts/check-feedback-browser.mjs
+node scripts/check-auth-browser.mjs
+```
+
+Для внешней установки поддерживаются `PLAYWRIGHT_MODULE` и `PLAYWRIGHT_EXECUTABLE_PATH`, для другого адреса — `P0_BASE_URL`. Проверка не запускает сервер, не создаёт обращений и не меняет доменные записи; отчёты и скриншоты сохраняются в `docs/evidence/closed-loop-review/`. [Результаты ревью](docs/CODE-REVIEW.md#повторное-ревью-коммита-8edfbbd).

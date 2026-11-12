@@ -1,0 +1,153 @@
+/* The feedback cycle: current action → accountable owner → readable result/history. */
+.ir-app article.ir-detail.workspace-panel.request-panel {
+  grid-template-columns: minmax(0, 1fr) minmax(270px, 320px);
+  column-gap: 24px;
+  row-gap: 20px;
+}
+.ir-app .ir-detail > .case-detail-heading { margin: 0; }
+.ir-app .case-detail-heading h1 {
+  margin: 10px 0 16px;
+  font-size: clamp(22px, 2vw, 30px);
+  line-height: 1.4;
+  letter-spacing: -.6px;
+  overflow-wrap: anywhere;
+}
+.ir-app .ir-detail .request-text {
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.8;
+}
+.ir-app .ir-detail :is(.case-section h3, .crm-outcome h3, .crm-detail-history h3, .crm-detail-actions > h3) {
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.5;
+}
+.ir-app .ir-detail .crm-detail-content { gap: 18px; }
+.ir-app .ir-detail .crm-detail-content > .crm-outcome.is-next-step {
+  background: var(--brand-soft);
+  border-color: var(--line);
+}
+.ir-app .ir-detail .crm-outcome.is-next-step h3 { color: var(--brand); }
+.ir-app .ir-detail .crm-detail-content > .crm-detail-history {
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.ir-app .history-description { color: var(--muted); font-size: 13px; }
+.ir-app .ir-detail .request-history { margin: 24px 0 0; padding: 0 0 0 5px; }
+.ir-app .ir-detail .request-history li {
+  margin: 0;
+  padding: 0 0 26px 22px;
+  border-left: 2px solid var(--line);
+}
+.ir-app .ir-detail .request-history li:last-child { padding-bottom: 8px; border-color: transparent; }
+.ir-app .ir-detail .request-history li::before {
+  width: 10px;
+  height: 10px;
+  left: -6px;
+  top: 5px;
+  background: var(--surface);
+  border: 2px solid var(--brand);
+}
+.ir-app .request-history li > strong { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 14px; line-height: 1.6; }
+.ir-app .request-history small { margin-top: 6px; font-size: 12px; color: var(--muted); }
+.ir-app .request-history .request-text { margin-top: 10px; font-size: 14px; }
+.ir-app .history-status { padding: 2px 8px; border-radius: 5px; background: var(--panel-soft); color: var(--control-text); font-size: 12px; font-weight: 500; }
+.ir-app .history-next-step { padding: 12px; border-radius: 7px; background: var(--panel-soft); }
+.ir-app .history-next-step strong { display: block; font-size: 12px; color: var(--brand); }
+.ir-app .ir-detail .comment-box { margin-top: 18px; padding-top: 20px; }
+.ir-app .ir-detail .comment-box button { width: auto; justify-self: start; }
+.ir-app .ir-detail .request-fields label { font-size: 14px; }
+.ir-app .ir-detail .request-fields :is(textarea, input, select) { font-size: 15px; }
+.ir-app .ir-detail .ir-properties { gap: 0; margin: 12px 0 0; }
+.ir-app .ir-detail .ir-properties > div { padding: 14px 0; border-bottom: 1px solid var(--line); }
+.ir-app .ir-detail .ir-properties > div:last-child { border: 0; }
+.ir-app .ir-detail .ir-properties dt { font-size: 12px; color: var(--muted); }
+.ir-app .ir-detail .ir-properties dd { margin-top: 5px; font-size: 15px; font-weight: 650; line-height: 1.6; color: var(--ink); overflow-wrap: anywhere; }
+.ir-app .ir-detail .ir-properties dd.red { color: var(--red); }
+.ir-app .ir-detail .ir-properties small { display: block; margin-top: 5px; font-size: 12px; }
+.ir-app .ir-detail .case-section small { font-size: 12px; }
+.ir-app .ir-detail .attachment { font-size: 13px; min-height: 44px; }
+.ir-app .ir-detail .detail-step { min-height: 48px; font-size: 12px; }
+/* Every state uses the same semantic theme tokens, including hover and result text. */
+.ir-app .result-item { display: block; background: var(--surface); color: var(--ink); border-color: var(--line); padding: 22px 24px; }
+.ir-app .result-item:hover { background: var(--panel-soft); }
+.ir-app .result-item h3 { color: var(--ink); font-size: 16px; line-height: 1.6; margin: 12px 0 8px; }
+.ir-app .result-item p { color: var(--control-text); font-size: 14px; line-height: 1.8; white-space: pre-wrap; }
+.ir-app .result-item .case-id { font-size: 12px; }
+.ir-app .ir-result-meta { color: var(--green); font-size: 12px; line-height: 1.6; flex-wrap: wrap; margin-top: 16px; }
+.ir-app .result-open { margin-left: auto; color: var(--brand); display: inline-flex; align-items: center; gap: 6px; font-weight: 650; }
+.ir-app .feedback-filters { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 24px 18px; border-bottom: 1px solid var(--line); }
+.ir-app .feedback-filters .btn { min-height: 40px; }
+.ir-app .feedback-filters .btn span { font-variant-numeric: tabular-nums; }
+.ir-app .feedback-notification { gap: 16px; padding: 24px; background: var(--surface); color: var(--ink); }
+.ir-app .feedback-notification.unread { background: var(--panel-soft); box-shadow: inset 3px 0 var(--brand); }
+.ir-app .feedback-notification:hover { background: var(--panel-soft); }
+.ir-app .feedback-icon { width: 40px; height: 40px; flex-shrink: 0; display: grid; place-items: center; border-radius: 10px; color: var(--brand); background: var(--brand-soft); }
+.ir-app .feedback-icon.result { background: var(--green-bg); color: var(--green); }
+.ir-app .feedback-icon.action { background: var(--amber-bg); color: var(--amber); }
+.ir-app .feedback-body { flex: 1; min-width: 0; }
+.ir-app .feedback-event { display: flex; gap: 12px; justify-content: space-between; align-items: baseline; flex-wrap: wrap; }
+.ir-app .feedback-event h3 { color: var(--ink); font-size: 15px; line-height: 1.6; }
+.ir-app .feedback-event time { font-size: 12px; white-space: nowrap; }
+.ir-app .feedback-title { display: block; color: var(--ink); margin-top: 10px; font-size: 15px; line-height: 1.65; font-weight: 600; overflow-wrap: anywhere; }
+.ir-app .feedback-title:hover { color: var(--brand); text-decoration: underline; }
+.ir-app .feedback-status { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 10px 0; color: var(--muted); font-size: 12px; }
+.ir-app .feedback-notification p { color: var(--control-text); font-size: 14px; line-height: 1.8; }
+.ir-app .feedback-notification .feedback-decision { color: var(--ink); white-space: pre-wrap; padding: 12px 16px; border-left: 2px solid var(--green); background: var(--green-bg); border-radius: 0 6px 6px 0; margin-bottom: 10px; }
+.ir-app .feedback-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.ir-app .feedback-feed .empty { padding: 40px 24px; }
+.ir-app .feedback-feed .empty .btn { margin-top: 16px; }
+@media (max-width: 950px) {
+  .ir-app article.ir-detail.workspace-panel.request-panel { grid-template-columns: minmax(0, 1fr); }
+  .ir-app .ir-detail > .crm-detail-actions { grid-row: 3; grid-column: 1; position: static; }
+  .ir-app .ir-detail > .crm-detail-content { grid-row: 4; grid-column: 1; }
+  .ir-app .ir-detail .ir-properties { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; }
+}
+@media (max-width: 740px) {
+  .ir-app .mobile-tabs {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 25;
+    display: flex;
+    gap: 2px;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--line);
+    border-bottom: 0;
+    box-shadow: 0 -4px 20px #0000000a;
+  }
+  .ir-app .mobile-tabs a { flex: 1; min-width: 0; min-height: 56px; font-size: 10px; gap: 4px; }
+  .ir-app .mobile-tabs a svg { width: 20px; height: 20px; }
+  .ir-app .content { padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)); }
+  .ir-app .footer-note { margin-bottom: 10px; }
+  .ir-app .ir-detail .crm-detail-content > :is(.case-section, .crm-outcome, .crm-detail-history) { padding: 18px; }
+  .ir-app .ir-detail .request-text { font-size: 14px; }
+  .ir-app .ir-detail .request-fields :is(textarea, input, select) { font-size: 16px; }
+  .ir-app .ir-detail .detail-route { display: flex; gap: 0; }
+  .ir-app .ir-detail .detail-step { display: flex; flex-direction: column; gap: 6px; padding: 10px 3px; font-size: 10px; min-height: 64px; }
+  .ir-app .ir-detail .detail-step:last-child { grid-column: auto; }
+  .ir-app .ir-detail .ir-properties dd { font-size: 14px; }
+  .ir-app .feedback-notification { flex-wrap: nowrap; gap: 10px; padding: 18px 14px; }
+  .ir-app .feedback-icon { width: 32px; height: 32px; border-radius: 8px; }
+  .ir-app .feedback-filters { padding: 0 14px 16px; gap: 6px; }
+  .ir-app .feedback-filters .btn { min-height: 44px; }
+  .ir-app .feedback-title { font-size: 14px; }
+  .ir-app .feedback-actions { flex-direction: column; align-items: stretch; }
+  .ir-app .feedback-actions .btn { white-space: normal; }
+  .ir-app .result-item { padding: 20px 16px; }
+  .ir-app .result-item > .ir-flex { flex-wrap: wrap; gap: 8px; }
+  .ir-app .result-open { width: 100%; margin: 8px 0 0; }
+}
+/* Explicit theme scope also wins when Next dev reorders the legacy CSS chunks. */
+[data-theme='dark'] .ir-app :is(.icon-button, .ir-mobile-toggle) {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line);
+}
+[data-theme='dark'] .ir-app :is(.icon-button, .ir-mobile-toggle):hover {
+  background: var(--panel-soft);
+  color: var(--ink);
+}
