@@ -1,5 +1,6 @@
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
+import { TelegramLink } from './telegram-link'
 import { notFound } from 'next/navigation'
 import {
   CheckCheck,
@@ -162,6 +163,8 @@ export async function RequestWorkspace({
     ['results', 'analytics', 'insights', 'notifications', 'help'].includes(view)
   )
     return (
+      <>
+      {view === 'help' && <TelegramLink />}
       <DashboardViews
         rows={list.data}
         categories={categoryNames}
@@ -169,6 +172,7 @@ export async function RequestWorkspace({
         view={view}
         receipts={receipts}
       />
+      </>
     )
   if (view === 'new' && role === 'employee')
     return (

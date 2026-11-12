@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { CommandPalette } from './command-palette'
 import {
   LayoutDashboard,
   Inbox,
@@ -220,6 +221,7 @@ export async function DashboardShell({
               <span>{ui('findARequest')}</span>
               <kbd>/</kbd>
             </Link>
+            <CommandPalette role={role} />
             <Preferences theme={theme} compact />
             <span className="role-select">{t(role)}</span>
             <Link

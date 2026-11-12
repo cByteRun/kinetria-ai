@@ -766,3 +766,24 @@
     font-size: 12px;
   }
 }
+/* Keyboard navigation shares the workspace colour tokens and native focus trap. */
+.command-dialog { width:min(620px,calc(100vw - 32px)); max-height:80dvh; padding:0; border:1px solid var(--line); border-radius:18px; background:var(--surface); color:var(--ink); box-shadow:0 28px 90px #0005; }
+.command-dialog::backdrop { background:#0f102477; backdrop-filter:blur(7px); }
+.command-search { display:flex; align-items:center; gap:12px; padding:16px; border-bottom:1px solid var(--line); }
+.command-search input { flex:1; min-width:0; border:0; background:transparent; color:inherit; outline:none; }
+.command-results { padding:8px; overflow:auto; max-height:55dvh; }
+.command-results button { display:flex; align-items:center; gap:14px; text-align:left; width:100%; padding:13px; background:transparent; color:inherit; border:0; border-radius:10px; cursor:pointer; }
+.command-results button[aria-selected=true] { background:var(--brand-soft); }
+.command-results button span { flex:1; }
+.command-results small { display:block; margin-top:4px; color:var(--muted); }
+.command-hint { padding:0 20px 12px; color:var(--muted); font-size:12px; }
+.command-trigger { gap:8px; }
+.command-trigger kbd { font-size:10px; white-space:nowrap; }
+@media(max-width:740px) { .command-trigger span { display:none; } .command-trigger { padding:8px; } }
+.ir-app .upload-zone input[hidden] { display:none !important; }
+.ir-app .file-upload .upload-zone { display:grid; justify-items:center; gap:10px; padding:24px 16px; border:1px dashed var(--line); border-radius:12px; background:var(--panel-soft); text-align:center; }
+.ir-app .idea-metadata { display:grid; grid-template-columns:minmax(0,1fr) minmax(100px,.4fr); gap:12px; padding:16px; border:1px solid var(--line); border-radius:10px; background:var(--panel-soft); }
+.ir-app .idea-metadata h3 { grid-column:1/-1; }
+.ir-app .idea-metadata label:last-child { grid-column:1; grid-row:2; }
+.ir-app .idea-metadata label:nth-child(2) { grid-column:2; }
+@media(max-width:480px) { .ir-app .idea-metadata { grid-template-columns:1fr; } .ir-app .idea-metadata label:last-child,.ir-app .idea-metadata label:nth-child(2) { grid-column:auto; grid-row:auto; } }

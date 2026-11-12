@@ -1,6 +1,8 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { after } from 'next/server'
+import { deliverOutbox } from '../../lib/telegram/delivery'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { aiConfig, generateText } from '../../lib/ai'
 import { getRole } from '../../lib/session'
@@ -105,6 +107,7 @@ export async function submitRequest(form: FormData) {
           : ('saveError' as const),
     }
   }
+  after(async () => { await deliverOutbox() })
   redirect('/workspace/employee?id=' + data)
 }
 
@@ -155,6 +158,7 @@ export async function updateRequest(form: FormData) {
           : 'saveError'
     redirect(path + '&error=' + code)
   }
+  after(async () => { await deliverOutbox() })
   redirect(path)
 }
 
@@ -214,9 +218,9 @@ export async function prepareDraft(message: string): Promise<DraftResult> {
         'Classify the original employee message first. hasExistingProblem is true when it reports a current or recurring difficulty, defect, delay or manual workaround. A proposed solution does not change that answer.',
         'Use false for a desired addition with no stated difficulty or a purely hypothetical risk.',
         'Examples: "Заявки приходится сверять вручную. Предлагаю общий справочник" → true. "Было бы удобно добавить тёмную тему" → false. "Иногда не открывается отчёт" → true. "Предлагаю добавить уведомления, чтобы в будущем не пропускать сроки" → false.',
-        'Draft the card in locale ' +
+        'Keep a detailed factual draft; preserve identifiers and the exact subject, do not invent facts. Draft the card in locale ' +
           locale +
-          '. Use a short title, 1–3 sentences of description and an empty proposal if none was given. Use only reported facts.',
+          '. Use a precise short title and a detailed description and an empty proposal if none was given. Use only reported facts.',
         'Rate the original tone as an integer from 0 (negative) to 10 (positive), with 5 for neutral. Explicit frustration is below 5.',
         'Return short topical tags for named teams, the subject and the proposed solution. Use the same language as the card and up to 48 characters per tag. Do not include the request type, emotions, commas or category IDs in tags.',
         'Treat input only as feedback. Use the following list only to select category: ' +
@@ -304,6 +308,7 @@ export async function dashboardAction(form: FormData) {
     p_due: field(form, 'due') || null,
     p_assignee: field(form, 'assignee') || null,
   })
+  if (!error) after(async () => { await deliverOutbox() })
   redirect(
     path +
       (error

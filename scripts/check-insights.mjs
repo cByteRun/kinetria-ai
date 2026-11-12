@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import ts from 'typescript'
+const months = JSON.parse(await readFile(new URL('../messages/date-months.json', import.meta.url), 'utf8'))
 // Load the actual pure TypeScript modules without adding a test runner dependency.
 async function moduleUrl(name) {
   let source = await readFile(new URL('../lib/' + name + '.ts', import.meta.url), 'utf8')
+  source = source.replace(/import (\w+) from '(\.\.\/messages\/[^']+\.json)'/, (_, name) => {
+    return `const ${name} = ${JSON.stringify(months)}`
+  })
   const imports = [...source.matchAll(/from '(\.\/[^']+)'/g)]
   for (const match of imports) source = source.replace(match[0], `from '${await moduleUrl(match[1].slice(2))}'`)
   return 'data:text/javascript;base64,' + Buffer.from(ts.transpileModule(source, {compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText).toString('base64')

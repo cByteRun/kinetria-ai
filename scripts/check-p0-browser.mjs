@@ -38,7 +38,7 @@ async function submit(page, index) {
   await page.locator('[name="title"]').fill(`Демо P0 ${tag} · дубли артикулов ${index}`)
   await page.locator('textarea[name="description"]').fill(`Синтетическая проблема ${index}: один артикул записан по-разному в каталоге. Сотрудники повторно сверяют его вручную. Проверка ${tag}.`)
   await page.locator('[name="proposal"]').fill('Проверить дубли и согласовать единый справочник.')
-  await page.locator('summary').filter({hasText:'Дополнительно:'}).click()
+  await page.locator('[name=tags]').waitFor({state:'visible'})
   await page.locator('[name="tags"]').fill(tag + ', справочник')
   if (index === 1) await page.locator('[name="attachments"]').setInputFiles({ name: 'p0.txt', mimeType: 'text/plain', buffer: Buffer.from('Synthetic P0 evidence') })
   await page.getByRole('button', {name:'Зарегистрировать',exact:true}).click()

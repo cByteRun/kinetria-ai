@@ -3,13 +3,13 @@
 import { useActionState, useRef, useState, useTransition } from 'react'
 import { useTranslations } from 'next-intl'
 import { prepareDraft, submitRequest } from '../app/workspace/actions'
+import { FileUpload } from './file-upload'
 import { requestKinds, type Draft } from '../lib/requests'
 import samples from '../lib/demo-requests.json'
 import {
   Sparkles,
   Send,
   RotateCcw,
-  Paperclip,
   ArrowRight,
   MessageSquareWarning,
   Lightbulb,
@@ -48,7 +48,6 @@ export function RequestForm({
   const key = useRef<string | null>(null)
   const [files, setFiles] = useState<File[]>([])
   const [fileError, setFileError] = useState('')
-  const fileInput = useRef<HTMLInputElement>(null)
   const [mode, setMode] = useState('manual')
   const [message, setMessage] = useState('')
   const [chat, setChat] = useState<
@@ -116,6 +115,7 @@ export function RequestForm({
         if ('draft' in response) {
           setDraft((previous) => ({
             ...response.draft,
+            title: previous.title || response.draft.title,
             description: previous.description,
             category: previous.category || response.draft.category,
             proposal: previous.proposal || response.draft.proposal,
@@ -323,6 +323,7 @@ export function RequestForm({
                         if ('draft' in response)
                           setDraft((previous) => ({
                             ...response.draft,
+                            title: previous.title || response.draft.title,
                             description: previous.description,
                             category:
                               previous.category || response.draft.category,
@@ -359,67 +360,9 @@ export function RequestForm({
                 placeholder={ui('suggestANextStepOrImprovement')}
               />
             </label>
-            <div className="upload-zone">
-              <button
-                type="button"
-                className="btn"
-                onClick={() => fileInput.current?.click()}
-              >
-                <Paperclip size={16} /> {ui('chooseFiles')}
-              </button>
-              <p>{ui('addMaterialsIfTheyHelpExplainTheSituation')}</p>
-              <input
-                ref={fileInput}
-                name="attachments"
-                hidden
-                type="file"
-                multiple
-                aria-label={ui('requestMaterials')}
-                onChange={(e) => {
-                  const selected = Array.from(e.target.files || [])
-                  if (
-                    selected.length > 3 ||
-                    selected.some((f) => f.size > 1048576 || f.size === 0)
-                  ) {
-                    setFileError('chooseUpTo3NonemptyFilesNoLarger')
-                    setFiles([])
-                    e.target.value = ''
-                  } else {
-                    setFileError('')
-                    setFiles(selected)
-                  }
-                }}
-              />
-              <p className="form-hint">{ui('upTo3Files1MbEachAccessible')}</p>
-            </div>
-            {fileError && (
-              <p className="form-error" role="alert">
-                {ui(fileError)}
-              </p>
-            )}
-            {files.length > 0 && (
-              <div className="attachments">
-                {files.map((f, i) => (
-                  <span className="attachment" key={i}>
-                    <Paperclip />
-                    {f.name}
-                    <button
-                      type="button"
-                      aria-label={ui('remove') + f.name}
-                      onClick={() =>
-                        setFiles((previous) =>
-                          previous.filter((_, index) => index !== i),
-                        )
-                      }
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-            <details className="idea-metadata">
-              <summary>{ui('moreTagsAndSentiment')}</summary>
+            <FileUpload files={files} onChange={setFiles} error={fileError} onError={setFileError} />
+            <section className="idea-metadata">
+              <h3 className="form-label">{ui('moreTagsAndSentiment')}</h3>
               <label>
                 {ui('sentiment')}
                 <select
@@ -450,7 +393,7 @@ export function RequestForm({
                   onChange={(e) => update('tags', e.target.value.split(','))}
                 />
               </label>
-            </details>
+            </section>
             {result?.error && (
               <p className="form-error" role="alert">
                 {t(result.error)}
@@ -483,7 +426,6 @@ export function RequestForm({
                 setAiError(undefined)
                 setFiles([])
                 setFileError('')
-                if (fileInput.current) fileInput.current.value = ''
               }}
             >
               <RotateCcw size={14} />

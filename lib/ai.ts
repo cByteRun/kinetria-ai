@@ -1,6 +1,9 @@
 export function aiConfig() {
-  if (process.env.VERCEL === '1' || process.env.VERCEL_ENV) return null
   const provider = process.env.AI_PROVIDER?.trim().toLowerCase()
+  if (provider === 'groq' && process.env.GROQ_API_KEY) {
+    return { provider, key: process.env.GROQ_API_KEY, model: process.env.GROQ_TEXT_MODEL || 'openai/gpt-oss-20b' } as const
+  }
+  if (process.env.VERCEL === '1' || process.env.VERCEL_ENV) return null
   if (provider === 'ollama' && process.env.OLLAMA_MODEL) {
     return { provider, model: process.env.OLLAMA_MODEL } as const
   }
@@ -40,6 +43,20 @@ export async function generateText(instructions: string, input: string, maxToken
       throw new Error('Ollama returned no complete text')
     }
     return text
+  }
+  if (config.provider === 'groq') {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + config.key },
+      signal: AbortSignal.timeout(12000),
+      body: JSON.stringify({ model: config.model, temperature: 0, max_completion_tokens: maxTokens,
+        messages: [{ role: 'system', content: instructions + (schema ? '\nReturn JSON matching this schema: ' + JSON.stringify(schema) : '') }, { role: 'user', content: input }],
+        ...(schema && { response_format: { type: 'json_object' } }),
+      }),
+    })
+    if (!response.ok) throw new Error('Groq unavailable')
+    const result = await response.json(), choice = result.choices?.[0]
+    if (choice?.finish_reason !== 'stop' || typeof choice.message?.content !== 'string' || !choice.message.content.trim()) throw new Error('Groq incomplete response')
+    return choice.message.content as string
   }
   const gemini = config.provider === 'gemini'
   const response = await fetch(gemini

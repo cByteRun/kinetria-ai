@@ -745,5 +745,32 @@
     "workplace": "Workplace environment",
     "filing": "Document storage",
     "results": "Outcome transparency"
+  },
+  "telegram": {
+    "description": "Connect Telegram to your account. The single-use link expires in 10 minutes. The bot respects your request permissions.",
+    "connect": "Create connection link",
+    "pending": "Preparing…",
+    "open": "Open Telegram and confirm connection",
+    "error": "Telegram is not configured or your session is unavailable.",
+    "sessionError": "Your session expired. Sign in again.",
+    "configurationError": "Set a valid Telegram bot username on the server, with or without @.",
+    "databaseError": "Could not create the link. Check the Telegram migration and database connection."
+  },
+  "command": {
+    "title": "Navigation",
+    "search": "Find a screen or action…",
+    "close": "Close",
+    "empty": "No results",
+    "hint": "↑ ↓ select · Enter open · Esc close",
+    "overview": "Metrics, request journey and attention queue",
+    "registry": "Search, filters, request cards and history",
+    "new": "Create a problem or suggestion with attachments",
+    "results": "Decisions and author acknowledgement",
+    "analytics": "Categories, deadlines and outcomes",
+    "insights": "Recurring problems and request groups",
+    "notifications": "Updates and requests requiring action",
+    "categories": "Configure categories and review deadlines",
+    "routing": "Assignments, rules and fallback queue",
+    "help": "Workflow, access and Telegram connection"
   }
 }
