@@ -15,8 +15,8 @@ try {
   const errors=[]
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message))
   await page.goto(base+'/login')
-  await page.locator('button[name=account][value="'+account+'"]').click()
-  await page.waitForURL('**/workspace/'+role)
+  await page.locator('button[data-account="'+account+'"]').click()
+  await page.waitForURL('**/workspace/'+role+'?view=*')
   await page.goto(base+'/workspace/'+role+'?view=registry')
   await page.getByRole('button',{name:'Список',exact:true}).waitFor()
   assert.equal(await page.getByRole('button',{name:'Список',exact:true}).getAttribute('aria-pressed'),'true')

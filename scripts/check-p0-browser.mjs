@@ -15,8 +15,8 @@ async function login(account, role) {
   const page = await context.newPage()
   page.on('pageerror', e => errors.push(e.message))
   await page.goto(base + '/login')
-  await page.locator(`button[name="account"][value="${account}"]`).click()
-  await page.waitForURL('**/workspace/' + role)
+  await page.locator(`button[data-account="${account}"]`).click()
+  await page.waitForURL('**/workspace/' + role + '?view=*')
   return page
 }
 async function save(page, name) {

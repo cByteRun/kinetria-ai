@@ -313,3 +313,6 @@ python3 scripts/check-repository-security.py
 
 
 Production Telegram восстановлен 13.11.2026: миграция async inbox применена, deployment READY, webhook/команды обновлены; 7 обновлений завершены, pending=0, deliver HTTP 200. [Проверка и ограничения](docs/VALIDATION.md#восстановление-production-telegram-13112026).
+
+
+Экран `/login`: слева короткий lifecycle «Идея → Ответственный → Решение», справа открытый список демоаккаунтов. Email/пароль заблокированы с явной подписью деморежима; отдельно доступна инструкция подключения Telegram. Смена роли работает без выхода. [Дизайн и проверка](docs/09-dashboard-spec.md#вход-жизненный-цикл-и-демоаккаунты-13112026).

@@ -110,8 +110,8 @@ try {
     )
 
     for (const role of ['employee', 'manager', 'handler', 'admin']) {
-      await page.locator(`button[name="account"][value="${role}"]`).click()
-      await page.waitForURL(`**/workspace/${role}`)
+      await page.locator(`button[data-account="${role}"]`).click()
+      await page.waitForURL(`**/workspace/${role}?view=*`)
       await page.locator('.preferences select').waitFor()
       assert.equal(await page.locator('html').getAttribute('lang'), locale)
       const views = [

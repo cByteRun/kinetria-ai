@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers'
-import { isRole, roles } from './roles'
+import { isRole, roles, type Role } from './roles'
 import accounts from './demo-accounts.json'
 import {
   demoCookie,
@@ -8,6 +8,20 @@ import {
 } from './session'
 import { hasSupabase } from './supabase/config'
 import { createClient } from './supabase/server'
+
+// Intent is a section name, never a redirect URL. The authenticated role is authoritative.
+export function roleDestination(role: Role, intent?: FormDataEntryValue | null) {
+  const allowed: Record<Role, readonly string[]> = {
+    employee: ['new', 'registry', 'results'],
+    manager: ['registry', 'analytics', 'results'],
+    handler: ['registry', 'results', 'analytics'],
+    admin: ['routing', 'analytics', 'registry'],
+    client: ['overview'],
+  }
+  const view = typeof intent === 'string' && allowed[role].includes(intent)
+    ? intent : allowed[role][0]
+  return `/workspace/${role}?view=${view}`
+}
 
 export async function authenticate(form: FormData) {
   const selection = form.get('role')
@@ -19,7 +33,7 @@ export async function authenticate(form: FormData) {
     return '/login?error=credentials'
   if (localPreview && isRole(selection)) {
     await startPreview(selection)
-    return '/workspace/' + selection
+    return roleDestination(selection, form.get('intent'))
   }
 
   if (!hasSupabase) return '/login?error=config'
@@ -45,7 +59,7 @@ export async function authenticate(form: FormData) {
     await supabase.auth.signOut({ scope: 'local' })
     return '/login?error=profile'
   }
-  return '/workspace/' + profile.role
+  return roleDestination(profile.role, form.get('intent'))
 }
 
 export async function endSession() {

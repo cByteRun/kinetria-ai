@@ -23,6 +23,7 @@ import { getTranslations } from 'next-intl/server'
 import { WorkspaceLive } from './workspace-live'
 import { createClient } from '../lib/supabase/server'
 import { hasSupabase } from '../lib/supabase/config'
+import { localPreview } from '../lib/session'
 import { terminalStatuses } from '../lib/requests'
 import { Preferences } from './preferences'
 import { MobileNavigation } from './mobile-navigation'
@@ -43,6 +44,8 @@ export async function DashboardShell({
   const ui = await getTranslations('ui')
 
   const t = await getTranslations('roles')
+  const entry = await getTranslations('entryFlow')
+  const canSwitchRole = localPreview || (hasSupabase && Boolean(process.env.KINETRIA_DEMO_PASSWORD))
   const initials =
     name
       ?.trim()
@@ -223,7 +226,9 @@ export async function DashboardShell({
             </Link>
             <CommandPalette role={role} />
             <Preferences theme={theme} compact />
-            <span className="role-select">{t(role)}</span>
+            {canSwitchRole ? <Link className="role-select" href="/login" aria-label={entry('switchRole')}>
+              {entry('switchRole')} <ChevronsUpDown size={13} />
+            </Link> : <span className="role-select">{t(role)}</span>}
             <Link
               className="icon-button"
               href={base + '?view=notifications'}

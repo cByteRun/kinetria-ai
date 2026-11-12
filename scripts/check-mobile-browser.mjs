@@ -51,9 +51,9 @@ async function login(account, role) {
       .click()
   } else
     await page
-      .locator(`button[name="account"][value="${account}"]`)
+      .locator(`button[data-account="${account}"]`)
       .click()
-  await page.waitForURL('**/workspace/' + role, { timeout: 60000 })
+  await page.waitForURL('**/workspace/' + role + '?view=*', { timeout: 60000 })
   return page
 }
 try {

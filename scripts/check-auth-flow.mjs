@@ -30,4 +30,18 @@ try {
   globalThis.authTest={client:{auth:{signInWithPassword:async()=>{called=true;throw Error('must not authenticate')}}}}
   const invalid=new FormData();invalid.set('role','superadmin');assert.equal(await authenticate(invalid),'/login?error=credentials');assert.equal(called,false)
   console.log('PASS invalid role rejected before authentication')
+  for (const [role, view] of [['employee','new'],['manager','registry'],['handler','registry'],['admin','routing'],['client','overview']]) {
+    globalThis.authTest={client:{auth:{signInWithPassword:async()=>({data:{user:{id:'synthetic-user'}},error:null})},from:()=>({select:()=>({eq:()=>({eq:()=>({maybeSingle:async()=>({data:{role},error:null})})})})})}}
+    const form=new FormData();form.set('email','synthetic@example.test');form.set('password','synthetic')
+    assert.equal(await authenticate(form),`/workspace/${role}?view=${view}`)
+    console.log('PASS authenticated profile opens relevant section:',role,view)
+    for (const intent of ['https://untrusted.example/', 'new', 'registry', 'results', 'analytics', 'routing']) {
+      form.set('intent', intent)
+      const available={employee:['new','registry','results'],manager:['registry','analytics','results'],handler:['registry','results','analytics'],admin:['routing','analytics','registry'],client:['overview']}[role]
+      const expected=available.includes(intent)?intent:view
+      assert.equal(await authenticate(form),`/workspace/${role}?view=${expected}`)
+    }
+    console.log('PASS allowed intents and forbidden sections:',role)
+  }
+
 }finally{delete globalThis.authTest;if(originalUrl===undefined)delete process.env.NEXT_PUBLIC_SUPABASE_URL;else process.env.NEXT_PUBLIC_SUPABASE_URL=originalUrl}

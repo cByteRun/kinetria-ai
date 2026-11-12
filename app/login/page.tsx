@@ -1,226 +1,104 @@
-import { demoCategoryIds } from '../../i18n/demo-categories'
 import { getTheme } from '../../i18n/theme'
 import { Preferences } from '../../components/preferences'
 import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import {
-  ArrowLeft,
-  ArrowRight,
-  ArrowUpRight,
-  Route,
-  Inbox,
-  CircleCheck,
-  LockKeyhole,
-  Sparkles,
-  Check,
-} from 'lucide-react'
+import { ArrowLeft, ArrowRight, Route, LockKeyhole, Send, Lightbulb, UsersRound, CircleCheck, Wrench, ShieldCheck } from 'lucide-react'
 import accounts from '../../lib/demo-accounts.json'
-import { getRole, localPreview } from '../../lib/session'
+import { getProfile, localPreview } from '../../lib/session'
 import { hasSupabase } from '../../lib/supabase/config'
-import { roles, type Role } from '../../lib/roles'
 import { AuthForm } from '../../components/auth-form'
-import '../workspace/prototype.css'
 import './login.css'
+
 const errors = ['credentials', 'config', 'profile'] as const
-export default async function Login({
-  searchParams,
-}: {
+const groups = [
+  { role: 'employee', icon: Lightbulb },
+  { role: 'manager', icon: UsersRound },
+  { role: 'handler', icon: Wrench },
+  { role: 'admin', icon: ShieldCheck },
+  { role: 'client', icon: UsersRound },
+] as const
+
+export default async function Login({ searchParams }: {
   searchParams: Promise<{ error?: string }>
 }) {
-  const theme = await getTheme()
-  const categoryText = await getTranslations('categories')
-  const ui = await getTranslations('ui')
-
-  if (await getRole()) redirect('/workspace')
-  const { error } = await searchParams
-  const t = await getTranslations('login'),
-    roleText = await getTranslations('roles')
-  const showRoles =
-    localPreview || (hasSupabase && Boolean(process.env.KINETRIA_DEMO_PASSWORD))
+  const showRoles = localPreview || (hasSupabase && Boolean(process.env.KINETRIA_DEMO_PASSWORD))
+  const profile = await getProfile()
+  if (profile && !showRoles) redirect('/workspace')
+  const [theme, ui, t, text, roleText, { error }] = await Promise.all([
+    getTheme(), getTranslations('ui'), getTranslations('login'),
+    getTranslations('simpleLogin'), getTranslations('roles'), searchParams,
+  ])
   return (
-    <main className="ir-app ir-login">
-      <header className="ir-login-header">
-        <Link className="brand-lockup" href="/">
-          <span className="brand-mark">
-            <Route />
-          </span>
-          <span>
-            Idea<span style={{ fontWeight: 500 }}>Route</span>
-          </span>
+    <main className="entry-page">
+      <header className="entry-header">
+        <Link className="entry-brand" href="/" aria-label="IdeaRoute">
+          <span className="entry-brand-mark"><Route size={22} /></span>
+          <span>Idea<span>Route</span></span>
         </Link>
-        <div className="ir-login-header-actions">
-          <Link className="ir-home-link" href="/">
-            <ArrowLeft size={15} />
-            {ui('backToHome')}
-          </Link>
+        <span className="entry-company">{ui('modusTrade')}</span>
+        <div className="entry-preferences">
+          <Link className="entry-home" href="/"><ArrowLeft size={14} />{ui('backToHome')}</Link>
           <Preferences theme={theme} compact />
         </div>
       </header>
-      <div className="ir-login-grid">
-        <section className="ir-login-story">
-          <div className="eyebrow">{ui('employeeFeedback')}</div>
-          <h1>
-            {ui('everyRequest')}
-            <br />
-            {ui('toAnOutcome')}
-          </h1>
-          <p className="ir-login-lead">
-            {ui('ideasBecomeImprovements')}
-            <br />
-            {ui('andProblemsFindSolutions')}
-          </p>
-          <div className="ir-login-route card">
-            <div className="card-head">
-              <div>
-                <h2>{ui('aClearRouteAVisibleResult')}</h2>
-                <p>{ui('fromTheFirstMessageToAResponseFor')}</p>
-              </div>
-              <Route />
-            </div>
-            <div className="ir-login-stages">
+      <div className="login-split">
+        <div className="login-story-column">
+          <section className="login-story" aria-labelledby="lifecycle-title">
+            <p className="login-eyebrow">{text('eyebrow')}</p>
+            <h1 id="lifecycle-title">{ui('fromIdeaToOutcome')}</h1>
+            <p className="login-story-lead">{text('lead')}</p>
+            <ol className="login-lifecycle">
               {[
-                [Inbox, '01', ui('request')],
-                [Sparkles, '02', ui('review')],
-                [CircleCheck, '03', ui('result')],
-              ].map(([Icon, n, label]) => {
-                const I = Icon as typeof Inbox
-                return (
-                  <div key={String(n)}>
-                    <span className="ir-login-stage-icon">
-                      <I />
-                    </span>
-                    <small>{String(n)}</small>
-                    <strong>{String(label)}</strong>
-                  </div>
-                )
-              })}
-            </div>
-            <div className="route-foot">
-              <Check size={15} />
-              {ui('everyRequestHasAnOwnerAndANext')}
-            </div>
-          </div>
-          <div className="ir-login-promises">
-            <span>
-              <LockKeyhole size={15} />
-              {ui('accessBasedOnYourRole')}
-            </span>
-            <span>
-              <CircleCheck size={15} />
-              {ui('decisionHistory')}
-            </span>
-          </div>
-        </section>
-        <section className="ir-login-panel">
-          <div className="ir-login-panel-head">
-            <span className="workspace-avatar">{ui('mt')}</span>
-            <div>
-              <strong>{ui('modusTrade')}</strong>
-              <small>{ui('workspace')}</small>
-            </div>
-          </div>
-          <h2>{ui('welcome')}</h2>
-          <p className="ir-login-description">
-            {ui('signInToSuggestAnImprovement')}
-            <br />
-            {ui('reviewRequestsAndSeeTheOutcome')}
-          </p>
-          {error && (
-            <p className="form-error" role="alert">
-              {error === 'connection'
-                ? ui('unableToReachTheServerTrySigningIn')
-                : t(errors.find((k) => k === error) || 'fallback')}
-            </p>
-          )}
-          {hasSupabase && (
-            <AuthForm
-              action="/auth/login"
-              className="ir-login-form"
-              pendingLabel={ui('signingIntoTheWorkspace')}
-            >
-              <label>
-                {ui('workEmail')}
-                <input
-                  className="form-field"
-                  name="email"
-                  type="email"
-                  placeholder="name@company.kz"
-                  autoComplete="username"
-                  required
-                />
-              </label>
-              <label>
-                {ui('password')}
-                <input
-                  className="form-field"
-                  name="password"
-                  type="password"
-                  placeholder={ui('enterYourPassword')}
-                  autoComplete="current-password"
-                  required
-                />
-              </label>
-              <button className="btn primary">
-                {ui('signInToWorkspace')}
-                <ArrowRight size={16} />
-              </button>
-            </AuthForm>
-          )}
-          {showRoles && (
-            <details className="ir-demo-login" open>
-              <summary>
-                <span className="tiny-pill">{ui('demo2')}</span>{' '}
-                {ui('tryARole')}
-              </summary>
-              <p>{ui('testAccountsAndSyntheticRequests')}</p>
-              <AuthForm
-                action="/auth/login"
-                className="ir-demo-accounts"
-                pendingLabel={ui('openingTheSelectedWorkspace')}
-              >
-                {hasSupabase
-                  ? accounts
-                      .filter((a) => a.role !== 'client')
-                      .map((a) => (
-                        <button key={a.id} name="account" value={a.id}>
-                          <span>
-                            <strong>{a.name}</strong>
-                            <small>
-                              {roleText(a.role as Role)}
-                              {a.category
-                                ? ' · ' +
-                                  (demoCategoryIds[a.category]
-                                    ? categoryText(demoCategoryIds[a.category])
-                                    : a.category)
-                                : ''}
-                            </small>
-                          </span>
-                          <ArrowUpRight size={15} />
-                        </button>
-                      ))
-                  : (Object.keys(roles) as Role[])
-                      .filter((r) => r !== 'client')
-                      .map((r) => (
-                        <button key={r} name="role" value={r}>
-                          <strong>{roleText(r)}</strong>
-                          <ArrowUpRight size={15} />
-                        </button>
-                      ))}
-              </AuthForm>
-            </details>
-          )}
-          {!hasSupabase && !localPreview && <p>{t('disabled')}</p>}
-          <p className="ir-login-security">
-            <LockKeyhole size={13} />
-            {ui('requestsAreAccessibleWithinYourRole')}
-          </p>
+                { key: 'idea', icon: Lightbulb },
+                { key: 'owner', icon: UsersRound },
+                { key: 'decision', icon: CircleCheck },
+              ].map(({ key, icon: Icon }, index) => <li key={key}>
+                <span className="login-stage-icon"><Icon size={21} /></span>
+                <div><span className="login-stage-number">0{index + 1}</span><h2>{text(`${key}.title`)}</h2><p>{text(`${key}.description`)}</p></div>
+              </li>)}
+            </ol>
+            <p className="login-story-note"><CircleCheck size={15} />{text('closedLoop')}</p>
+          </section>
+          <section className="login-telegram" aria-labelledby="telegram-title">
+            <div className="login-telegram-heading"><Send size={19} /><h2 id="telegram-title">{text('telegramTitle')}</h2></div>
+            <p>{text('telegramLead')}</p>
+            <ol>{['signIn', 'link', 'start'].map((step, index) => <li key={step}><span>{index + 1}</span>{text(`telegramSteps.${step}`)}</li>)}</ol>
+            {profile && profile.role !== 'client' && <Link className="login-telegram-link" href={`/workspace/${profile.role}?view=help`}>{text('telegramAction')}<ArrowRight size={14} /></Link>}
+            <p className="login-telegram-note">{text('telegramNote')}</p>
+          </section>
+        </div>
+        <section className="login-access" aria-labelledby="login-title">
+          {profile && <div className="entry-session"><span>{text('current', { name: profile.displayName || roleText(profile.role) })}</span><Link href="/workspace">{text('continue')}<ArrowRight size={14} /></Link></div>}
+          <div className="login-access-head"><h2 id="login-title">{text('title')}</h2><span className="login-demo-badge">{text('demo')}</span></div>
+          <p className="login-access-description">{text('description')}</p>
+          {error && <p className="entry-error" role="alert">{error === 'connection' ? ui('unableToReachTheServerTrySigningIn') : t(errors.find(k => k === error) || 'fallback')}</p>}
+          {showRoles && <AuthForm action="/auth/login" className="login-account-list" pendingLabel={ui('openingTheSelectedWorkspace')}>
+            {groups.map(({ role, icon: Icon }) => <section className={`login-account-group login-group-${role}`} key={role} aria-labelledby={`role-${role}`}>
+              <h3 id={`role-${role}`}>{roleText(role)}{role === 'client' && <span>{text('future')}</span>}</h3>
+              {accounts.filter(a => a.role === role && (hasSupabase || a.id === role)).map(account => <button
+                key={account.id} name={hasSupabase ? 'account' : 'role'} value={hasSupabase ? account.id : role}
+                className="login-account-row" data-account={account.id}>
+                <span className="login-account-icon"><Icon size={18} /></span>
+                <span className="login-account-copy"><strong>{account.name}</strong><span>{text(`accounts.${account.id}`)}</span></span>
+                <ArrowRight className="login-account-arrow" size={16} />
+              </button>)}
+            </section>)}
+          </AuthForm>}
+          {!showRoles && <p className="login-unavailable" role="status">{t('disabled')}</p>}
+          <p className="login-synthetic">{text(localPreview ? 'preview' : 'synthetic')}</p>
+          <section className="login-email" aria-labelledby="email-title" aria-describedby="email-note">
+            <div className="login-email-heading"><LockKeyhole size={14} /><h3 id="email-title">{text('emailTitle')}</h3><span>{text('locked')}</span></div>
+            <p id="email-note">{text('emailNote')}</p>
+            <fieldset disabled className="login-email-fields">
+              <legend className="login-sr-only">{text('emailTitle')}</legend>
+              <label>{ui('workEmail')}<input type="email" placeholder="name@company.kz" autoComplete="off" /></label>
+              <label>{ui('password')}<input type="password" placeholder="••••••••" autoComplete="off" /></label>
+            </fieldset>
+          </section>
         </section>
       </div>
-      <footer className="ir-login-footer">
-        <span>IdeaRoute / {ui('feedbackOperations')}</span>
-        <span>{ui('fromIdeaToOutcome')}</span>
-      </footer>
+      <footer className="entry-footer"><span>IdeaRoute · {ui('modusTrade')}</span><span>{text('footer')}</span></footer>
     </main>
   )
 }

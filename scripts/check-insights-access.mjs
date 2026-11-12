@@ -79,9 +79,9 @@ try {
     const page = await context.newPage()
     await page.goto(base + '/login')
     await page
-      .locator(`button[name="account"][value="${account}"]`)
+      .locator(`button[data-account="${account}"]`)
       .click()
-    await page.waitForURL('**/workspace/' + role)
+    await page.waitForURL('**/workspace/' + role + '?view=*')
     await page.goto(base + '/workspace/' + role + '?view=insights')
     const summary = recurrenceSummary(rows)
     const expected = [

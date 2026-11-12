@@ -12,7 +12,7 @@ try {
  for (const role of ['employee','handler','manager','admin']) {
   const context=await browser.newContext({viewport:{width:1440,height:1000}})
   const page=await context.newPage(); page.on('pageerror',e=>report.errors.push(e.message))
-  await page.goto(base+'/login');await page.locator(`button[name="account"][value="${role}"]`).click();await page.waitForURL('**/workspace/'+role)
+  await page.goto(base+'/login');await page.locator(`button[data-account="${role}"]`).click();await page.waitForURL('**/workspace/'+role+'?view=*')
   await page.locator('.command-trigger').click();await page.locator('.command-dialog[open]').waitFor()
   await page.keyboard.press('Escape');await page.keyboard.press('Control+k');await page.locator('.command-dialog[open]').waitFor()
   const options=await page.locator('.command-results [role=option]').allTextContents()

@@ -773,5 +773,57 @@
     "categories": "Configure categories and review deadlines",
     "routing": "Assignments, rules and fallback queue",
     "help": "Workflow, access and Telegram connection"
+  },
+  "entryFlow": {
+    "switchRole": "Switch role"
+  },
+  "simpleLogin": {
+    "eyebrow": "Employee feedback",
+    "lead": "Problems and suggestions become clear tasks with an owner and an outcome.",
+    "idea": {
+      "title": "Idea",
+      "description": "An employee reports a problem or suggests an improvement."
+    },
+    "owner": {
+      "title": "Owner",
+      "description": "The request gets a manager, an assignee and a deadline."
+    },
+    "decision": {
+      "title": "Decision",
+      "description": "The team records the outcome. The author sees what was decided and done."
+    },
+    "closedLoop": "The history and outcome stay in one request.",
+    "title": "Sign in to IdeaRoute",
+    "demo": "Demo",
+    "description": "Choose an account to open its workspace in one click.",
+    "synthetic": "All accounts and requests are synthetic. No registration needed.",
+    "preview": "Local preview: changes are not shared between windows.",
+    "future": "Next stage",
+    "current": "Signed in as {name}",
+    "continue": "Workspace",
+    "emailTitle": "Corporate sign-in",
+    "locked": "Unavailable in demo",
+    "emailNote": "Use the demo accounts above in this build.",
+    "telegramTitle": "Connect Telegram",
+    "telegramLead": "Submit ideas by voice or text and receive outcomes in the bot.",
+    "telegramSteps": {
+      "signIn": "Sign in with the demo account you need.",
+      "link": "In the workspace, open Help → Telegram and create a connection link.",
+      "start": "Follow the link to the bot and press Start."
+    },
+    "telegramAction": "Go to connection settings",
+    "telegramNote": "The bot and web share one history. Telegram is linked to the selected profile.",
+    "footer": "Feedback with a visible outcome",
+    "accounts": {
+      "employee": "Request author",
+      "manager": "Business processes and collaboration",
+      "manager-it": "Catalog, IT and data",
+      "manager-people": "Training and workplace",
+      "handler": "Cross-team collaboration",
+      "handler-catalog": "Catalog and data",
+      "handler-training": "Training",
+      "admin": "Categories, routing and unassigned requests",
+      "client": "Description of the future customer channel"
+    }
   }
 }
