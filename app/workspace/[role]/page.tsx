@@ -8,6 +8,8 @@ import { DashboardShell } from '../../../components/dashboard-shell'
 import { RequestWorkspace } from '../../../components/request-workspace'
 import { PreviewWorkspace } from '../../../components/preview-workspace'
 import '../dashboard.css'
+import '../prototype.css'
+import '../live-dashboard.css'
 
 export default async function RoleWorkspace({ params, searchParams }: {
   params: Promise<{ role: string }>

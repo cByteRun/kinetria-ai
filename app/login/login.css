@@ -1,0 +1,330 @@
+.ir-login {
+  --brand: #6951d5;
+  --brand-soft: #f0ecfc;
+  --ink: #282633;
+  --muted: #777580;
+  --line: #e9e8ef;
+  --surface: #fff;
+  --bg: #f7f8fa;
+  min-height: 100vh;
+  background: #f7f8fa;
+  color: #282633;
+  font:
+    13px/1.55 Manrope,
+    "Segoe UI",
+    sans-serif;
+  color-scheme: light;
+}
+.ir-login h1,
+.ir-login h2,
+.ir-login h3 {
+  font-family: Manrope, sans-serif;
+}
+.ir-login-header {
+  height: 90px;
+  max-width: 1320px;
+  margin: auto;
+  padding: 0 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.ir-login .brand-lockup {
+  padding: 0;
+  font-size: 24px;
+  color: #282633;
+}
+.ir-home-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #81758d;
+  font-size: 11px;
+}
+.ir-login-grid {
+  max-width: 1140px;
+  margin: 50px auto 70px;
+  display: grid;
+  grid-template-columns: 1.12fr 1fr;
+  gap: 100px;
+  align-items: start;
+  padding: 0 30px;
+}
+.ir-login-story {
+  padding-top: 75px;
+}
+.ir-login-story h1 {
+  font-size: 42px;
+  font-weight: 750;
+  line-height: 1.25;
+  letter-spacing: -1.8px;
+  margin: 13px 0 20px;
+}
+.ir-login-lead {
+  font-size: 15px;
+  color: #81758d;
+  line-height: 1.9;
+}
+.ir-login-route {
+  margin-top: 40px;
+  overflow: hidden;
+}
+.ir-login-route .card-head h2 {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.ir-login-route .card-head p {
+  font-size: 10px;
+}
+.ir-login-route .card-head > svg {
+  color: #9c83b5;
+}
+.ir-login-stages {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 9px;
+  padding: 12px 20px 22px;
+}
+.ir-login-stages > div {
+  border: 1px solid #eeebf4;
+  background: #faf9fc;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  padding: 17px 12px;
+  position: relative;
+  min-width: 0;
+}
+.ir-login-stages > div:last-child {
+  background: #eff8f3;
+  border-color: #d6ebe0;
+  color: #39836b;
+}
+.ir-login-stages small {
+  position: absolute;
+  right: 12px;
+  top: 14px;
+  font-size: 9px;
+  color: #a399b6;
+}
+.ir-login-stages strong {
+  font-size: 11px;
+  margin-top: 15px;
+}
+.ir-login-stage-icon {
+  color: #957acb;
+}
+.ir-login-stages > div:last-child .ir-login-stage-icon {
+  color: #39836b;
+}
+.ir-login .route-foot {
+  font-size: 10px;
+  line-height: 1.7;
+}
+.ir-login-promises {
+  display: flex;
+  gap: 22px;
+  margin-top: 22px;
+  color: #81758d;
+  font-size: 10px;
+}
+.ir-login-promises span {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.ir-login-panel {
+  padding: 32px;
+  background: white;
+  border: 1px solid #e9e8ef;
+  border-radius: 13px;
+  box-shadow: 0 5px 20px #2f263104;
+}
+.ir-login-panel-head {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 28px;
+}
+.ir-login-panel-head strong {
+  font-size: 11px;
+}
+.ir-login-panel-head small {
+  display: block;
+  color: #81758d;
+  font-size: 9px;
+}
+.ir-login-panel h2 {
+  font-size: 25px;
+  letter-spacing: -0.8px;
+  font-weight: 750;
+  line-height: 1.4;
+  margin-bottom: 10px;
+}
+.ir-login-description {
+  font-size: 11px;
+  line-height: 1.8;
+  color: #81758d;
+  margin-bottom: 25px;
+}
+.ir-login-form {
+  display: grid;
+  gap: 18px;
+}
+.ir-login-form label {
+  display: grid;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 650;
+  color: #5e536c;
+}
+.ir-login .form-field {
+  font:
+    400 12px Manrope,
+    sans-serif;
+  min-height: 43px;
+}
+.ir-login .btn.primary {
+  font:
+    650 11px Manrope,
+    sans-serif;
+  min-height: 43px;
+  border: 1px solid #6951d5;
+  border-radius: 7px;
+  background: #6951d5;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+.ir-demo-login {
+  margin-top: 25px;
+  border-top: 1px solid #e9e8ef;
+  padding-top: 22px;
+}
+.ir-demo-login summary {
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #6d5e7d;
+}
+.ir-demo-login > p {
+  font-size: 10px;
+  color: #81758d;
+  margin: 10px 0 12px;
+}
+.ir-demo-accounts {
+  display: grid;
+  gap: 7px;
+  max-height: 238px;
+  overflow-y: auto;
+  padding: 1px 5px 1px 1px;
+}
+.ir-demo-accounts button {
+  font: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e9e8ef;
+  border-radius: 7px;
+  background: white;
+  color: #6d5e7d;
+}
+.ir-demo-accounts button:hover {
+  background: #f8f5fd;
+  border-color: #d4c5f4;
+}
+.ir-demo-accounts strong {
+  font-size: 11px;
+  font-weight: 650;
+  display: block;
+}
+.ir-demo-accounts small {
+  font-size: 9px;
+  color: #81758d;
+  display: block;
+  margin-top: 3px;
+}
+.ir-login-security {
+  font-size: 9px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  color: #92859e;
+  margin-top: 23px;
+}
+.ir-login-footer {
+  display: flex;
+  max-width: 1256px;
+  margin: 0 auto;
+  padding: 20px 32px 26px;
+  justify-content: space-between;
+  color: #a095ad;
+  font-size: 10px;
+}
+.ir-login .eyebrow {
+  font-size: 9px;
+}
+.ir-login .brand-mark svg {
+  width: 23px;
+  height: 23px;
+}
+@media (max-width: 1000px) {
+  .ir-login-grid {
+    gap: 40px;
+  }
+  .ir-login-story h1 {
+    font-size: 34px;
+  }
+}
+@media (max-width: 740px) {
+  .ir-login-header {
+    height: 75px;
+    padding: 0 20px;
+  }
+  .ir-login-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    margin: 25px auto;
+    padding: 0 20px;
+    max-width: 480px;
+  }
+  .ir-login-story {
+    padding-top: 0;
+  }
+  .ir-login-story h1 {
+    font-size: 30px;
+    letter-spacing: -1px;
+  }
+  .ir-login-story h1 br {
+    display: none;
+  }
+  .ir-login-lead {
+    font-size: 12px;
+  }
+  .ir-login-route,
+  .ir-login-promises {
+    display: none;
+  }
+  .ir-login-panel {
+    width: 100%;
+    padding: 24px;
+  }
+  .ir-login-footer {
+    padding: 24px 20px;
+    font-size: 9px;
+  }
+  .ir-login .brand-lockup {
+    font-size: 22px;
+  }
+  .ir-login-description br {
+    display: none;
+  }
+}

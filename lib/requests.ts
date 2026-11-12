@@ -2,7 +2,7 @@ export const statuses = ['new', 'review', 'clarification', 'in_progress', 'imple
 
 export type RequestStatus = (typeof statuses)[number]
 export type Category = { id: string; name_ru: string; name_en: string; name_kk: string }
-export const requestKinds = ['problem', 'idea'] as const
+export const requestKinds = ['problem', 'idea', 'praise'] as const
 export type RequestKind = (typeof requestKinds)[number]
 export const requestKindLabels = { problem: 'Проблема', idea: 'Пожелание', praise: 'Отзыв' }
 

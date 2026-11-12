@@ -47,11 +47,11 @@ with samples (source_ref, category_id, kind, status, title, description, outcome
   ('A-020', 'results', 'idea', 'new', 'Обзор завершённых улучшений', 'Предлагаю публиковать краткий обзор завершённых внутренних улучшений, чтобы сотрудники видели результат направленных предложений.', 'Рассмотреть формат квартальной подборки без конфиденциальных сведений.')
 ), imported as (
   insert into public.requests (source_ref, author_id, assignee_id, submission_key, category_id,
-    kind, status, title, description, decision, next_step)
+    kind, status, title, description, decision, next_step, is_demo)
   select s.source_ref, author.id, r.assignee_id, gen_random_uuid(), s.category_id,
     s.kind::public.request_kind, s.status::public.request_status, s.title, s.description,
     case when s.status in ('implemented', 'rejected', 'closed') then s.outcome end,
-    case when s.status = 'in_progress' then s.outcome end
+    case when s.status = 'in_progress' then s.outcome end, true
   from samples s
   join auth.users author on author.email = 'employee@kinetria.example'
   left join kinetria_private.category_routes r on r.category_id = s.category_id

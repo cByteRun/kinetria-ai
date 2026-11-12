@@ -1,82 +1,448 @@
 'use client'
-
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { Search, ArrowUpDown, Star, Inbox, ChevronRight } from 'lucide-react'
-import { useTranslations } from 'next-intl'
-import { feedbackStage, feedbackStages, requestKindLabels, statuses, terminalStatuses, type RequestStatus } from '../lib/requests'
-
-import { CaseAssignment, CaseCategory, CaseKind, CaseNextStep, CaseStatus } from './case-labels'
+import { useSearchParams } from 'next/navigation'
+import {
+  Search,
+  Inbox,
+  ArrowUpRight,
+  Download,
+  List,
+  Columns3,
+  Lightbulb,
+  MessageSquareWarning,
+  HeartHandshake,
+  ClockAlert,
+} from 'lucide-react'
+import {
+  requestKindLabels,
+  statuses,
+  type RequestStatus,
+} from '../lib/requests'
+import {
+  dateLabel,
+  hasResult,
+  isDone,
+  isOverdue,
+  statusNames,
+  today,
+} from '../lib/dashboard'
 
 export type RegistryRow = {
-  id: string; number: number; source_ref: string | null; title: string;
-  status: RequestStatus; category_id: string; assignee_id: string | null; updated_at?: string
-  description?: string; next_step?: string | null; decision?: string | null; kind: keyof typeof requestKindLabels; sentiment: number | null
+  id: string
+  number: number
+  source_ref: string | null
+  title: string
+  status: RequestStatus
+  category_id: string
+  assignee_id: string | null
+  updated_at?: string
+  description?: string
+  next_step?: string | null
+  decision?: string | null
+  kind: keyof typeof requestKindLabels
+  sentiment: number | null
+  department?: string
+  priority?: string
+  due_at?: string | null
+  created_at?: string
+  first_response_at?: string | null
+  resolved_at?: string | null
+  acknowledged_at?: string | null
+  is_demo?: boolean
+  version?: number
 }
-
-function requestNumber(row: RegistryRow) {
-  return row.source_ref ?? 'R-' + String(row.number).padStart(3, '0')
+export const requestNumber = (row: RegistryRow) =>
+  row.source_ref ?? 'R-' + String(row.number).padStart(3, '0')
+export function StatusBadge({ row }: { row: RegistryRow }) {
+  return (
+    <span
+      className={
+        'badge ' +
+        ((
+          { clarification: 'waiting', in_progress: 'progress' } as Record<
+            string,
+            string
+          >
+        )[row.status] || row.status)
+      }
+    >
+      {statusNames[row.status]}
+    </span>
+  )
 }
-
-export function RequestRegistry({ rows, categories, path }: {
-  rows: RegistryRow[]; categories: Record<string, string>; path: string
+export function DueLabel({ row }: { row: RegistryRow }) {
+  return (
+    <span
+      className={
+        'due ' +
+        (isOverdue(row)
+          ? 'red'
+          : row.due_at?.slice(0, 10) === today()
+            ? 'amber'
+            : 'muted')
+      }
+    >
+      {isOverdue(row) && <ClockAlert size={14} />}{' '}
+      {isDone(row)
+        ? dateLabel(row.resolved_at)
+        : isOverdue(row)
+          ? Math.max(
+              1,
+              Math.ceil(
+                (Date.parse(today()) - Date.parse(row.due_at!)) / 86400000,
+              ),
+            ) + ' д. просрочки'
+          : row.due_at?.slice(0, 10) === today()
+            ? 'Сегодня'
+            : dateLabel(row.due_at)}
+    </span>
+  )
+}
+export function CaseTable({
+  rows,
+  categories,
+  path,
+  compact = false,
+}: {
+  rows: RegistryRow[]
+  categories: Record<string, string>
+  path: string
+  compact?: boolean
 }) {
-  const t = useTranslations('requestsMvp')
-  const router = useRouter()
-  const detailHref = (id: string) => path + '?view=registry&id=' + id
-  const [query, setQuery] = useState('')
-  const [status, setStatus] = useState('')
-  const [category, setCategory] = useState('')
-  const [kind, setKind] = useState('')
-  const [assignment, setAssignment] = useState('')
-  const [ascending, setAscending] = useState(false)
-  const [favorites, setFavorites] = useState<string[]>([])
-  const [onlyFavorites, setOnlyFavorites] = useState(false)
-  const filtered = rows.filter(row => (!status || row.status === status) && (!category || row.category_id === category)
-    && (!kind || row.kind === kind)
-    && (!assignment || Boolean(row.assignee_id) === (assignment === 'assigned'))
-    && (!onlyFavorites || favorites.includes(row.id))
-    && (row.title + ' ' + (row.description || '') + ' ' + requestNumber(row)).toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()))
-    .sort((a, b) => ascending ? a.number - b.number : b.number - a.number)
-  return <section className="crm-registry">
-    <div className="crm-toolbar">
-      <label className="crm-search"><Search size={17} /><input placeholder="Тема, описание или номер" aria-label="Поиск обращений" value={query} onChange={e => setQuery(e.target.value)} /></label>
-      <select aria-label="Фильтр по статусу" value={status} onChange={e => setStatus(e.target.value)}><option value="">Все статусы</option>{statuses.map(s => <option key={s} value={s}>{t(s)}</option>)}</select>
-      <select aria-label="Фильтр по категории" value={category} onChange={e => setCategory(e.target.value)}><option value="">Все категории</option>{Object.entries(categories).map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select>
-      <select aria-label="Фильтр по типу" value={kind} onChange={e => setKind(e.target.value)}>
-        <option value="">Все типы</option>
-        {Object.entries(requestKindLabels).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
-      </select>
-      <select aria-label="Фильтр по назначению" value={assignment} onChange={e => setAssignment(e.target.value)}>
-        <option value="">Все назначения</option>
-        <option value="assigned">Назначен</option>
-        <option value="unassigned">Без назначения</option>
-      </select>
-      <button aria-pressed={ascending} onClick={() => setAscending(!ascending)}><ArrowUpDown size={16} />По номеру</button>
-      <button aria-pressed={onlyFavorites} onClick={() => setOnlyFavorites(!onlyFavorites)}><Star size={16} />Избранное</button>
+  return (
+    <div className="table-scroll">
+      <table className="case-table">
+        <thead>
+          <tr>
+            <th>Обращение</th>
+            <th>Статус</th>
+            {!compact && (
+              <>
+                <th>Подразделение</th>
+                <th>Приоритет</th>
+              </>
+            )}
+            <th>Срок</th>
+            <th aria-label="Открыть" />
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.id}>
+              <td>
+                <div className="ir-case-cell">
+                  <span
+                    className={
+                      'type-icon ' +
+                      (row.kind === 'idea'
+                        ? 'idea'
+                        : row.kind === 'praise'
+                          ? 'positive'
+                          : '')
+                    }
+                  >
+                    {row.kind === 'idea' ? (
+                      <Lightbulb />
+                    ) : row.kind === 'praise' ? (
+                      <HeartHandshake />
+                    ) : (
+                      <MessageSquareWarning />
+                    )}
+                  </span>
+                  <div>
+                    <Link
+                      className="case-title"
+                      href={path + '?view=registry&id=' + row.id}
+                    >
+                      {row.title}
+                    </Link>
+                    <div className="case-caption">
+                      {requestNumber(row)} · {categories[row.category_id]}{' '}
+                      {row.is_demo && <span className="tiny-pill">Демо</span>}
+                    </div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <StatusBadge row={row} />
+                {row.status === 'clarification' && (
+                  <div className="case-caption">Ждём ответ автора</div>
+                )}
+                {!row.assignee_id && !isDone(row) && (
+                  <div className="case-caption">Резервная очередь</div>
+                )}
+              </td>
+              {!compact && (
+                <>
+                  <td>{row.department || '—'}</td>
+                  <td>
+                    <span
+                      className={row.priority === 'high' ? 'amber' : 'muted'}
+                    >
+                      {row.priority === 'high'
+                        ? 'Высокий'
+                        : row.priority === 'low'
+                          ? 'Низкий'
+                          : 'Обычный'}
+                    </span>
+                  </td>
+                </>
+              )}
+              <td>
+                <DueLabel row={row} />
+              </td>
+              <td>
+                <Link
+                  className="icon-button"
+                  href={path + '?view=registry&id=' + row.id}
+                  aria-label={'Открыть ' + requestNumber(row)}
+                >
+                  <ArrowUpRight />
+                </Link>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {!rows.length && (
+        <div className="empty">
+          <Inbox />
+          <h3>Обращений пока нет</h3>
+          <p>Измените фильтры или зарегистрируйте новое обращение.</p>
+        </div>
+      )}
     </div>
-    <div className="crm-table-scroll"><table><thead><tr><th aria-label="Избранное" /><th aria-sort={ascending ? 'ascending' : 'descending'}>№</th><th>Тема обращения</th><th>Тип</th><th>Статус</th><th>Категория</th><th>Назначение</th><th aria-label="Открыть карточку" /></tr></thead>
-      <tbody>{filtered.map(row => <tr key={row.id} className="crm-request-row" onClick={event => {
-        if (!(event.target as Element).closest('a, button')) router.push(detailHref(row.id), { scroll: false })
-      }}>
-        <td><button className="crm-star" aria-label="В избранное" aria-pressed={favorites.includes(row.id)} onClick={() => setFavorites(previous => previous.includes(row.id) ? previous.filter(id => id !== row.id) : [...previous, row.id])}><Star size={15} fill={favorites.includes(row.id) ? 'currentColor' : 'none'} /></button></td>
-        <td><Link className="case-ref" scroll={false} href={detailHref(row.id)}>{requestNumber(row)}</Link></td>
-        <td>
-          <Link className="case-row-title" scroll={false} href={detailHref(row.id)}>{row.title}</Link>
-          {row.description && <p className="idea-row-description">{row.description}</p>}
-          {row.next_step && <CaseNextStep>{row.next_step}</CaseNextStep>}
-        </td>
-        <td><CaseKind kind={row.kind} /></td>
-        <td>
-          <CaseStatus status={row.status} label={t(row.status)} />
-          <small className="case-stage">{feedbackStages[feedbackStage(row)]}</small>
-        </td>
-        <td><CaseCategory name={categories[row.category_id] ?? row.category_id} /></td>
-        <td><CaseAssignment assigned={Boolean(row.assignee_id)} closed={terminalStatuses.includes(row.status)} /></td>
-        <td><ChevronRight className="case-chevron" size={16} aria-hidden="true" /></td>
-      </tr>)}</tbody></table></div>
-    {!filtered.length && <div className="crm-empty"><Inbox size={28} /><p>Обращений по выбранным условиям нет</p></div>}
-    <footer className="crm-table-footer" aria-live="polite">Показано {filtered.length} из {rows.length}</footer>
-  </section>
+  )
+}
+export function RequestRegistry({
+  rows,
+  categories,
+  path,
+}: {
+  rows: RegistryRow[]
+  categories: Record<string, string>
+  path: string
+}) {
+  const params = useSearchParams()
+  const [query, setQuery] = useState(params.get('q') || ''),
+    [status, setStatus] = useState(params.get('filter') || ''),
+    [category, setCategory] = useState(params.get('category') || ''),
+    [department, setDepartment] = useState(''),
+    [deadline, setDeadline] = useState(''),
+    [board, setBoard] = useState(false)
+  const filtered = rows.filter(
+    (r) =>
+      (!status ||
+        (status === 'open'
+          ? !isDone(r)
+          : status === 'done'
+            ? hasResult(r)
+            : status === 'overdue'
+              ? isOverdue(r)
+              : status === 'unassigned'
+                ? !r.assignee_id && !isDone(r)
+                : r.status === status)) &&
+      (!category || r.category_id === category) &&
+      (!department || r.department === department) &&
+      (!deadline ||
+        (deadline === 'overdue'
+          ? isOverdue(r)
+          : r.due_at?.slice(0, 10) === today())) &&
+      [
+        r.title,
+        r.description,
+        r.decision,
+        r.next_step,
+        requestNumber(r),
+        categories[r.category_id],
+        r.department,
+      ]
+        .join(' ')
+        .toLocaleLowerCase()
+        .includes(query.trim().toLocaleLowerCase()),
+  )
+  function exportCsv() {
+    const q = (v: unknown) => {
+      let s = String(v ?? '')
+      if (/^[\s]*[=+\-@]/.test(s)) s = "'" + s
+      return '"' + s.replaceAll('"', '""') + '"'
+    }
+    const data = [
+      [
+        'Номер',
+        'Тема',
+        'Категория',
+        'Подразделение',
+        'Статус',
+        'Срок',
+        'Решение',
+        'Демо',
+      ],
+      ...filtered.map((r) => [
+        requestNumber(r),
+        r.title,
+        categories[r.category_id],
+        r.department,
+        statusNames[r.status],
+        r.due_at,
+        r.decision,
+        r.is_demo ? 'Да' : 'Нет',
+      ]),
+    ]
+      .map((r) => r.map(q).join(';'))
+      .join('\r\n')
+    const url = URL.createObjectURL(
+      new Blob(['\uFEFF' + data], { type: 'text/csv;charset=utf-8' }),
+    )
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'IdeaRoute-' + today() + '.csv'
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }
+  return (
+    <section className="card">
+      <div className="card-head">
+        <div>
+          <h2>Единый реестр обращений</h2>
+          <p aria-live="polite">
+            Найдено {filtered.length} из {rows.length}
+          </p>
+        </div>
+        <div className="ir-flex">
+          <button className="btn sm" onClick={exportCsv}>
+            <Download />
+            Экспорт CSV
+          </button>
+          <button
+            className={'icon-button ' + (!board ? 'selected' : '')}
+            aria-label="Таблица"
+            aria-pressed={!board}
+            onClick={() => setBoard(false)}
+          >
+            <List />
+          </button>
+          <button
+            className={'icon-button ' + (board ? 'selected' : '')}
+            aria-label="Доска"
+            aria-pressed={board}
+            onClick={() => setBoard(true)}
+          >
+            <Columns3 />
+          </button>
+        </div>
+      </div>
+      <div className="filters">
+        <label className="search-input">
+          <Search />
+          <input
+            aria-label="Поиск обращений"
+            placeholder="Номер, тема, описание или решение"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </label>
+        <select
+          className="filter-select"
+          aria-label="Фильтр по статусу"
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+        >
+          <option value="">Все статусы</option>
+          <option value="open">Все активные</option>
+          <option value="done">С решением</option>
+          <option value="overdue">Просрочены</option>
+          <option value="unassigned">Без ответственного</option>
+          {statuses.map((s) => (
+            <option key={s} value={s}>
+              {statusNames[s]}
+            </option>
+          ))}
+        </select>
+        <select
+          className="filter-select"
+          aria-label="Фильтр по категории"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+        >
+          <option value="">Все категории</option>
+          {Object.entries(categories).map(([id, name]) => (
+            <option key={id} value={id}>
+              {name}
+            </option>
+          ))}
+        </select>
+        <select
+          className="filter-select"
+          aria-label="Фильтр по подразделению"
+          value={department}
+          onChange={(e) => setDepartment(e.target.value)}
+        >
+          <option value="">Все подразделения</option>
+          {[...new Set(rows.map((r) => r.department).filter(Boolean))].map(
+            (d) => (
+              <option key={d}>{d}</option>
+            ),
+          )}
+        </select>
+        <select
+          className="filter-select"
+          aria-label="Фильтр по сроку"
+          value={deadline}
+          onChange={(e) => setDeadline(e.target.value)}
+        >
+          <option value="">Любой срок</option>
+          <option value="overdue">Просрочено</option>
+          <option value="today">Сегодня</option>
+        </select>
+        {(query || status || category || department || deadline) && (
+          <button
+            className="btn sm"
+            onClick={() => {
+              setQuery('')
+              setStatus('')
+              setCategory('')
+              setDepartment('')
+              setDeadline('')
+            }}
+          >
+            Сбросить
+          </button>
+        )}
+      </div>
+      {board ? (
+        <div className="board">
+          {[...statuses].map((s) => (
+            <section className="board-col" key={s}>
+              <strong>
+                {statusNames[s]} ·{' '}
+                {filtered.filter((r) => r.status === s).length}
+              </strong>
+              {filtered
+                .filter((r) => r.status === s)
+                .map((r) => (
+                  <Link
+                    className="board-card"
+                    key={r.id}
+                    href={path + '?view=registry&id=' + r.id}
+                  >
+                    <small className="case-id">{requestNumber(r)}</small>
+                    <h3>{r.title}</h3>
+                    <DueLabel row={r} />
+                    {r.is_demo && <span className="tiny-pill">Демо</span>}
+                  </Link>
+                ))}
+            </section>
+          ))}
+        </div>
+      ) : (
+        <CaseTable rows={filtered} categories={categories} path={path} />
+      )}
+      <footer className="table-foot">
+        Показано {filtered.length} из {rows.length}
+        <span>Доступ определяется вашей ролью</span>
+      </footer>
+    </section>
+  )
 }
