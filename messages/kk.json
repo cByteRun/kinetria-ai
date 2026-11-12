@@ -825,5 +825,18 @@
       "admin": "Санаттар, бағыттар және резерв",
       "client": "Болашақ клиент арнасының сипаттамасы"
     }
+  },
+  "dashboardShell": {
+    "lifecycle": "Lifecycle / Мәртебелер",
+    "settings": "Баптаулар",
+    "integrations": "Интеграциялар",
+    "telegramIntegration": "Telegram",
+    "telegramConfigured": "Telegram · бапталған",
+    "telegramNotConfigured": "Telegram · бапталмаған",
+    "profile": "Пайдаланушы профилі",
+    "heroEyebrow": "ӨТІНІШТІҢ ӨМІРЛІК ЦИКЛІ",
+    "heroTitle": "Өтініштен — шешімге дейін",
+    "heroDescription": "Әр кезеңді бақылаңыз: жауапты адам, мерзім, әрекет және авторға берілетін нәтиже.",
+    "activeRequests": "Белсенді өтініштер"
   }
 }

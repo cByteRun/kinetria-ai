@@ -15,6 +15,8 @@ import {
   LockKeyhole,
   Search,
   ChevronsUpDown,
+  Send,
+  Settings2,
 } from 'lucide-react'
 import { AuthForm } from './auth-form'
 import { canViewInsights, type Role } from '../lib/roles'
@@ -31,12 +33,14 @@ import { MobileNavigation } from './mobile-navigation'
 export async function DashboardShell({
   role,
   view,
+  mode,
   name,
   theme,
   children,
 }: {
   role: Role
   view: string
+  mode?: string
   theme: Theme
   name?: string
   children: React.ReactNode
@@ -45,6 +49,8 @@ export async function DashboardShell({
 
   const t = await getTranslations('roles')
   const entry = await getTranslations('entryFlow')
+  const shell = await getTranslations('dashboardShell')
+  const telegramConfigured = Boolean(process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_BOT_USERNAME)
   const canSwitchRole = localPreview || (hasSupabase && Boolean(process.env.KINETRIA_DEMO_PASSWORD))
   const initials =
     name
@@ -88,6 +94,7 @@ export async function DashboardShell({
       label: role === 'employee' ? ui('myRequests') : ui('requests'),
       icon: Inbox,
     },
+    { id: 'lifecycle', label: shell('lifecycle'), icon: GitBranch },
     ...(role === 'employee'
       ? [{ id: 'new', label: ui('newRequest'), icon: PlusCircle }]
       : []),
@@ -103,22 +110,25 @@ export async function DashboardShell({
         ]
       : []),
   ]
-  const nav = (item: (typeof items)[number]) => (
-    <Link
-      key={item.id}
-      prefetch={false}
-      href={base + '?view=' + item.id}
-      className={'nav-link ' + (view === item.id ? 'active' : '')}
-      aria-current={view === item.id ? 'page' : undefined}
-    >
-      <item.icon />
-      <span>{item.label}</span>
-      {Boolean(counts[item.id]) && (
-        <span className="nav-count">{counts[item.id]}</span>
-      )}
-    </Link>
-  )
-  const label =
+  const nav = (item: (typeof items)[number]) => {
+    const active = item.id === 'lifecycle'
+      ? view === 'registry' && mode === 'board'
+      : view === item.id && !(item.id === 'registry' && mode === 'board')
+    return (
+      <Link
+        key={item.id}
+        prefetch={false}
+        href={item.id === 'lifecycle' ? base + '?view=registry&mode=board' : base + '?view=' + item.id}
+        className={'nav-link ' + (active ? 'active' : '')}
+        aria-current={active ? 'page' : undefined}
+      >
+        <item.icon />
+        <span>{item.label}</span>
+        {Boolean(counts[item.id]) && <span className="nav-count">{counts[item.id]}</span>}
+      </Link>
+    )
+  }
+  const label = mode === 'board' && view === 'registry' ? shell('lifecycle') :
     [
       ...items,
       { id: 'routing', label: ui('routing') },
@@ -143,7 +153,7 @@ export async function DashboardShell({
             <Route />
           </span>
           <span>
-            Idea<span style={{ fontWeight: 500 }}>Route</span>
+            Idea<span style={{ fontWeight: 500 }}> Road</span>
           </span>
         </Link>
         <div className="workspace">
@@ -161,7 +171,7 @@ export async function DashboardShell({
           </div>
           {role === 'admin' && (
             <div className="nav-group">
-              <div className="eyebrow">{ui('systemManagement')}</div>
+              <div className="eyebrow"><Settings2 size={12} /> {shell('settings')}</div>
               {nav({ id: 'categories', label: ui('categories'), icon: Tags })}
               {nav({
                 id: 'routing',
@@ -170,6 +180,10 @@ export async function DashboardShell({
               })}
             </div>
           )}
+          <div className="nav-group">
+            <div className="eyebrow">{shell('integrations')}</div>
+            {nav({ id: 'help', label: shell('telegramIntegration'), icon: Send })}
+          </div>
           <div className="nav-group">
             <div className="eyebrow">{ui('personal')}</div>
             {nav({
@@ -216,16 +230,24 @@ export async function DashboardShell({
             <strong>{label}</strong>
           </div>
           <div className="top-actions">
-            <Link
-              className="btn ghost global-search muted"
-              href={base + '?view=registry'}
-            >
-              <Search />
-              <span>{ui('findARequest')}</span>
-              <kbd>/</kbd>
+            <form className="shell-search" action={base} role="search">
+              <input type="hidden" name="view" value="registry" />
+              <Search size={16} aria-hidden="true" />
+              <input name="q" aria-label={ui('findARequest')} placeholder={ui('findARequest')} />
+              <button type="submit" aria-label={ui('findARequest')}><ArrowUpRight size={16} /></button>
+            </form>
+            <Link className="telegram-status" href={base + '?view=help'} title={shell(telegramConfigured ? 'telegramConfigured' : 'telegramNotConfigured')}>
+              <Send size={15} /><span>{shell(telegramConfigured ? 'telegramConfigured' : 'telegramNotConfigured')}</span>
+              <i className={telegramConfigured ? 'configured' : ''} aria-hidden="true" />
             </Link>
             <CommandPalette role={role} />
             <Preferences theme={theme} compact />
+            <details className="shell-profile">
+              <summary aria-label={shell('profile')} title={name || t(role)}><span className="avatar">{initials}</span></summary>
+              <div className="shell-profile-menu"><strong>{name || t(role)}</strong><small>{t(role)}</small>
+                <AuthForm action="/auth/logout" pendingLabel={ui('signingOut')}><button className="btn"><LogOut size={15} />{ui('signOut')}</button></AuthForm>
+              </div>
+            </details>
             {canSwitchRole ? <Link className="role-select" href="/login" aria-label={entry('switchRole')}>
               {entry('switchRole')} <ChevronsUpDown size={13} />
             </Link> : <span className="role-select">{t(role)}</span>}

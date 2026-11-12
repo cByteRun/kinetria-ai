@@ -13,19 +13,20 @@ import '../prototype.css'
 import '../live-dashboard.css'
 import '../adaptive.css'
 import '../feedback.css'
+import '../floating-shell.css'
 
 export default async function RoleWorkspace({
   params,
   searchParams,
 }: {
   params: Promise<{ role: string }>
-  searchParams: Promise<{ error?: string; id?: string; view?: string }>
+  searchParams: Promise<{ error?: string; id?: string; view?: string; mode?: string }>
 }) {
   const ui = await getTranslations('ui')
   const profile = await requireProfile()
   const { role } = await params
   if (!isRole(role) || role !== profile.role) notFound()
-  const { error, id, view: selection } = await searchParams
+  const { error, id, view: selection, mode } = await searchParams
   const view = selection || (id ? 'registry' : 'overview')
   if ((view === 'analytics' || view === 'insights') && !canViewInsights(role))
     notFound()
@@ -36,7 +37,7 @@ export default async function RoleWorkspace({
       ? accounts.find((account) => account.id === role)?.name
       : undefined)
   return (
-    <DashboardShell role={role} view={view} theme={theme} name={name}>
+    <DashboardShell role={role} view={view} mode={mode} theme={theme} name={name}>
       {role === 'client' ? (
         <section className="workspace-panel request-panel">
           <h1>{ui('clientPortal')}</h1>

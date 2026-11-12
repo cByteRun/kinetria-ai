@@ -825,5 +825,18 @@
       "admin": "Categories, routing and unassigned requests",
       "client": "Description of the future customer channel"
     }
+  },
+  "dashboardShell": {
+    "lifecycle": "Lifecycle / Statuses",
+    "settings": "Settings",
+    "integrations": "Integrations",
+    "telegramIntegration": "Telegram",
+    "telegramConfigured": "Telegram · configured",
+    "telegramNotConfigured": "Telegram · not configured",
+    "profile": "User profile",
+    "heroEyebrow": "REQUEST LIFECYCLE",
+    "heroTitle": "From request to resolution",
+    "heroDescription": "Keep every step in view: owner, deadline, action and an outcome for the author.",
+    "activeRequests": "Active requests"
   }
 }

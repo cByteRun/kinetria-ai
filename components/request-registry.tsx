@@ -256,7 +256,7 @@ function RegistryFilters({
     [department, setDepartment] = useState(''),
     [deadline, setDeadline] = useState(''),
     [mode, setMode] = useState(
-      showRecurrence ? params.get('mode') || 'table' : 'table',
+      params.get('mode') === 'board' ? 'board' : showRecurrence ? params.get('mode') || 'table' : 'table',
     ),
     [sort, setSort] = useState('newest')
   const tag = params.get('tag') || ''

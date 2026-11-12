@@ -825,5 +825,18 @@
       "admin": "Категории, маршруты и резерв",
       "client": "Описание будущего клиентского канала"
     }
+  },
+  "dashboardShell": {
+    "lifecycle": "Lifecycle / Статусы",
+    "settings": "Настройки",
+    "integrations": "Интеграции",
+    "telegramIntegration": "Telegram",
+    "telegramConfigured": "Telegram · настроен",
+    "telegramNotConfigured": "Telegram · не настроен",
+    "profile": "Профиль пользователя",
+    "heroEyebrow": "LIFECYCLE ОБРАЩЕНИЙ",
+    "heroTitle": "От обращения — к решению",
+    "heroDescription": "Контролируйте каждый этап: ответственный, срок, действие и результат для автора.",
+    "activeRequests": "Активных обращений"
   }
 }

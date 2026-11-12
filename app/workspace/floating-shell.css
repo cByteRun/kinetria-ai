@@ -1,0 +1,111 @@
+/* Floating App Shell and Lifecycle Hero. */
+.ir-app {
+  --shell-space: 20px;
+  --shell-gap: 20px;
+  --shell-radius: 18px;
+  --sidebar-width: 238px;
+  --shell-shadow: 0 4px 20px color-mix(in srgb, var(--ink) 3%, transparent);
+  padding: var(--shell-space);
+  background: color-mix(in srgb, var(--brand) 3%, var(--bg));
+}
+.ir-app .sidebar {
+  inset: var(--shell-space) auto var(--shell-space) var(--shell-space);
+  width: var(--sidebar-width);
+  border: 1px solid var(--line);
+  border-radius: var(--shell-radius);
+  box-shadow: var(--shell-shadow);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.ir-app .brand-lockup { height: 80px; flex-shrink: 0; letter-spacing: -.8px; gap: 10px; padding-inline: 22px; }
+.ir-app .brand-mark { border-radius: 11px; background: var(--brand); color: var(--brand-contrast); }
+.ir-app .workspace { margin-bottom: 22px; border-radius: 12px; }
+.ir-app .nav-group { margin-bottom: 18px; }
+.ir-app .nav-group .eyebrow { display: flex; gap: 6px; align-items: center; }
+.ir-app .nav-link { border-radius: 10px; padding-block: 10px; }
+.ir-app .nav-link.active::before { display: none; }
+.ir-app .nav-link.active { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand) 14%, transparent); }
+.ir-app .side-manifesto { border-radius: 12px; padding: 14px; }
+.ir-app .side-bottom { padding-top: 0; }
+.ir-app .shell { margin-left: calc(var(--sidebar-width) + var(--shell-gap)); min-height: calc(100dvh - 2 * var(--shell-space)); min-width: 0; }
+.ir-app .topbar {
+  height: auto;
+  min-height: 72px;
+  padding: 12px 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--shell-radius);
+  box-shadow: var(--shell-shadow);
+  top: var(--shell-space);
+  gap: 14px;
+}
+.ir-app .crumbs { min-width: 0; white-space: normal; }
+.ir-app .top-actions { gap: 10px; min-width: 0; }
+.ir-app .top-actions > * { flex-shrink: 0; }
+.ir-app .shell-search { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--panel-soft); border-radius: 10px; padding: 6px 9px; width: clamp(150px, 15vw, 230px); color: var(--muted); }
+.ir-app .shell-search input { width: 100%; min-width: 0; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 11px; outline: none; }
+.ir-app .shell-search:focus-within { outline: 2px solid var(--brand); outline-offset: 2px; }
+.ir-app .shell-search button { display: grid; place-items: center; min-height: 28px; }
+.ir-app .telegram-status { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 10px; }
+.ir-app .telegram-status i { width: 6px; height: 6px; background: var(--muted); border-radius: 50%; }
+.ir-app .telegram-status i.configured { background: var(--green); }
+.ir-app .shell-profile { position: relative; }
+.ir-app .shell-profile summary { cursor: pointer; list-style: none; display: grid; place-items: center; min-width: 38px; min-height: 38px; }
+.ir-app .shell-profile summary::-webkit-details-marker { display: none; }
+.ir-app .shell-profile-menu { position: absolute; right: 0; top: calc(100% + 14px); width: 230px; max-width: calc(100vw - 40px); padding: 18px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 12px 40px #0002; display: grid; gap: 8px; overflow-wrap: anywhere; }
+.ir-app .shell-profile-menu small { color: var(--muted); }
+.ir-app .shell-profile-menu .btn { margin-top: 8px; }
+.ir-app .content { max-width: none; margin: var(--shell-gap) 0 0; padding: 26px; border: 1px solid var(--line); border-radius: var(--shell-radius); background: color-mix(in srgb, var(--surface) 65%, var(--bg)); box-shadow: var(--shell-shadow); }
+.ir-app .card { border-radius: var(--shell-radius); }
+.ir-app .lifecycle-hero { padding: 26px 28px 0; margin-bottom: 22px; border: 1px solid color-mix(in srgb, var(--brand) 22%, var(--line)); border-radius: var(--shell-radius); background: linear-gradient(115deg, color-mix(in srgb, var(--brand) 10%, var(--surface)), var(--surface)); overflow: hidden; }
+.ir-app .lifecycle-hero .eyebrow { color: var(--brand); font-size: 10px; letter-spacing: .13em; }
+.ir-app .lifecycle-hero .page-heading { margin-bottom: 24px; }
+.ir-app .lifecycle-hero h1 { font-size: clamp(24px, 2.3vw, 34px); letter-spacing: -1px; line-height: 1.25; margin: 10px 0; text-wrap: balance; }
+.ir-app .lifecycle-hero p { max-width: 520px; font-size: 12px; line-height: 1.8; }
+.ir-app .lifecycle-hero .btn { min-height: 42px; border-radius: 10px; }
+.ir-app .hero-summary { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 22px; padding-block: 20px; border-top: 1px solid color-mix(in srgb, var(--brand) 15%, var(--line)); }
+.ir-app .hero-summary > a { min-width: 0; display: flex; align-items: center; gap: 12px; }
+.ir-app .hero-stat-icon { display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid var(--line); border-radius: 11px; color: var(--brand); background: var(--surface); flex-shrink: 0; }
+.ir-app .hero-summary strong { display: block; color: var(--ink); font-size: 24px; line-height: 1.25; letter-spacing: -.8px; font-variant-numeric: tabular-nums; }
+.ir-app .hero-summary small { color: var(--muted); font-size: 11px; }
+.ir-app .hero-summary > .hero-progress { display: grid; align-content: center; gap: 10px; }
+.ir-app .hero-progress > span { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ir-app .hero-progress strong { font-size: 20px; }
+.ir-app .hero-progress progress { display: block; appearance: none; width: 100%; height: 6px; border: 0; border-radius: 5px; overflow: hidden; background: var(--brand-soft); color: var(--brand); }
+.ir-app .hero-progress progress::-webkit-progress-bar { background: var(--brand-soft); }
+.ir-app .hero-progress progress::-webkit-progress-value { background: var(--brand); border-radius: 5px; }
+.ir-app .hero-progress progress::-moz-progress-bar { background: var(--brand); border-radius: 5px; }
+#request-lifecycle { scroll-margin-top: 110px; }
+@media (max-width: 1280px) {
+  .ir-app { --shell-space: 16px; --shell-gap: 16px; --sidebar-width: 216px; }
+  .ir-app .topbar { flex-wrap: wrap; padding: 12px 18px; }
+  .ir-app .top-actions { margin-left: auto; flex-wrap: wrap; }
+  .ir-app .telegram-status span { display: none; }
+  .ir-app .content { padding: 22px; }
+  .ir-app .lifecycle-hero .page-heading { align-items: flex-start; flex-wrap: wrap; }
+}
+@media (max-width: 740px) {
+  .ir-app { --shell-space: 10px; --shell-gap: 12px; --shell-radius: 16px; padding-bottom: calc(90px + env(safe-area-inset-bottom)); }
+  .ir-app .sidebar { width: min(288px, calc(100vw - 28px)); height: auto; max-height: calc(100dvh - 20px); transform: translateX(calc(-100% - 20px)); visibility: hidden; }
+  .ir-app .shell { margin-left: 0; overflow: visible; }
+  .ir-app .topbar { padding: 12px 10px 12px 58px; min-height: 74px; top: var(--shell-space); gap: 10px; }
+  .ir-app .topbar .crumbs { flex: 1 1 100%; }
+  .ir-app .top-actions { margin-left: 0; gap: 8px; flex: 1 1 100%; }
+  .ir-app .top-actions .preferences { margin: 0; }
+  .ir-app .shell-search { width: 100%; flex: 1 1 100%; padding: 4px 8px; }
+  .ir-app .shell-search input { font-size: 16px; }
+  .ir-app .shell-search button { min-width: 32px; min-height: 36px; }
+  .ir-app .telegram-status { min-height: 44px; }
+  .ir-app .shell-profile summary { min-width: 44px; min-height: 44px; }
+  .ir-app .shell-profile-menu { right: -8px; }
+  .ir-app .ir-mobile-toggle { top: 23px; left: 20px; border-radius: 10px; }
+  .ir-app .ir-mobile-toggle[aria-expanded='true'] { left: min(244px, calc(100vw - 74px)); }
+  .ir-app .content { padding: 14px; }
+  .ir-app .lifecycle-hero { padding: 20px 18px 0; margin-bottom: 18px; }
+  .ir-app .lifecycle-hero .page-heading { gap: 16px; margin-bottom: 20px; }
+  .ir-app .lifecycle-hero h1 { font-size: 27px; }
+  .ir-app .hero-summary { grid-template-columns: 1fr 1fr; gap: 18px 10px; padding-block: 18px; }
+  .ir-app .hero-summary > .hero-progress { grid-column: 1 / -1; }
+  .ir-app .hero-stat-icon { display: none; }
+  .ir-app .hero-summary small { font-size: 11px; }
+  .ir-app .mobile-tabs { left: 10px; right: 10px; bottom: max(8px, env(safe-area-inset-bottom)); width: auto; border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 4px 24px #0002; }
+}

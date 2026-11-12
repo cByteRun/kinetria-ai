@@ -34,6 +34,7 @@ export function IdeaOverview({
   path: string
 }) {
   const ui = useTranslations('ui')
+  const shell = useTranslations('dashboardShell')
 
   const [tab, setTab] = useState('attention')
   const employee = role === 'employee',
@@ -68,48 +69,46 @@ export function IdeaOverview({
   const filter = (value: string) => path + '?view=registry&filter=' + value
   return (
     <>
-      <div className="page-heading">
-        <div>
-          <div className="eyebrow">
-            {employee
-              ? ui('yourIdeasAndFeedback')
-              : admin
-                ? ui('reliableRequestRouting')
-                : ui('employeeFeedback')}
+      <section className="lifecycle-hero" aria-labelledby="lifecycle-title">
+        <div className="page-heading">
+          <div>
+            <div className="eyebrow">
+              {shell('heroEyebrow')}
+            </div>
+            <h1 id="lifecycle-title">
+              {shell('heroTitle')}
+            </h1>
+            <p>
+              {shell('heroDescription')}
+            </p>
           </div>
-          <h1>
+          <Link
+            className="btn primary"
+            href={
+              employee
+                ? path + '?view=new'
+                : admin
+                  ? path + '?view=routing'
+                  : filter('open')
+            }
+          >
             {employee
-              ? ui('changeStartsWithYou')
+              ? ui('newRequest')
               : admin
-                ? ui('noRequestGetsLost')
-                : ui('everyRequestLeadsToAnOutcome')}
-          </h1>
-          <p>
-            {employee
-              ? ui('reportAProblemSuggestAnImprovementFollowThe')
-              : admin
-                ? ui('configureCategoriesOwnersAndRoutingRules')
-                : ui('helpSuggestionsMoveForwardAndProblemsFindSolutions')}
-          </p>
+                ? ui('configureRouting')
+                : ui('reviewRequests')}{' '}
+            <ArrowUpRight />
+          </Link>
         </div>
-        <Link
-          className="btn primary"
-          href={
-            employee
-              ? path + '?view=new'
-              : admin
-                ? path + '?view=routing'
-                : filter('open')
-          }
-        >
-          {employee
-            ? ui('newRequest')
-            : admin
-              ? ui('configureRouting')
-              : ui('reviewRequests')}{' '}
-          <ArrowUpRight />
-        </Link>
-      </div>
+        <div className="hero-summary">
+          <Link href={filter('open')}><span className="hero-stat-icon"><Inbox size={18} /></span><span><strong>{active.length}</strong><small>{shell('activeRequests')}</small></span></Link>
+          <Link href={filter('clarification')}><span className="hero-stat-icon"><ClockAlert size={18} /></span><span><strong>{rows.filter(r => r.status === 'clarification').length}</strong><small>{ui('clarification')}</small></span></Link>
+          <Link href={path + '?view=results'} className="hero-progress">
+            <span><small>{ui('withARecordedDecision')}</small><strong>{rows.length ? Math.round(done.length / rows.length * 100) + '%' : '—'}</strong></span>
+            <progress value={done.length} max={Math.max(1, rows.length)} aria-label={ui('withARecordedDecision')} />
+          </Link>
+        </div>
+      </section>
       <div className="context-line">
         <span className="ir-flex">
           <Building2 />
@@ -189,7 +188,7 @@ export function IdeaOverview({
         ))}
       </div>
       <div className="overview-route ir-route-grid">
-        <section className="card route-card">
+        <section id="request-lifecycle" className="card route-card">
           <div className="card-head">
             <div>
               <h2>{ui('requestRoute')}</h2>
