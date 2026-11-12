@@ -115,3 +115,6 @@
 
 - [x] Telegram UX: блочная инструкция/пример, эмодзи и группы кнопок, возвраты редакторов, явное добавление файлов и имена; единая публичная `/login`, default/all_private_chats и кнопка commands в setup. [Контракт](TELEGRAM-UX.md), [локальная проверка](VALIDATION.md#telegram-инструкция-возвраты-вложения-и-меню-12112026).
 - [ ] Применить эту итерацию к живому боту: deployment, `pnpm telegram:webhook`, ручной проход голос → файл → регистрация → скачивание.
+
+
+Production Telegram восстановлен 13.11.2026: миграция async inbox применена, deployment READY, webhook/команды обновлены; 7 обновлений завершены, pending=0, deliver HTTP 200. [Проверка и ограничения](VALIDATION.md#восстановление-production-telegram-13112026).

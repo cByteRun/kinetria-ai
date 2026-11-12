@@ -308,3 +308,6 @@ python3 scripts/check-repository-security.py
 
 
 Асинхронный Telegram webhook: перед новым deployment применить `20261112181447_telegram_async_inbox.sql`, перерегистрировать webhook (`max_connections=40`) и настроить `/api/telegram/deliver` по расписанию с `CRON_SECRET`. [Сценарии, Vision/ТЗ, гарантии и нагрузочная приёмка](docs/10-e2e-flows-and-traceability.md).
+
+
+Production Telegram восстановлен 13.11.2026: миграция async inbox применена, deployment READY, webhook/команды обновлены; 7 обновлений завершены, pending=0, deliver HTTP 200. [Проверка и ограничения](docs/VALIDATION.md#восстановление-production-telegram-13112026).

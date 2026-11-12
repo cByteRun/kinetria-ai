@@ -168,3 +168,26 @@ HTTP-тест 100 параллельных admissions использует им�
 Проверено локально: `check-telegram.mjs` (все редакторы → Назад без изменений, сброс ожидания, PDF/DOCX/фото, имена, лимиты и payload), `check-telegram-api.mjs`, `check-telegram-webhook.mjs` (регистрация default/all_private_chats без дублей и menu commands), `npx tsc --noEmit --noUnusedLocals`, `check-i18n.mjs`, `git diff --check`.
 
 `check-telegram-webhook-workflow.mjs` прошёл на реальной локальной PostgreSQL с ROLLBACK: явный attach → сохранение файла при регистрации → выдача через sendDocument автору, руководителю, администратору и назначенному ответственному; неназначенному доступ отклонён. Telegram и Whisper в этом тесте имитируются. Новые deployment, реальный голос и применение системного меню в этой итерации не выполнялись. После deployment нужен `pnpm telegram:webhook`; [контракт и дерево](TELEGRAM-UX.md).
+
+
+## Диагностика живого Telegram (13.11.2026, Asia/Qyzylorda)
+
+Production Vercel READY на коммите `5952a4b` уже использует асинхронную очередь. В логах POST webhook — `Telegram webhook: processing failed`; Telegram сообщает `503 Service Unavailable`, ожидают доставки 5 обновлений на момент проверки. Защищённый GET probe подтверждает доступность бота и базовой таблицы сессий, но не проверяет очередь. Чтение `telegram_inbox` через подключённый Supabase REST вернуло `PGRST205`: таблица отсутствует в schema cache. Требуется применить к целевой БД миграцию `20261112181447_telegram_async_inbox.sql` и повторить проверку; если объекты уже существуют в SQL, проверить обновление schema cache. Миграция и deployment в ходе диагностики не выполнялись. Последний UX-коммит `f00f50b` в проверенном production deployment отсутствует.
+
+
+## Восстановление production Telegram (13.11.2026)
+
+Причина 503 — отсутствовавшая миграция `20261112181447_telegram_async_inbox.sql`. Текущий Supabase-коннектор не имеет доступа к интеграционному проекту production; существующее подключение PostgreSQL доступно внутри Vercel build. В отдельной ветке `fix/telegram-production-inbox`, коммит `e51fe5f`, добавлен `scripts/migrate-telegram-inbox.mjs`. Разовая production-сборка запускает его с pg@8.16.3, затем обычный `pnpm run build`. Основной код соответствует `f00f50b`; обычный package.json build не изменён.
+
+Runner сверяет проект API с PostgreSQL URL, проверяет TLS с Supabase CA, использует транзакцию/advisory lock, применяет только указанную миграцию и записывает её версию в `supabase_migrations.schema_migrations`. Проверены обе RLS-таблицы, закрытый доступ anon/authenticated к inbox и права service_role на четыре RPC. Выполнен reload schema cache. Seed/reset не запускались, секреты не выводились.
+
+Подтверждено в production:
+
+- Build: `Applied migration: 20261112181447_telegram_async_inbox`, затем `Migration committed; tables, RLS and service RPC permissions verified`; deployment READY.
+- `scripts/setup-telegram.mjs`: приватный канал, права post/edit, webhook и каталог команд настроены с readback, ожидающие обновления сохранены.
+- Telegram `getWebhookInfo`: pending_update_count=0, max_connections=40. Сохранённый last_error_date относится к прежнему 503 до миграции и сам по себе не означает новую ошибку.
+- REST inbox: HTTP 200, 7 завершённых обновлений с attempts=1, незавершённых 0, leases освобождены.
+- Защищённый POST `/api/telegram/deliver`: HTTP 200, `{sent:0, processed:0}` после опустошения очереди.
+- Защищённый webhook probe: бот и Supabase ready; права приватного канала подтверждены. Реальный голосовой Closed-Loop и нагрузка 50–100 RPS этой проверкой не подтверждаются.
+
+Внешнее ежеминутное расписание восстановления по-прежнему требует отдельной настройки; ручной вызов deliver подтверждён. Результат относится к текущему наблюдению очереди, не к гарантии бесперебойной работы.
