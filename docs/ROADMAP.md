@@ -2,7 +2,7 @@
 
 > 🎯 **Текущий фокус:** пройти сценарий №3 голосом и кнопками с переключением демоаккаунтов на живом боте `your_bot` и приватном канале. Затем проверить UX/UI. Обязательный P0 реализован ранее; P2 не разрабатываем. Hero отложен по текущему решению пользователя.
 >
-> Основание: [Business Vision](BUSINESS_VISION.md), [исходное ТЗ](TZ/ТЗ_на_разработку_системы_обратной_связи_и_предложений_сотрудников.docx), docs 00–09. Порядок: **ТЗ → Telegram → UX/UI**. Обновлено 12.11.2026, история проверена до `03ab9d0`.
+> Основание: [Business Vision](BUSINESS_VISION.md), [исходное ТЗ](TZ/ТЗ_на_разработку_системы_обратной_связи_и_предложений_сотрудников.docx), docs 00–09. Порядок: **ТЗ → Telegram → UX/UI**. Обновлено 12.11.2026, история проверена до `9680cba`.
 
 `[x]` — реализация/документ подтверждены кодом, коммитом или указанной проверкой. Это не означает промышленную готовность, подачу заявки или доставку через ещё не настроенный внешний сервис. `[ ]` — осталось выполнить. Детали трёх сценариев и приёмка: [VALIDATION](VALIDATION.md).
 
@@ -10,20 +10,20 @@
 
 ### 🔴 Milestone 1 · P0 — Обязательное по ТЗ · 5/5
 
-- [x] Closed-Loop: создание → маршрутизация → рассмотрение → решение → уведомление в кабинете → история и ознакомление. `f3a06d9`, `f4d7ae5`, `47b3a31`; `app/workspace/actions.ts`, `components/request-workspace.tsx`, `components/feedback-notifications.tsx`, SQL workflow. [P0: R-050 и ограничения](P0-VALIDATION.md).
-- [x] Сотрудник, руководитель, администратор; дополнительный ответственный. RBAC по авторству, назначению и области категории. `f3a06d9`, `8edfbbd`; `lib/roles.ts`, `lib/session.ts`, `supabase/migrations/20261112000300_dashboard_scopes.sql`.
-- [x] Ответственный, сроки, статусы, комментарии, уточнение и содержательное решение. `f3a06d9`, `f4d7ae5`; `20261112005114_live_dashboard.sql`, `components/case-review-fields.tsx`.
-- [x] Аналитика категорий, сроков, результатов и повторяющихся проблем. `e2348be`, `8edfbbd`; `lib/insights.ts`, `components/recurring-analytics.tsx`, `components/dashboard-views.tsx`. Группы по категории/тегу, без доказательства общей причины.
-- [x] Поиск, фильтры, CSV, история; переход из темы сохраняет ограничения. `e2348be`, `8edfbbd`, `47b3a31`; `components/request-registry.tsx`, `components/request-workspace.tsx`.
+- [x] Closed-Loop: создание → маршрутизация → рассмотрение → решение → уведомление в кабинете → история и ознакомление. `f3a06d9`, `7efe09c`, `b896b3c`; `app/workspace/actions.ts`, `components/request-workspace.tsx`, `components/feedback-notifications.tsx`, SQL workflow. [P0: R-050 и ограничения](P0-VALIDATION.md).
+- [x] Сотрудник, руководитель, администратор; дополнительный ответственный. RBAC по авторству, назначению и области категории. `f3a06d9`, `f9be88b`; `lib/roles.ts`, `lib/session.ts`, `supabase/migrations/20261112000300_dashboard_scopes.sql`.
+- [x] Ответственный, сроки, статусы, комментарии, уточнение и содержательное решение. `f3a06d9`, `7efe09c`; `20261112005114_live_dashboard.sql`, `components/case-review-fields.tsx`.
+- [x] Аналитика категорий, сроков, результатов и повторяющихся проблем. `0cd82c8`, `f9be88b`; `lib/insights.ts`, `components/recurring-analytics.tsx`, `components/dashboard-views.tsx`. Группы по категории/тегу, без доказательства общей причины.
+- [x] Поиск, фильтры, CSV, история; переход из темы сохраняет ограничения. `0cd82c8`, `f9be88b`, `b896b3c`; `components/request-registry.tsx`, `components/request-workspace.tsx`.
 
 ### 📚 Milestone 2 · P0 — Документация для защиты · 7/7
 
-- [x] Проблема, роли, решение, Closed-Loop, ценность — [Business Vision](BUSINESS_VISION.md), [бриф](00-brief.md). `a6824f6` и последующая синхронизация.
-- [x] Пользовательские сценарии и переходы — [продукт](01-product.md), [экраны](09-dashboard-spec.md). `8edfbbd`, `47b3a31`, `03ab9d0`.
-- [x] Архитектура, стек, данные, RBAC, безопасность, интеграции — [02](02-architecture.md), [03](03-domain.md), [04](04-stack.md). `f3a06d9`, `f4d7ae5`, `8edfbbd`.
+- [x] Проблема, роли, решение, Closed-Loop, ценность — [Business Vision](BUSINESS_VISION.md), [бриф](00-brief.md). `c345c30` и последующая синхронизация.
+- [x] Пользовательские сценарии и переходы — [продукт](01-product.md), [экраны](09-dashboard-spec.md). `f9be88b`, `b896b3c`, `9680cba`.
+- [x] Архитектура, стек, данные, RBAC, безопасность, интеграции — [02](02-architecture.md), [03](03-domain.md), [04](04-stack.md). `f3a06d9`, `7efe09c`, `f9be88b`.
 - [x] Разделены MVP и развитие: Telegram Mini App / Битрикс24 → Client Feedback Portal / опросы — этот roadmap и [05](05-plan.md).
 - [x] Зафиксированы ограничения, допущения, реальные функции и внешние зависимости — [VALIDATION](VALIDATION.md), [P0](P0-VALIDATION.md), [пилот](08-pilot.md).
-- [x] Запуск, переменные, тестовые данные, демо — [README](../README.md), `scripts/seed-demo.mjs`, `supabase/demo-*.sql`. `f4d7ae5`, `e2348be`, `03ab9d0`.
+- [x] Запуск, переменные, тестовые данные, демо — [README](../README.md), `scripts/seed-demo.mjs`, `supabase/demo-*.sql`. `7efe09c`, `0cd82c8`, `9680cba`.
 - [x] Два веб-сценария Closed-Loop / Operational Insights проверены на синтетических данных — `scripts/check-p0-browser.mjs`, `scripts/check-dashboard.mjs`; [сохранённые результаты](P0-VALIDATION.md). Качество решения R-050 имеет отдельную оговорку.
 
 ### 🤖 Milestone 3 · P1 — Telegram-интеграция · код 8/8, живая приёмка ожидает настройки
@@ -45,14 +45,14 @@
 
 ### 🎨 Milestone 4 · P1 — UX/UI и регрессии · 7/8
 
-- [x] Светлая/тёмная темы и сохранение выбора — `8edfbbd`, `47b3a31`, `03ab9d0`; `components/preferences.tsx`, `app/workspace/adaptive.css`, cookies.
-- [x] RU/EN/KK на основных экранах и проверка переводов — `03ab9d0`; `messages/*.json`, `scripts/check-i18n.mjs`, [I18N-REVIEW](I18N-REVIEW.md).
-- [x] AI сохраняет подробное исходное описание и ручные поля; тема точнее привязана к содержанию, категория проверяется по каталогу, ручная коррекция доступна. `e2348be` + текущие `app/workspace/actions.ts`, `lib/ai.ts`, `components/request-form.tsx`. Качество конкретной модели требует живого прогона.
+- [x] Светлая/тёмная темы и сохранение выбора — `f9be88b`, `b896b3c`, `9680cba`; `components/preferences.tsx`, `app/workspace/adaptive.css`, cookies.
+- [x] RU/EN/KK на основных экранах и проверка переводов — `9680cba`; `messages/*.json`, `scripts/check-i18n.mjs`, [I18N-REVIEW](I18N-REVIEW.md).
+- [x] AI сохраняет подробное исходное описание и ручные поля; тема точнее привязана к содержанию, категория проверяется по каталогу, ручная коррекция доступна. `0cd82c8` + текущие `app/workspace/actions.ts`, `lib/ai.ts`, `components/request-form.tsx`. Качество конкретной модели требует живого прогона.
 - [x] Композиция «Нового обращения»: категория/тип → подробности → материалы → видимые теги/тональность → отправка; обе темы и состояния ожидания. `components/request-form.tsx`, `app/workspace/adaptive.css`.
 - [x] Единый `components/file-upload.tsx`: кнопка, drag-and-drop, список/удаление, лимиты и ошибки. Нативный Choose File скрыт; лишний маркер сворачиваемого блока убран.
 - [x] Ctrl/Cmd+K: поиск экранов/действий с учётом роли, иконки, описания, стрелки, Enter/Escape, удержание фокуса, затемнение/blur. `components/command-palette.tsx`, `components/dashboard-shell.tsx`.
 - [ ] Hero по выбранному референсу — **отложен пользователем**, текущий лендинг сохранён.
-- [x] Dashboard заполнен полезными блоками: «Путь обращения», очередь внимания, последние результаты. Уже сделано в `f4d7ae5`, `8edfbbd`; `components/idea-overview.tsx`.
+- [x] Dashboard заполнен полезными блоками: «Путь обращения», очередь внимания, последние результаты. Уже сделано в `7efe09c`, `f9be88b`; `components/idea-overview.tsx`.
 
 ### 🧪 Milestone 5 · P1 — Демо внутри Telegram · 3/3
 

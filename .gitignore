@@ -9,3 +9,5 @@ tmp
 docs/qa
 AGENTS.md
 docs/evidence
+__pycache__/
+*.pyc

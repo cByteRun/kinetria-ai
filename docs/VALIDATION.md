@@ -69,7 +69,7 @@
 
 Финальные дополнительные проверки: `scripts/check-telegram-api.mjs` — PASS (секреты, полный длинный текст, лимиты, emoji, подтверждение после всех частей); `scripts/check-telegram-demo.mjs` и `.sql` — PASS; общий transport-тест меню/имён/действий — PASS. Существующий `check-p0-browser.mjs` обновлён под постоянно видимое поле тегов; новый массовый P0-прогон при живом боте не запускался, чтобы не создавать лишние тестовые обращения/уведомления.
 
-## Проверка сортировки и запуска после b3137ef (12.11.2026)
+## Проверка сортировки и запуска после f9b384f (12.11.2026)
 
 - `node node_modules/next/dist/bin/next build`: production сборка, TypeScript и генерация страниц прошли. В sandbox первоначальный запуск не прочитал вывод TypeScript; повтор вне sandbox успешен.
 - `scripts/check-registry-order.mjs` на production сайте: employee (50), manager-it (31), handler (4), admin (50) — список выбран по умолчанию, порядок ID совпадает с RLS-запросом created_at DESC / number DESC; темы включаются вручную; ошибок браузера нет. Использует существующие синтетические данные, не создаёт обращения. Настройки Playwright и P0_BASE_URL аналогичны остальным browser-проверкам.
@@ -90,21 +90,21 @@ Runbook: [README](../README.md#быстрый-запуск-telegram-и-бесп�
 
 ### Размещение Vercel и конфигурация Supabase
 
-Production URL: https://app.example.invalid, вход: https://app.example.invalid/login. Проект Vercel kinetria-ai, Node.js 24; preview остаются под Vercel Authentication, production публичный. APP_URL сохранён в production и локальном окружении. Исходники загружены через Vercel API из текущей рабочей директории.
+Историческая проверка размещённого приложения: HTTPS origin из APP_URL, вход /login, Node.js 24; preview остаются под Vercel Authentication, production публичный. APP_URL сохранён в production и локальном окружении. Исходники загружены через Vercel API из текущей рабочей директории.
 
-В production явно заданы URL и publishable key облачной KinetriaAI (SUPABASE_PROJECT_REF). Существующий интеграционный SUPABASE_SECRET_KEY не соответствует этой базе (Auth API: 401 Invalid API key); требуется заменить его в Vercel и выполнить redeploy. До этого seed аккаунтов и живой webhook не считаются принятыми. Setup останавливается на неготовом probe до setWebhook, текущий транспорт Telegram не переключается.
+В production явно заданы URL и publishable key одного облачного проекта Supabase. Существующий интеграционный SUPABASE_SECRET_KEY не соответствует этой базе (Auth API: 401 Invalid API key); требуется заменить его в Vercel и выполнить redeploy. До этого seed аккаунтов и живой webhook не считаются принятыми. Setup останавливается на неготовом probe до setWebhook, текущий транспорт Telegram не переключается.
 
 Проверка SQL облачной БД: RLS telegram_sessions включён, authenticated не читает сессии, bridge закрыт для anon/authenticated, сохранение state выполняется в БД — PASS. Advisor сообщает INFO об отсутствии клиентских политик у 7 служебных Telegram-таблиц: доступ намеренно закрыт. Отдельные прежние WARN относятся к public.rls_auto_enable(), не к Telegram bridge: [описание и remediation](https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable).
 
-Production deployment `DEPLOYMENT_ID`: READY. Проверка публичных `/` и `/login`: HTTP 200; `/api/telegram/webhook` без secret: HTTP 401. Authenticated probe пока не принят из-за серверного ключа другой базы.
+Исторический production deployment: READY. Проверка публичных `/` и `/login`: HTTP 200; `/api/telegram/webhook` без secret: HTTP 401. Authenticated probe пока не принят из-за серверного ключа другой базы.
 
 ## Подключение интеграционной базы и живой webhook
 
-12.11.2026: обновлённый .env.local указывает на Supabase `SUPABASE_PROJECT_REF`, созданную через интеграцию Vercel. Проверка Auth Admin с текущим secret: успешна. Ранее использованная `SUPABASE_PROJECT_REF` — отдельный проект с похожим названием; прежний блокер 401 устранён синхронизацией всей тройки URL/publishable/secret.
+12.11.2026: обновлённый .env.local указывает на Supabase, созданную через интеграцию Vercel. Проверка Auth Admin с текущим secret: успешна. Ранее использованная база — отдельный проект с похожим названием; прежний блокер 401 устранён синхронизацией всей тройки URL/publishable/secret.
 
 В интеграционной базе изначально не было profiles, requests и Telegram RPC. Через штатный PostgreSQL URL интеграции с проверкой project ref и TLS-сертификата Supabase выполнен разовый `scripts/bootstrap-hosted.mjs`. Все 11 файлов migrations применены по порядку и записаны в supabase_migrations.schema_migrations. Подготовлены 9 профилей, 20 синтетических обращений, назначения категорий и маршруты. Последующие миграции пропускаются по version; обычная сборка проекта снова pnpm build, bootstrap автоматически не запускается. pg 8.16.3 устанавливался только во временный каталог build-машины.
 
-Production deployment: `DEPLOYMENT_ID`, https://app.example.invalid. Облачный setup проверил getMe, приватность канала, post/edit права, затем зарегистрировал `/api/telegram/webhook` с secret и max_connections=1; URL подтверждён через getWebhookInfo.
+Размещённая версия проверена на origin из APP_URL. Облачный setup проверил getMe, приватность канала, post/edit права, затем зарегистрировал `/api/telegram/webhook` с secret и max_connections=1; URL подтверждён через getWebhookInfo.
 
 `node scripts/check-hosted-deployment.mjs` выполнен в Vercel с production env — PASS:
 
@@ -117,6 +117,6 @@ Production deployment: `DEPLOYMENT_ID`, https://app.example.invalid. Облач�
 Полный ручной голосовой проход в Telegram этой проверкой не подменяется. Планировщик outbox для повторов при сбое остаётся отдельной эксплуатационной настройкой. Локальная среда периодически не достигает Vercel по HTTPS; поэтому настройка webhook и сквозная HTTP-проверка выполнены с облачной build-машины.
 
 
-## Ревью Telegram после ff681ce
+## Ревью Telegram после 397c041
 
 Локально проверен webhook → общий доменный Closed-Loop: создание/вложение → назначение и срок → уточнение/ответ → работа → решение/ознакомление, а также резерв администратора. Исправлены повторы после сбоев RPC и отправки, независимая доставка уведомлений, старые кнопки назначения и чтение полного вопроса/истории. Схема и права сохранены. Исправления ещё требуют redeploy; реальный Whisper и расписание outbox отдельно не подтверждены. [Находки, проверки и ограничения](CODE-REVIEW.md#ревью-миграции-telegram-polling--webhook).
