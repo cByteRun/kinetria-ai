@@ -22,7 +22,22 @@ const chat = await api('getChat', {chat_id: channel})
 if (chat.type !== 'channel' || chat.username) throw new Error('Use a private channel without a public username.')
 const member = await api('getChatMember', {chat_id: channel, user_id: bot.id})
 if (member.status !== 'administrator' || !member.can_post_messages || !member.can_edit_messages) throw new Error('Grant bot channel administrator rights: post and edit messages.')
-await api('setMyCommands', {commands:[{command:'help',description:'Инструкция вашей роли'},{command:'new',description:'Новое обращение'},{command:'list',description:'Доступные обращения'},{command:'stats',description:'Сводка очереди'},{command:'cancel',description:'Отменить действие'},{command:'unlink',description:'Отключить аккаунт'}]})
+const commands = [
+  {command:'start',description:'О боте и начало работы'},
+  {command:'home',description:'Главная · меню текущей роли'},
+  {command:'help',description:'Как работает бот · помощь по роли'},
+  {command:'demo',description:'Сменить аккаунт закрытого демо'},
+  {command:'new',description:'Новое обращение · сотрудник'},
+  {command:'draft',description:'Продолжить черновик · сотрудник'},
+  {command:'list',description:'Мои обращения / рабочая очередь'},
+  {command:'stats',description:'Сводка доступных обращений'},
+  {command:'reserve',description:'Резерв · администратор'},
+  {command:'cancel',description:'Отменить текущий шаг'},
+  {command:'unlink',description:'Отключить аккаунт'},
+]
+await api('setMyCommands', {commands})
+const registeredCommands = await api('getMyCommands', {})
+if (JSON.stringify(registeredCommands) !== JSON.stringify(commands)) throw new Error('Bot command registration readback failed.')
 await api('setWebhook', {url: webhookUrl,secret_token:secret,max_connections:1,allowed_updates:['message','callback_query']})
 const registered = await api('getWebhookInfo', {})
 if (registered.url !== webhookUrl || registered.max_connections !== 1) throw new Error('Webhook registration readback failed.')

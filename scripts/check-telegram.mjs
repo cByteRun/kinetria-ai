@@ -66,9 +66,9 @@ await handleUpdate({update_id:++n,message:{chat:{id:-123,type:'group'},from:{id:
 assert.equal(calls.length,beforeCalls,'No employee data in group chats')
 globalThis.telegramHarness.demoEnabled=true
 globalThis.telegramHarness.switchDemo=async(tg,id)=>{assert.equal(tg,42);const account=accounts.find(a=>a.id===id);assert(account);currentRole=account.role;return {name:account.name,role:account.role}}
-await send('/demo');assert.equal(messages.at(-1).buttons.length,8)
+await send('/demo');assert.equal(messages.at(-1).buttons.length,9)
 await callback('demo:manager-it');assert.equal(currentRole,'manager');assert(messages.at(-1).text.includes('Максим Ли'));assert(messages.at(-1).buttons.some(row=>row.some(b=>b.callback_data==='demoMenu')))
-await callback('demoMenu');assert.equal(messages.at(-1).buttons.length,8)
+await callback('demoMenu');assert.equal(messages.at(-1).buttons.length,9)
 await callback('demo:admin');assert.equal(currentRole,'admin');assert(messages.at(-1).buttons.some(row=>row.some(b=>b.callback_data==='menu:reserve')))
 await callback('demo:employee');assert.equal(currentRole,'employee');assert(messages.at(-1).buttons.some(row=>row.some(b=>b.callback_data==='menu:draft')))
 console.log('PASS Telegram demo dialog: website account menu, named greeting, manager/admin/employee actions, return to account picker')
@@ -78,9 +78,9 @@ process.env.APP_URL='https://idearoute.example/path'
 listRows=[{id:'new',number:12,status:'new',title:'Newest'}, {id:'old',number:11,status:'review',title:'Older'}]
 await send('/list')
 assert.deepEqual(messages.at(-1).buttons.slice(0,2).map(row=>row[0].callback_data),['open:old','open:new'])
-assert.equal(messages.at(-1).buttons.at(-1)[0].url,'https://idearoute.example/login')
+assert.equal(messages.at(-1).buttons.flat().find(b=>b.url)?.url,'https://idearoute.example/login')
 await send('/demo')
-assert.equal(messages.at(-1).buttons.at(-1)[0].url,'https://idearoute.example/login')
+assert.equal(messages.at(-1).buttons.flat().find(b=>b.url)?.url,'https://idearoute.example/login')
 process.env.APP_URL='javascript:alert(1)'
 await send('/list')
 assert(!messages.at(-1).buttons.some(row=>row.some(b=>b.url)))
@@ -102,5 +102,15 @@ for (const [account, role, scope] of [['employee','employee','только ва�
  await send('/stats');assert(messages.at(-1).buttons.flat().some(b=>b.url==='https://idearoute.example/login'))
 }
 globalThis.telegramHarness.demoEnabled=false
-currentRole='handler';await send('/start');assert(messages.at(-1).text.includes('назначенные вам'))
+currentRole='handler';await send('/start');assert(messages.at(-1).text.includes('Ответственный'))
+const savedState=structuredClone(states.get(42))
+for (const command of ['/home','/help','/start']) {
+ await send(command); assert.deepEqual(states.get(42),savedState); assert.equal(currentRole,'handler')
+ assert(messages.at(-1).buttons.flat().some(b=>b.callback_data==='menu:home'))
+}
+await callback('menu:home');assert.deepEqual(states.get(42),savedState)
+assert(messages.at(-1).text.includes('одними обращениями'))
+assert(!messages.at(-1).buttons.flat().some(b=>b.callback_data==='demoMenu'))
+globalThis.telegramHarness.demoEnabled=true
+await send('/start');assert(messages.at(-1).text.includes('/demo'));assert.equal(currentRole,'handler')
 console.log('PASS role instructions: all four roles, current identity scope, draft preserved, help and dashboard links for demo/linked accounts and stats')

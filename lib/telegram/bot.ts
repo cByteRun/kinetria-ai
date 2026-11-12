@@ -17,9 +17,9 @@ const statusNames: Record<string, string> = { new: 'Новое', review: 'На �
 function websiteButtons(): Button[][] {
   try {
     const url = new URL(process.env.APP_URL || '')
-    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) return []
-    return [[{ text: '🌐 Открыть дашборд · вход / демо', url: new URL('/login', url.origin).href }]]
-  } catch { return [] }
+    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) return [[button('🏠 Главная', 'menu:home')]]
+    return [[{ text: '🌐 Открыть дашборд · вход / демо', url: new URL('/login', url.origin).href }], [button('🏠 Главная', 'menu:home')]]
+  } catch { return [[button('🏠 Главная', 'menu:home')]] }
 }
 
 async function showDraft(tg: number, c: Context, s: State) {
@@ -78,14 +78,25 @@ const roleInstructions: Record<string, string> = {
   manager: '👔 Инструкция руководителя\n\n1. Откройте «Моя очередь» или /list. Доступны обращения категорий вашего направления.\n2. В карточке нажмите «Назначить ответственного», выберите допустимого участника, укажите срок или «-» и подтвердите назначение.\n3. Рассматривайте обращения, запрашивайте уточнения и фиксируйте следующий шаг или содержательное решение. История сохраняется для автора.\n4. Контролируйте сроки, аналитику и повторяющиеся темы своего направления в дашборде.\n\n/stats показывает сводку последних 30 доступных записей. /cancel отменяет текущий шаг.',
   admin: '⚙️ Инструкция администратора\n\n1. Откройте «Моя очередь» или /list для общего внутреннего реестра; /stats — сводка последних 30 доступных записей.\n2. «Резервная очередь» или /reserve показывает открытые обращения без владельца. В карточке назначьте допустимого руководителя, укажите срок и подтвердите.\n3. История, комментарии и вложения помогают проверить маршрут. Решение по обращению публикует руководитель или ответственный.\n4. Категории, правила маршрутизации, срок, приоритет и общая аналитика доступны в дашборде.\n\n/cancel отменяет текущий шаг.',
 }
+const overview = '💡 IdeaRoute — проблемы и предложения сотрудников с понятным результатом.\n\n📝 Автор подтверждает обращение → 👔 команда назначает ответственного и срок → 🛠 фиксирует решение → ✅ автор получает итог.\n\n🌐 Бот и дашборд работают с одними обращениями и историей. В боте — быстрые действия и уведомления; на сайте — полный реестр, аналитика и настройки. На сайте войдите в тот же аккаунт.'
+function homeButtons(tg: number, role: string): Button[][] {
+  const rows = role === 'employee'
+    ? [[button('📝 Новое обращение', 'menu:new'), button('Мои обращения', 'menu:list')], [button('Продолжить черновик', 'menu:draft')]]
+    : [[button(role === 'admin' ? 'Общий реестр' : 'Моя очередь', 'menu:list'), button('📊 Сводка', 'menu:stats')]]
+  if (role === 'admin') rows.push([button('Резервная очередь', 'menu:reserve')])
+  rows.push([button('📖 Помощь по моей роли', 'help')])
+  if (demoAllowed(tg)) rows.push([button('🔄 Сменить демоаккаунт', 'demoMenu')])
+  rows.push(...websiteButtons())
+  return rows
+}
+async function showHome(tg: number, c: Pick<Context, 'role' | 'name'>) {
+  await say(tg, `${overview}\n\n${demoRoleNames[c.role] || c.role} · ${c.name}\nВыберите действие.\n\n🏠 /home — главное меню; /help — помощь; /cancel — отменить текущий шаг.${demoAllowed(tg) ? '\n🧪 Выбранный демоаккаунт остаётся активным до выбора другого через /demo или отвязки /unlink.' : ''}\nЧерновик сохраняется при переходе на главную и в помощь; /draft — продолжить.`, homeButtons(tg, c.role))
+}
 async function showInstructions(tg: number, c: Pick<Context, 'role'>) {
-  await say(tg, roleInstructions[c.role] || 'Инструкция для этой роли недоступна.', [
-    [button(c.role === 'employee' ? 'Мои обращения' : 'Моя очередь', 'menu:list')],
-    ...websiteButtons(),
-  ])
+  await say(tg, `${overview}\n\n${roleInstructions[c.role] || 'Инструкция для этой роли недоступна.'}\n\n🏠 /home — меню текущей роли без смены аккаунта. /help и /home сохраняют текущий шаг и черновик.${demoAllowed(tg) ? '\n🧪 /demo — выбрать другой демоаккаунт. Текущий действует до переключения или /unlink. Черновики разделены по аккаунтам.' : ''}`, homeButtons(tg, c.role))
 }
 async function demoMenu(tg: number) {
-  await say(tg, '🧪 IdeaRoute · Вход в демо\nВыберите тестовый аккаунт, как на странице входа сайта. Роль и доступы изменятся; черновики сохраняются отдельно для каждого аккаунта.', demoChoices.map(account => [button(`${demoRoleNames[account.role]} · ${account.name}`, 'demo:' + account.id)]).concat(websiteButtons()))
+  await say(tg, `${overview}\n\n🧪 Вход в демо\nВыберите тестовый аккаунт, как на странице входа сайта. Он будет активен до выбора другого через /demo или отвязки /unlink. /home возвращает меню текущей роли.\n\n👥 Для совместного показа каждый участник выбирает отдельный аккаунт. Уже занятый аккаунт выбрать нельзя. Черновики сохраняются отдельно для каждого аккаунта.`, demoChoices.map(account => [button(`${demoRoleNames[account.role]} · ${account.name}`, 'demo:' + account.id)]).concat(websiteButtons()))
 }
 export async function handleUpdate(update: Update) {
   const m = update.message || update.callback_query?.message
@@ -97,27 +108,27 @@ export async function handleUpdate(update: Update) {
   try {
     if (update.callback_query) await telegram('answerCallbackQuery', { callback_query_id: update.callback_query.id }).catch(() => undefined)
     const callback = update.callback_query?.data || ''
-    const menuCommands: Record<string, string> = { 'menu:new': '/new', 'menu:list': '/list', 'menu:stats': '/stats', 'menu:reserve': '/reserve', 'menu:draft': '/draft' }
+    const menuCommands: Record<string, string> = { 'menu:home': '/home', 'menu:new': '/new', 'menu:list': '/list', 'menu:stats': '/stats', 'menu:reserve': '/reserve', 'menu:draft': '/draft' }
     const text = menuCommands[callback] || update.message?.text?.trim() || ''
-    if (demoAllowed(tg) && (['/demo', '/login', '/switch', '/start'].includes(text) || callback === 'demoMenu')) {
+    if (demoAllowed(tg) && text === '/start') {
+      try { await showHome(tg, await bridge(tg, 'context')) }
+      catch (error) { if (error instanceof Error && error.message === 'unlinked') await demoMenu(tg); else throw error }
+    } else if (demoAllowed(tg) && (['/demo', '/login', '/switch'].includes(text) || callback === 'demoMenu')) {
       await demoMenu(tg)
     } else if (demoAllowed(tg) && callback.startsWith('demo:')) {
       const profile = await switchDemoAccount(tg, callback.slice(5))
-      const buttons: Button[][] = profile.role === 'employee'
-        ? [[button('Новое обращение', 'menu:new'), button('Мои обращения', 'menu:list')], [button('Продолжить черновик', 'menu:draft')]]
-        : [[button('Моя очередь', 'menu:list'), button('Сводка', 'menu:stats')]]
-      if (profile.role === 'admin') buttons.push([button('Резервная очередь', 'menu:reserve')])
-      buttons.push([button('📖 Как пользоваться · ' + demoRoleNames[profile.role], 'help')], [button('🔄 Сменить демоаккаунт', 'demoMenu')], ...websiteButtons())
-      await say(tg, `🧪 Демоаккаунт\nЗдравствуйте, ${profile.name}!\n${demoRoleNames[profile.role]}\nВыберите действие. /demo — сменить аккаунт; /cancel — отменить текущий шаг.`, buttons)
+      await showHome(tg, profile)
     } else if (/^\/start [0-9a-f-]{36}$/i.test(text)) {
       await bridge(tg, 'link', { token: text.slice(7) })
-      await say(tg, '✅ Аккаунт привязан. /help — инструкция вашей роли; /list — обращения; /unlink — отключить.', [[button('📖 Как пользоваться', 'help')], ...websiteButtons()])
+      await say(tg, '✅ Аккаунт привязан. Один аккаунт — один Telegram. Для совместной работы каждый привязывает свой аккаунт.'); await showHome(tg, await bridge(tg, 'context'))
     } else {
       const c: Context = await bridge(tg, 'context'); const s = c.state
       const cb = update.callback_query?.data || ''
       if (text === '/unlink') { await bridge(tg, 'unlink'); await say(tg, 'Telegram отключён от аккаунта.') }
       else if (text === '/cancel' || cb === 'cancel') { await state(tg, {}); await say(tg, 'Действие отменено. /new · /list') }
-      else if (text === '/start' || text === '/help' || cb === 'help') await showInstructions(tg, c)
+      else if (text === '/start' || text === '/home') await showHome(tg, c)
+      else if (text === '/help' || cb === 'help') await showInstructions(tg, c)
+      else if (['/demo', '/login', '/switch'].includes(text)) await say(tg, 'Демовход доступен только участникам закрытого показа. /home — меню вашего аккаунта.', websiteButtons())
       else if (text === '/draft') {
         if (c.role === 'employee' && s.draft) {
           const next = { ...s, mode: 'draft', field: undefined }
@@ -236,14 +247,14 @@ export async function handleUpdate(update: Update) {
           if (s.files?.some(x => x.name === name)) await say(tg, 'Файл с таким именем уже добавлен.')
           else { const next = { ...s, files: [...s.files || [], { name, size: data.length, content: data.toString('base64') }] }; await state(tg, next); await showDraft(tg, c, next) }
         }
-      } else await say(tg, 'Выберите /new или /list. Кнопка старого черновика могла устареть; /cancel отменяет текущий шаг.')
+      } else await say(tg, '🏠 /home — меню вашей роли; /help — инструкция. Кнопка старого черновика могла устареть; /cancel отменяет текущий шаг.')
     }
     await bridge(tg, 'finish', { update: update.update_id, done: true })
   } catch (error) {
     const message = error instanceof Error ? error.message : ''
     if (['conflict', 'unavailable', 'unlinked', 'demoBusy'].includes(message)) {
       try {
-        await say(tg, message === 'demoBusy' ? 'Этот демоаккаунт уже привязан к другому Telegram. Выберите другой аккаунт или сначала отвяжите его через /unlink.' : message === 'unlinked' ? 'Привяжите аккаунт по одноразовой ссылке из раздела «Как работает маршрут» на сайте.' : message === 'conflict' ? 'Карточка изменилась. Откройте /list и повторите действие с актуальной версией.' : 'Действие недоступно. Проверьте права, поля и срок ссылки. /cancel · /list', websiteButtons())
+        await say(tg, message === 'demoBusy' ? 'Этот демоаккаунт уже привязан к другому Telegram. Выберите другой аккаунт или сначала отвяжите его через /unlink.' : message === 'unlinked' ? overview + '\n\n🔗 Откройте на сайте кабинет → «Как работает маршрут» → «Привязать аккаунт» и перейдите по одноразовой ссылке. Каждый участник привязывает свой аккаунт; повторная привязка одного веб-аккаунта заменит предыдущий Telegram.' : message === 'conflict' ? 'Карточка изменилась. Откройте /list и повторите действие с актуальной версией.' : 'Действие недоступно. Проверьте права, поля и срок ссылки. /cancel · /list', websiteButtons())
         await bridge(tg, 'finish', { update: update.update_id, done: true })
       } catch (replyError) {
         await bridge(tg, 'finish', { update: update.update_id, done: false })
