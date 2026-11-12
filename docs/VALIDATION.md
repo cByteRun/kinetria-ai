@@ -79,3 +79,39 @@
 - Telegram getMe/права приватного канала проверены; webhook отсутствует. Локальный poller перезапущен, получен `Polling your_bot`, обработаны накопившиеся update_id. APP_URL оставлен пустым до указания домена пользователем, URL-кнопка проверена в harness.
 
 Runbook: [README](../README.md#быстрый-запуск-telegram-и-бесплатного-groq). Остановка poller/компьютера прекращает локальную работу бота; для постоянной работы требуется HTTPS webhook либо постоянный процесс.
+
+## Telegram: инструкции ролей и переход на webhook (12.11.2026)
+
+- `node scripts/check-telegram.mjs`: PASS — кнопка инструкции и переход APP_URL/login для сотрудника, ответственного, руководителя и администратора; /help использует текущую роль, сохраняет черновик; /stats содержит URL-кнопку. Существующие проверки подтверждения, повторов update_id, файлов и приватных чатов проходят.
+- `node scripts/check-telegram-webhook.mjs`: PASS — secret, невалидный/слишком большой JSON, ожидание обработки перед 200, 503 для retry, скрытие текста ошибок, outbox через after, проверка Supabase; setup проверяет endpoint до регистрации, не сбрасывает pending updates, сверяет getWebhookInfo.
+- `check-telegram-api.mjs`, `check-telegram-demo.mjs`, `check-telegram-delivery.mjs`, `check-i18n.mjs`: PASS. Production build вне sandbox: PASS; внутри sandbox повторилось ограничение чтения TypeScript showConfig.
+- Состояние уже хранится в Supabase, существующие таблицы/RPC сохранены. Polling отключён, команда заменена на pnpm telegram:webhook. Новый schema migration для транспорта не нужен.
+- Облачный deployment, регистрация webhook и проверка реального endpoint фиксируются отдельно после завершения настройки. Полный человеческий голосовой сценарий не подменяется harness-проверками.
+
+### Размещение Vercel и конфигурация Supabase
+
+Production URL: https://app.example.invalid, вход: https://app.example.invalid/login. Проект Vercel kinetria-ai, Node.js 24; preview остаются под Vercel Authentication, production публичный. APP_URL сохранён в production и локальном окружении. Исходники загружены через Vercel API из текущей рабочей директории.
+
+В production явно заданы URL и publishable key облачной KinetriaAI (SUPABASE_PROJECT_REF). Существующий интеграционный SUPABASE_SECRET_KEY не соответствует этой базе (Auth API: 401 Invalid API key); требуется заменить его в Vercel и выполнить redeploy. До этого seed аккаунтов и живой webhook не считаются принятыми. Setup останавливается на неготовом probe до setWebhook, текущий транспорт Telegram не переключается.
+
+Проверка SQL облачной БД: RLS telegram_sessions включён, authenticated не читает сессии, bridge закрыт для anon/authenticated, сохранение state выполняется в БД — PASS. Advisor сообщает INFO об отсутствии клиентских политик у 7 служебных Telegram-таблиц: доступ намеренно закрыт. Отдельные прежние WARN относятся к public.rls_auto_enable(), не к Telegram bridge: [описание и remediation](https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable).
+
+Production deployment `DEPLOYMENT_ID`: READY. Проверка публичных `/` и `/login`: HTTP 200; `/api/telegram/webhook` без secret: HTTP 401. Authenticated probe пока не принят из-за серверного ключа другой базы.
+
+## Подключение интеграционной базы и живой webhook
+
+12.11.2026: обновлённый .env.local указывает на Supabase `SUPABASE_PROJECT_REF`, созданную через интеграцию Vercel. Проверка Auth Admin с текущим secret: успешна. Ранее использованная `SUPABASE_PROJECT_REF` — отдельный проект с похожим названием; прежний блокер 401 устранён синхронизацией всей тройки URL/publishable/secret.
+
+В интеграционной базе изначально не было profiles, requests и Telegram RPC. Через штатный PostgreSQL URL интеграции с проверкой project ref и TLS-сертификата Supabase выполнен разовый `scripts/bootstrap-hosted.mjs`. Все 11 файлов migrations применены по порядку и записаны в supabase_migrations.schema_migrations. Подготовлены 9 профилей, 20 синтетических обращений, назначения категорий и маршруты. Последующие миграции пропускаются по version; обычная сборка проекта снова pnpm build, bootstrap автоматически не запускается. pg 8.16.3 устанавливался только во временный каталог build-машины.
+
+Production deployment: `DEPLOYMENT_ID`, https://app.example.invalid. Облачный setup проверил getMe, приватность канала, post/edit права, затем зарегистрировал `/api/telegram/webhook` с secret и max_connections=1; URL подтверждён через getWebhookInfo.
+
+`node scripts/check-hosted-deployment.mjs` выполнен в Vercel с production env — PASS:
+
+- Authenticated probe: HTTP 200, database ready. Без secret: HTTP 401. Невалидный update: 400; допустимый update без сообщения: 200, без отправки сообщения человеку.
+- Сотрудник: Auth, профиль, RLS-реестр 20 записей, веб-вход с cookie и кабинет — PASS.
+- Ответственный: тот же проход, RLS-реестр 1 назначение — PASS.
+- Руководитель manager-it: тот же проход, RLS-реестр 4 записи направления — PASS.
+- Администратор: тот же проход, RLS-реестр 20 записей — PASS.
+
+Полный ручной голосовой проход в Telegram этой проверкой не подменяется. Планировщик outbox для повторов при сбое остаётся отдельной эксплуатационной настройкой. Локальная среда периодически не достигает Vercel по HTTPS; поэтому настройка webhook и сквозная HTTP-проверка выполнены с облачной build-машины.

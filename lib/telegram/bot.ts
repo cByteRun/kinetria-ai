@@ -18,7 +18,7 @@ function websiteButtons(): Button[][] {
   try {
     const url = new URL(process.env.APP_URL || '')
     if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) return []
-    return [[{ text: '🌐 Открыть сайт · вход / демо', url: new URL('/login', url.origin).href }]]
+    return [[{ text: '🌐 Открыть дашборд · вход / демо', url: new URL('/login', url.origin).href }]]
   } catch { return [] }
 }
 
@@ -69,6 +69,18 @@ async function detail(tg: number, c: Context, id: string) {
   await say(tg, `${ref(r.number)} · ${statusNames[r.status]}\n${r.title}\n\n${r.description}\n\nПредложение: ${r.proposal || '—'}\nСрок: ${r.due_at || '—'}\nРешение: ${r.decision || '—'}\nСледующий шаг: ${r.next_step || '—'}`, controls)
 }
 const demoRoleNames: Record<string, string> = { employee: '👤 Сотрудник', handler: '🛠 Ответственный', manager: '👔 Руководитель', admin: '⚙️ Администратор' }
+const roleInstructions: Record<string, string> = {
+  employee: '👤 Инструкция сотрудника\n\n1. Нажмите «Новое обращение» или /new. Опишите проблему или предложение текстом либо голосом до 120 секунд / 3 МиБ.\n2. Проверьте черновик: тему, описание, категорию и предложение. Можно добавить до 3 файлов по 1 МиБ. Только кнопка «Отправить» регистрирует обращение и выдаёт R-номер.\n3. Откройте «Мои обращения» или /list: здесь только ваши записи. В карточке доступны история, комментарии и вложения.\n4. Если нужно уточнение — нажмите «Ответить». После решения прочитайте итог и нажмите «Ознакомлен с решением».\n\n/new создаёт обращение, /draft возвращает черновик, /cancel отменяет текущий шаг.',
+  handler: '🛠 Инструкция ответственного\n\n1. Откройте «Моя очередь» или /list. Вы видите только обращения, назначенные вам.\n2. Откройте карточку, изучите описание, историю и вложения. Примите обращение на рассмотрение.\n3. При необходимости запросите уточнение у автора. Для работы укажите содержательный следующий шаг.\n4. Зафиксируйте результат: реализацию, мотивированный отказ или закрытие. Решение и история доступны автору.\n\n/stats показывает сводку последних 30 доступных записей. Срок, приоритет и полная аналитика ваших назначений доступны в дашборде. /cancel отменяет текущий шаг.',
+  manager: '👔 Инструкция руководителя\n\n1. Откройте «Моя очередь» или /list. Доступны обращения категорий вашего направления.\n2. В карточке нажмите «Назначить ответственного», выберите допустимого участника, укажите срок или «-» и подтвердите назначение.\n3. Рассматривайте обращения, запрашивайте уточнения и фиксируйте следующий шаг или содержательное решение. История сохраняется для автора.\n4. Контролируйте сроки, аналитику и повторяющиеся темы своего направления в дашборде.\n\n/stats показывает сводку последних 30 доступных записей. /cancel отменяет текущий шаг.',
+  admin: '⚙️ Инструкция администратора\n\n1. Откройте «Моя очередь» или /list для общего внутреннего реестра; /stats — сводка последних 30 доступных записей.\n2. «Резервная очередь» или /reserve показывает открытые обращения без владельца. В карточке назначьте допустимого руководителя, укажите срок и подтвердите.\n3. История, комментарии и вложения помогают проверить маршрут. Решение по обращению публикует руководитель или ответственный.\n4. Категории, правила маршрутизации, срок, приоритет и общая аналитика доступны в дашборде.\n\n/cancel отменяет текущий шаг.',
+}
+async function showInstructions(tg: number, c: Pick<Context, 'role'>) {
+  await say(tg, roleInstructions[c.role] || 'Инструкция для этой роли недоступна.', [
+    [button(c.role === 'employee' ? 'Мои обращения' : 'Моя очередь', 'menu:list')],
+    ...websiteButtons(),
+  ])
+}
 async function demoMenu(tg: number) {
   await say(tg, '🧪 IdeaRoute · Вход в демо\nВыберите тестовый аккаунт, как на странице входа сайта. Роль и доступы изменятся; черновики сохраняются отдельно для каждого аккаунта.', demoChoices.map(account => [button(`${demoRoleNames[account.role]} · ${account.name}`, 'demo:' + account.id)]).concat(websiteButtons()))
 }
@@ -92,17 +104,17 @@ export async function handleUpdate(update: Update) {
         ? [[button('Новое обращение', 'menu:new'), button('Мои обращения', 'menu:list')], [button('Продолжить черновик', 'menu:draft')]]
         : [[button('Моя очередь', 'menu:list'), button('Сводка', 'menu:stats')]]
       if (profile.role === 'admin') buttons.push([button('Резервная очередь', 'menu:reserve')])
-      buttons.push([button('🔄 Сменить демоаккаунт', 'demoMenu')], ...websiteButtons())
+      buttons.push([button('📖 Как пользоваться · ' + demoRoleNames[profile.role], 'help')], [button('🔄 Сменить демоаккаунт', 'demoMenu')], ...websiteButtons())
       await say(tg, `🧪 Демоаккаунт\nЗдравствуйте, ${profile.name}!\n${demoRoleNames[profile.role]}\nВыберите действие. /demo — сменить аккаунт; /cancel — отменить текущий шаг.`, buttons)
     } else if (/^\/start [0-9a-f-]{36}$/i.test(text)) {
       await bridge(tg, 'link', { token: text.slice(7) })
-      await say(tg, '✅ Аккаунт привязан. /new — создать, /list — обращения, /stats — сводка, /cancel — отмена, /unlink — отключить.')
+      await say(tg, '✅ Аккаунт привязан. /help — инструкция вашей роли; /list — обращения; /unlink — отключить.', [[button('📖 Как пользоваться', 'help')], ...websiteButtons()])
     } else {
       const c: Context = await bridge(tg, 'context'); const s = c.state
       const cb = update.callback_query?.data || ''
       if (text === '/unlink') { await bridge(tg, 'unlink'); await say(tg, 'Telegram отключён от аккаунта.') }
       else if (text === '/cancel' || cb === 'cancel') { await state(tg, {}); await say(tg, 'Действие отменено. /new · /list') }
-      else if (text === '/start' || text === '/help') await say(tg, `IdeaRoute · ${c.name}\n/new — новое обращение (сотрудник)\n/list — доступные обращения\n/stats — сводка по доступной очереди\n/reserve — резерв администратора\n/cancel — отменить\n/unlink — отвязать аккаунт${demoAllowed(tg) ? '\n/demo — сменить тестовый аккаунт' : ''}`)
+      else if (text === '/start' || text === '/help' || cb === 'help') await showInstructions(tg, c)
       else if (text === '/draft') {
         if (c.role === 'employee' && s.draft) await showDraft(tg, c, s)
         else await say(tg, 'Сохранённого черновика нет. /new — создать обращение; /demo — выбор демоаккаунта.')
@@ -112,7 +124,7 @@ export async function handleUpdate(update: Update) {
         else { await state(tg, { mode: 'compose' }); await say(tg, 'Опишите проблему или предложение текстом либо голосом (до 120 секунд / 3 МиБ). Укажите категорию, проявления и ожидаемое решение. Аудио передаётся в Groq для распознавания. До подтверждения обращение не регистрируется.') }
       } else if (text === '/list' || text === '/stats' || (text === '/reserve' && c.role === 'admin')) {
         const rows = await bridge(tg, text === '/reserve' ? 'reserve' : text === '/stats' ? 'stats' : 'list') as { id: string; number: number; title: string; status: string; assignee_id: string | null }[]
-        if (text === '/stats') await say(tg, `📊 Последние ${rows.length} доступных обращений\nОткрыто: ${rows.filter(r => !terminalStatuses.includes(r.status as RequestStatus)).length}\nБез владельца: ${rows.filter(r => !r.assignee_id).length}\nПолная аналитика и настройки — в Web Dashboard.`)
+        if (text === '/stats') await say(tg, `📊 Последние ${rows.length} доступных обращений\nОткрыто: ${rows.filter(r => !terminalStatuses.includes(r.status as RequestStatus)).length}\nБез владельца: ${rows.filter(r => !r.assignee_id).length}\nПолная аналитика и настройки — в дашборде.`, websiteButtons())
         else await say(tg, rows.length ? 'Ваша очередь · последние 10 по дате создания. Самые новые внизу. Полный реестр — на сайте.' : 'Доступных обращений пока нет.', [...rows].reverse().map(r => [button(`${ref(r.number)} · ${statusNames[r.status]} · ${r.title.slice(0, 35)}`, 'open:' + r.id)]).concat(websiteButtons()))
       } else if (cb.startsWith('open:')) await detail(tg, c, cb.slice(5))
       else if (cb.startsWith('history:')) {
@@ -203,7 +215,7 @@ export async function handleUpdate(update: Update) {
     const message = error instanceof Error ? error.message : ''
     if (['conflict', 'unavailable', 'unlinked', 'demoBusy'].includes(message)) {
       try {
-        await say(tg, message === 'demoBusy' ? 'Этот демоаккаунт уже привязан к другому Telegram. Выберите другой аккаунт или сначала отвяжите его через /unlink.' : message === 'unlinked' ? 'Привяжите аккаунт по одноразовой ссылке из раздела «Как работает маршрут» на сайте.' : message === 'conflict' ? 'Карточка изменилась. Откройте /list и повторите действие с актуальной версией.' : 'Действие недоступно. Проверьте права, поля и срок ссылки. /cancel · /list')
+        await say(tg, message === 'demoBusy' ? 'Этот демоаккаунт уже привязан к другому Telegram. Выберите другой аккаунт или сначала отвяжите его через /unlink.' : message === 'unlinked' ? 'Привяжите аккаунт по одноразовой ссылке из раздела «Как работает маршрут» на сайте.' : message === 'conflict' ? 'Карточка изменилась. Откройте /list и повторите действие с актуальной версией.' : 'Действие недоступно. Проверьте права, поля и срок ссылки. /cancel · /list', websiteButtons())
         await bridge(tg, 'finish', { update: update.update_id, done: true })
       } catch (replyError) {
         await bridge(tg, 'finish', { update: update.update_id, done: false })

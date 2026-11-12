@@ -1,5 +1,5 @@
 import { after } from 'next/server'
-import { secretMatches, telegram } from '../../../../lib/telegram/api'
+import { secretMatches, telegram, telegramDb } from '../../../../lib/telegram/api'
 import { handleUpdate, type Update } from '../../../../lib/telegram/bot'
 import { deliverOutbox } from '../../../../lib/telegram/delivery'
 export const runtime = 'nodejs'
@@ -31,10 +31,14 @@ export async function POST(request: Request) {
 export async function GET(request: Request) {
   if (!secretMatches(request.headers.get('x-telegram-bot-api-secret-token'), process.env.TELEGRAM_WEBHOOK_SECRET)) return new Response('Unauthorized', { status: 401 })
   try {
-    const bot = await telegram<{ username: string }>('getMe', {})
-    return Response.json({ ok: true, username: bot.username })
+    const [bot, database] = await Promise.all([
+      telegram<{ username: string }>('getMe', {}),
+      telegramDb().from('telegram_sessions').select('telegram_id').limit(0),
+    ])
+    if (database.error) throw new Error('Database unavailable')
+    return Response.json({ ok: true, username: bot.username, database: 'ready' })
   } catch (error) {
-    const reason = error instanceof Error && /^Telegram delivery failed: HTTP [0-9]+, code [0-9]+$/.test(error.message) ? error.message : error instanceof Error && ['Provider timeout', 'Provider connection failed', 'Provider response failed'].includes(error.message) ? error.message : error instanceof Error ? error.name : 'Error'
+    const reason = error instanceof Error && /^Telegram delivery failed: HTTP [0-9]+, code [0-9]+$/.test(error.message) ? error.message : error instanceof Error && ['Provider timeout', 'Provider connection failed', 'Provider response failed', 'Database unavailable', 'Telegram database not configured'].includes(error.message) ? error.message : error instanceof Error ? error.name : 'Error'
     return Response.json({ ok: false, reason }, { status: 502 })
   }
 }

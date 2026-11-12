@@ -15,7 +15,7 @@ globalThis.telegramHarness = {
     if (op === 'state') { states.set(tg,data); return true }
     if (op === 'submit') return {id:'f0000000-0000-4000-8000-000000000000',number:123}
     if (op === 'finish') return true
-    if (op === 'list') return listRows
+    if (['list','stats'].includes(op)) return listRows
     throw new Error('Unexpected bridge operation: ' + op)
   },
   async say(tg,text,buttons) { messages.push({tg,text,buttons}); return {message_id:messages.length} },
@@ -86,3 +86,21 @@ await send('/list')
 assert(!messages.at(-1).buttons.some(row=>row.some(b=>b.url)))
 delete process.env.APP_URL
 console.log('PASS Telegram list: newest at bottom, website login link, unsafe URL excluded')
+
+process.env.APP_URL='https://idearoute.example'
+for (const [account, role, scope] of [['employee','employee','только ваши записи'],['handler','handler','назначенные вам'],['manager-it','manager','вашего направления'],['admin','admin','общего внутреннего реестра']]) {
+ await callback('demo:'+account)
+ assert.equal(currentRole,role)
+ assert(messages.at(-1).buttons.flat().some(b=>b.callback_data==='help'))
+ assert(messages.at(-1).buttons.flat().some(b=>b.url==='https://idearoute.example/login'))
+ const saved=JSON.stringify(states.get(42))
+ await callback('help')
+ assert(messages.at(-1).text.includes(scope))
+ assert.equal(JSON.stringify(states.get(42)),saved,'Help must preserve the current draft/action')
+ assert(messages.at(-1).buttons.flat().some(b=>b.url==='https://idearoute.example/login'))
+ await send('/help');assert(messages.at(-1).text.includes(scope))
+ await send('/stats');assert(messages.at(-1).buttons.flat().some(b=>b.url==='https://idearoute.example/login'))
+}
+globalThis.telegramHarness.demoEnabled=false
+currentRole='handler';await send('/start');assert(messages.at(-1).text.includes('назначенные вам'))
+console.log('PASS role instructions: all four roles, current identity scope, draft preserved, help and dashboard links for demo/linked accounts and stats')

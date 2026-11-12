@@ -5,7 +5,7 @@
     "build": "next build",
     "start": "next start",
     "seed:demo": "node --env-file=.env.local scripts/seed-demo.mjs",
-    "telegram:poll": "node --env-file=.env.local scripts/poll-telegram.mjs",
+    "telegram:webhook": "node --env-file=.env.local scripts/setup-telegram.mjs",
     "telegram:check": "node --env-file=.env.local scripts/check-telegram-connection.mjs",
     "groq:check": "node --env-file=.env.local scripts/check-groq-live.mjs"
   },

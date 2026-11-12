@@ -102,8 +102,14 @@ RLS ограничивает прямой Data API, а RPC дополнител�
 
 После действия `after()` запускает доставку; повторы — `POST /api/telegram/deliver` с `CRON_SECRET` и внешним планировщиком. Exactly-once отправки Telegram не гарантируется; возможны дубли при разрыве между API и подтверждением в БД. Настройка и границы данных: [TELEGRAM](TELEGRAM.md), статус проверки: [VALIDATION](VALIDATION.md).
 
-Демо-расширение: `telegram_demo_sessions` хранит отдельный диалог по Telegram/user ID; `telegram_demo_login` закрыта для anon/authenticated и принимает только существующий активный внутренний синтетический аккаунт. JS-транспорт дополнительно требует `TELEGRAM_DEMO_ENABLED=true` и allowlist Telegram ID; настоящий user ID получает через Supabase Auth вход в тот же демоаккаунт, что на сайте. Чужая занятая привязка не перехватывается. Локальный Node.js 24+ poller вызывает общие обработчики напрямую: исходящий Telegram fetch из текущего Next.js даёт timeout, это ограничение окружения и отдельный gate облачного webhook.
+Демо-расширение: `telegram_demo_sessions` хранит отдельный диалог по Telegram/user ID; `telegram_demo_login` закрыта для anon/authenticated и принимает только существующий активный внутренний синтетический аккаунт. JS-транспорт дополнительно требует `TELEGRAM_DEMO_ENABLED=true` и allowlist Telegram ID; настоящий user ID получает через Supabase Auth вход в тот же демоаккаунт, что на сайте. Чужая занятая привязка не перехватывается. Транспорт — HTTPS webhook Next.js на Vercel. Сессии и lease уже хранятся в Supabase; доступность бота и БД проверяется защищённым GET probe до регистрации webhook.
 
 ## Уточнение запуска и навигации после b3137ef
 
 Telegram bridge выбирает list/reserve по created_at DESC, number DESC LIMIT 10; stats — LIMIT 30. Бот переворачивает список для показа новых внизу. APP_URL формирует URL /login; перенос cookie или автологин отсутствует. Миграция 20261112114318_telegram_recent_requests.sql сохраняет scope и grants.
+
+## Telegram: инструкции ролей и webhook
+
+После выбора аккаунта доступны инструкция текущей роли и кнопка дашборда → APP_URL/login; /help не меняет черновик. Сотрудник работает со своими обращениями, ответственный — с назначениями, руководитель — с направлением, администратор — с общим реестром и резервом; настройки остаются в вебе. Основной транспорт — HTTPS webhook Next.js на Vercel, polling отключён. Состояние, архивы демо и update_id уже хранятся в Supabase. Регистрация: pnpm telegram:webhook, проверка: pnpm telegram:check. [Запуск и ограничения](TELEGRAM.md).
+
+Production webhook подключён к https://app.example.invalid и интеграционной Supabase `SUPABASE_PROJECT_REF`: все 11 миграций применены, 9 демопрофилей и 20 обращений подготовлены. Облачная проверка webhook, входа и реестра четырёх ролей прошла. Отдельная база `SUPABASE_PROJECT_REF` не используется этим deployment. [Результаты](VALIDATION.md#подключение-интеграционной-базы-и-живой-webhook).
