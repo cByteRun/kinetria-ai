@@ -69,3 +69,8 @@
 ## Telegram UX после ревью webhook
 
 Для проверки Telegram UX используйте check-telegram.mjs, check-telegram-api.mjs, check-telegram-webhook.mjs и check-telegram-webhook-workflow.mjs; последний требует локальную тестовую PostgreSQL и выполняет ROLLBACK. Полный [UX-гайд и дерево роутов](TELEGRAM-UX.md); [проверки](VALIDATION.md#telegram-ux-после-ревью-webhook).
+
+
+## Асинхронный Telegram и трассируемость
+
+Webhook сохраняет update в PostgreSQL до HTTP 200; `after()` и планировщик обрабатывают очередь с изоляцией пользователя, повтором и общим лимитером Telegram API. Требуются новая миграция, deployment и перерегистрация webhook; 50–100 RPS в целевой среде ещё не измерены. [Сценарии четырёх ролей, матрица Vision/ТЗ и границы проверки](10-e2e-flows-and-traceability.md).

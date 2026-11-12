@@ -1,3 +1,5 @@
+import type { BridgeResults, TelegramDetail } from './contracts'
+import { apiSlot, waitForApiSlot } from './rate-limit'
 import { timingSafeEqual } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 
@@ -14,18 +16,21 @@ export function telegramDb() {
     global: { fetch: (url, init) => fetch(url, { ...init, signal: AbortSignal.timeout(8000) }) },
   })
 }
-export async function bridge(tg: number, op: string, data: object = {}) {
+export function bridge<K extends keyof BridgeResults>(tg: number, op: K, data?: object): Promise<BridgeResults[K]>
+export async function bridge(tg: number, op: keyof BridgeResults, data: object = {}): Promise<unknown> {
   // History pages reuse the existing detail authorization before the service
   // client reads events. No new privileged SQL endpoint is needed.
-  const { data: result, error } = await telegramDb().rpc('telegram_bridge', { p_tg: tg, p_op: op === 'history' ? 'detail' : op, p_data: data })
+  const { data: rawResult, error } = await telegramDb().rpc('telegram_bridge', { p_tg: tg, p_op: op === 'history' ? 'detail' : op, p_data: data })
   if (error) {
     if (error.code === 'PT409') throw new Error('conflict')
     if (error.code === '42501') throw new Error('unlinked')
     // Only deterministic domain rejections may acknowledge the update. Network,
-    // gateway, schema and database failures must reach the webhook as HTTP 503.
+    // gateway, schema and database failures must remain retryable in the inbox.
     if (['PT404', '22023', '22P02', '22007', '22008', '23514', 'P0001'].includes(error.code)) throw new Error('unavailable')
     throw new Error('Telegram database temporarily unavailable')
   }
+  // Privileged SQL is the trusted producer of these operation contracts.
+  const result = rawResult as TelegramDetail | null
   if (op === 'history' && result) {
     const offset = Number((data as { offset?: number }).offset || 0)
     if (!Number.isSafeInteger(offset) || offset < 0 || offset > 100000) throw new Error('unavailable')
@@ -46,16 +51,21 @@ export async function bridge(tg: number, op: string, data: object = {}) {
     if (owner?.error || question?.error) throw new Error('Telegram database temporarily unavailable')
     return { ...result, assignee_name: owner?.data?.display_name, clarification_question: question?.data?.message }
   }
-  return result
+  return rawResult as unknown
 }
 export type Button = { text: string; callback_data?: string; url?: string }
-export async function telegram<T = unknown>(method: string, body: object): Promise<T> {
+export async function telegram<T = unknown>(method: string, body: object | FormData): Promise<T> {
   const token = process.env.TELEGRAM_BOT_TOKEN
   if (!token) throw new Error('Telegram not configured')
+  const chat = body instanceof FormData ? String(body.get('chat_id') || '') : 'chat_id' in body ? String(body.chat_id) : undefined
+  if (chat) await waitForApiSlot(chat)
   const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(8000),
+    method: 'POST', headers: body instanceof FormData ? undefined : { 'Content-Type': 'application/json' }, body: body instanceof FormData ? body : JSON.stringify(body), signal: AbortSignal.timeout(8000),
   })
-  const result = await response.json()
+  const result: { ok?: boolean; result: T; description?: string; error_code?: number; parameters?: { retry_after?: number } } = await response.json()
+  if (result.error_code === 429 && chat) {
+    await apiSlot(chat, Math.max(1, Math.ceil(result.parameters?.retry_after || 1)))
+  }
   if (!response.ok || !result.ok) {
     // Idempotent edits are successful even when Telegram reports unchanged content.
     if (method === 'editMessageText' && result.description?.includes('message is not modified')) return result.result
@@ -120,7 +130,9 @@ export async function transcribe(fileId: string) {
     method: 'POST', headers: { Authorization: 'Bearer ' + process.env.GROQ_API_KEY }, body: form, signal: AbortSignal.timeout(15000),
   })
   if (!response.ok) throw new Error('Speech unavailable')
-  const { text } = await response.json()
+  const value: unknown = await response.json()
+  if (!value || typeof value !== 'object' || !('text' in value)) throw new Error('Invalid transcript')
+  const { text } = value
   if (typeof text !== 'string' || !text.trim() || text.length > 4000) throw new Error('Invalid transcript')
   return text.trim() as string
 }

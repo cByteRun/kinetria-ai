@@ -30,6 +30,7 @@ try {
     begin return jsonb_build_object('data',public.telegram_bridge(tg,op,payload));
     exception when others then return jsonb_build_object('error',jsonb_build_object('code',SQLSTATE)); end; $$;
   `)
+  db.stdin.write((await source('supabase/migrations/20261112181447_telegram_async_inbox.sql'))+'\n');
   const people = await sql(`select jsonb_object_agg(role,id) from (
     select distinct on(p.role) p.role,p.id from public.profiles p where p.active and p.role in('employee','manager','handler','admin')
     and (p.role<>'manager' or exists(select 1 from kinetria_private.manager_categories m where m.manager_id=p.id and m.category_id='catalog')) order by p.role,p.id) x`)
@@ -60,7 +61,13 @@ try {
     createClient: () => ({
       from: table => new Query(table),
       async rpc(name, { p_tg, p_op, p_data }) {
-        assert.equal(name, 'telegram_bridge'); operations.push({ tg: p_tg, op: p_op, data: p_data })
+        if (name !== 'telegram_bridge') {
+          const args = arguments[1];
+          const specs = {telegram_enqueue:['p_id','p_tg','p_payload'],telegram_inbox_claim:['p_limit'],telegram_inbox_finish:['p_id','p_token','p_success']};
+          const params=specs[name].map(k=>k==='p_payload'?literal(JSON.stringify(args[k]))+'::jsonb':literal(args[k])).join(',');
+          return sql(`select jsonb_build_object('data',public.${name}(${params}))`);
+        }
+        operations.push({ tg: p_tg, op: p_op, data: p_data })
         if (temporaryDbFailure && p_op === 'context') { temporaryDbFailure = false; return { data: null, error: { code: '', message: 'sensitive provider data' } } }
         return sql(`select pg_temp.test_bridge(${p_tg},${literal(p_op)},${literal(JSON.stringify(p_data))}::jsonb)`)
       },
@@ -75,7 +82,7 @@ try {
   process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://synthetic.example'
   process.env.SUPABASE_SECRET_KEY = 'synthetic'
   process.env.TELEGRAM_WEBHOOK_SECRET = 'synthetic-test-secret'
-  const apiSource = (await source('lib/telegram/api.ts')).replace("'@supabase/supabase-js'", `'${toUrl('export const {createClient}=globalThis.webhookWorkflow')}'`)
+  const apiSource = (await source('lib/telegram/api.ts')).replace("'./rate-limit'", `'${toUrl('export const apiSlot=async()=>0;export const waitForApiSlot=async()=>{}')}'`).replace("'@supabase/supabase-js'", `'${toUrl('export const {createClient}=globalThis.webhookWorkflow')}'`)
   const api = await import(compile(apiSource))
   globalThis.webhookWorkflow.bridge = api.bridge
   globalThis.webhookWorkflow.secretMatches = api.secretMatches
@@ -86,12 +93,14 @@ try {
     .replace("'./api'", `'${apiUrl}'`).replace("'../requests'", `'${requestsUrl}'`)
     .replace("'./demo'", `'${toUrl('export const demoAllowed=()=>false;export const demoChoices=[];export const switchDemoAccount=()=>{throw new Error("Unexpected demo switch")}')}'`)
     .replace("'../ai'", `'${toUrl('export const aiConfig=()=>null;export const generateText=()=>{throw new Error("Unexpected AI call")}')}'`))
+  const inboxUrl = compile((await source('lib/telegram/inbox.ts')).replace("'./api'",`'${apiUrl}'`).replace("'./bot'",`'${botUrl}'`));
+  const inbox = await import(inboxUrl);
   const route = await import(compile((await source('app/api/telegram/webhook/route.ts'))
     .replace("'next/server'", `'${toUrl('export const {after}=globalThis.webhookWorkflow')}'`)
     .replace("'../../../../lib/telegram/api'", `'${apiUrl}'`)
-    .replace("'../../../../lib/telegram/bot'", `'${botUrl}'`)
+    .replace("'../../../../lib/telegram/inbox'", `'${inboxUrl}'`)
     .replace("'../../../../lib/telegram/delivery'", `'${toUrl('export const {deliverOutbox}=globalThis.webhookWorkflow')}'`)))
-  const post = update => route.POST(new Request('https://app.example/api/telegram/webhook', { method: 'POST', headers: { 'x-telegram-bot-api-secret-token': process.env.TELEGRAM_WEBHOOK_SECRET }, body: JSON.stringify(update) }))
+  const post = async update => {const response = await route.POST(new Request('https://app.example/api/telegram/webhook', { method: 'POST', headers: { 'x-telegram-bot-api-secret-token': process.env.TELEGRAM_WEBHOOK_SECRET }, body: JSON.stringify(update) }));await Promise.all(afterTasks.splice(0).map(task=>task()));return response}
   const send = async (role, text, extra = {}) => { const tg = ids[role]; const update = { update_id: ++updateId, message: { chat: { id: tg, type: 'private' }, from: { id: tg }, text, ...extra } }; assert.equal((await post(update)).status, 200); return update }
   const click = async (role, data) => { const tg = ids[role]; const update = { update_id: ++updateId, callback_query: { id: String(updateId), from: { id: tg }, message: { chat: { id: tg, type: 'private' } }, data } }; assert.equal((await post(update)).status, 200); return update }
   const context = role => api.bridge(ids[role], 'context')
@@ -171,8 +180,8 @@ try {
   temporaryDbFailure = true
   const retry = { update_id: ++updateId, message: { chat: { id: ids.employee, type: 'private' }, from: { id: ids.employee }, text: '/list' } }
   const originalError = console.error; console.error = () => {}
-  try { assert.equal((await post(retry)).status, 503) } finally { console.error = originalError }
-  await sql(`with expired as(update public.telegram_updates set leased_until=now()-interval '1 microsecond' where id=${updateId}) select '{}'::jsonb`)
+  try { assert.equal((await post(retry)).status, 200) } finally { console.error = originalError }
+  await sql(`with expired as(update public.telegram_updates set leased_until=now()-interval '1 microsecond' where id=${updateId}),ready as(update public.telegram_inbox set available_at=now()-interval '1 second' where id=${updateId}) select '{}'::jsonb`)
   assert.equal((await post(retry)).status, 200)
   // A reply delivery failure after submit must not create a second request.
   await send('employee', '/new'); await send('employee', 'Повтор webhook после регистрации не создаёт дубль.')
@@ -180,14 +189,15 @@ try {
   const key = (await context('employee')).state.key
   const retrySubmit = { update_id: ++updateId, callback_query: { id: String(updateId), from: { id: ids.employee }, message: { chat: { id: ids.employee, type: 'private' } }, data: 'submit:' + key } }
   failSend = true; console.error = () => {}
-  try { assert.equal((await post(retrySubmit)).status, 503) } finally { console.error = originalError }
-  await sql(`with expired as(update public.telegram_updates set leased_until=now()-interval '1 microsecond' where id=${updateId}) select '{}'::jsonb`)
+  try { assert.equal((await post(retrySubmit)).status, 200) } finally { console.error = originalError }
+  await sql(`with expired as(update public.telegram_updates set leased_until=now()-interval '1 microsecond' where id=${updateId}),ready as(update public.telegram_inbox set available_at=now()-interval '1 second' where id=${updateId}) select '{}'::jsonb`)
   assert.equal((await post(retrySubmit)).status, 200)
   assert(messages.at(-1).text.includes('Зарегистрировано'), 'Retry must restore the registration confirmation')
   const duplicates = await sql(`select jsonb_build_object('count',count(*)) from public.requests where submission_key=${literal(key)}`)
   assert.equal(duplicates.count, 1)
   assert(messages.every(m => m.buttons.flat().every(b => !b.callback_data || Buffer.byteLength(b.callback_data) <= 64)))
-  assert(afterTasks.length > 0)
+  assert.equal(afterTasks.length,0)
+  assert.equal((await inbox.drainInbox()).processed,0)
   console.log('PASS webhook + real SQL: voice stub/draft/file/submit, replay, assignment/deadline, full clarification after 9 comments, reply, work, decision/ack, admin reserve, role denial, stale version/dialog, transient DB retry, submit retry without duplicate; ROLLBACK')
 } finally {
   db.stdin.end('rollback;\n\\q\n')

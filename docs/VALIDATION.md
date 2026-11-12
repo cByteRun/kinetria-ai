@@ -153,3 +153,11 @@ Runbook: [README](../README.md#быстрый-запуск-telegram-и-бесп�
 - `node scripts/check-telegram-webhook-workflow.mjs` — PASS вне sandbox: настоящий локальный SQL с ROLLBACK, голосовой stub → черновик/вложение/подтверждение → назначение/срок → уточнение/ответ → работа → решение/ознакомление; резерв, запреты ролей, версии, retry БД/отправки. В sandbox первоначальный запуск не достиг PostgreSQL.
 
 Это автоматические локальные проверки, Whisper и Telegram в них подменены. Живой человеческий голос, deployment текущего кода и применение каталога setMyCommands этим не подтверждены. [Отчёт ревью](CODE-REVIEW.md#telegram-ux-после-ревью-webhook-12112026), [UX и дерево](TELEGRAM-UX.md).
+
+## Асинхронный webhook и конкурентность
+
+Добавлены сохраняемая входная очередь, фон после ACK, восстановление планировщиком, lease/token по пользователю, типы bridge и общий лимитер Telegram (включая multipart-документы и 429 retry_after). [Ревью](CODE-REVIEW.md#асинхронный-webhook-и-конкурентность-12112026) · [Vision/ТЗ и E2E](10-e2e-flows-and-traceability.md).
+
+Локально прошли `tsc --noEmit --noUnusedLocals`, `check-telegram.mjs`, `check-telegram-api.mjs`, `check-telegram-webhook.mjs`, `check-telegram-inbox.mjs`. SQL `check-telegram-inbox.sql` проверил 100 пользователей, повторный enqueue, головы чатов, backoff, token fencing, очистку payload, global/per-chat/cooldown и закрытые grants с ROLLBACK. `check-telegram-inbox-concurrency.mjs` проверил 100 пользователей и повторную подачу через 10 SQL-соединений, уникальные lease, последовательность одного чата и общий лимитер в изолированной удаляемой схеме. `check-telegram-webhook-workflow.mjs` прошёл через route → inbox → bot → реальную локальную БД до решения/ознакомления и отката; голос, Telegram и транспорт лимитера в нём имитированы.
+
+HTTP-тест 100 параллельных admissions использует имитацию БД. Фактические 50–100 RPS, задержки ACK целевой среды, настоящий 429, голосовой провайдер и восстановление production scheduler пока не измерены. Миграция `20261112181447_telegram_async_inbox.sql` проверена локально в тестовых транзакциях/схеме; к целевой БД не применена. Перед размещением применить миграцию, затем перерегистрировать max_connections=40 и настроить регулярный `/api/telegram/deliver` с CRON_SECRET.

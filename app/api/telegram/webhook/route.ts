@@ -1,6 +1,7 @@
 import { after } from 'next/server'
 import { secretMatches, telegram, telegramDb } from '../../../../lib/telegram/api'
-import { handleUpdate, type Update } from '../../../../lib/telegram/bot'
+import { parseUpdate, enqueueUpdate, drainInbox } from '../../../../lib/telegram/inbox'
+import type { Update } from '../../../../lib/telegram/bot'
 import { deliverOutbox } from '../../../../lib/telegram/delivery'
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -11,12 +12,15 @@ export async function POST(request: Request) {
   try {
     const raw = await request.text()
     if (raw.length > 65536) return new Response('Too large', { status: 413 })
-    update = JSON.parse(raw)
-    if (!Number.isSafeInteger(update.update_id) || update.update_id < 0) throw new Error('Invalid update')
+    update = parseUpdate(JSON.parse(raw) as unknown)
   } catch { return new Response('Invalid update', { status: 400 }) }
   try {
-    await handleUpdate(update)
-    after(async () => { await deliverOutbox() })
+    const queued = await enqueueUpdate(update)
+    if (queued) after(async () => {
+      try { await drainInbox() } catch { console.error('Telegram background inbox failed') }
+      // Deliver newly created domain events even if another inbox job failed.
+      try { await deliverOutbox() } catch { console.error('Telegram background outbox failed') }
+    })
     return Response.json({ ok: true })
   } catch (error) {
     const known = ['busy', 'Telegram delivery failed', 'fetch failed', 'conflict', 'unavailable', 'unlinked', 'Telegram database not configured']

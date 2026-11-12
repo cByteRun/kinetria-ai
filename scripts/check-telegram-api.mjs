@@ -3,8 +3,9 @@ import {readFile} from 'node:fs/promises'
 import ts from 'typescript'
 const url=s=>'data:text/javascript;base64,'+Buffer.from(s).toString('base64')
 let source=await readFile(new URL('../lib/telegram/api.ts',import.meta.url),'utf8')
+source=source.replace("'./rate-limit'",`'${url('export const apiSlot=async(...args)=>{globalThis.apiRateCalls?.push(args);return 0};export const waitForApiSlot=async()=>{};')}'`)
 source=source.replace("'@supabase/supabase-js'",`'${url('export const createClient=()=>globalThis.apiDbHarness;')}'`)
-const {say,secretMatches,bridge}=await import(url(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText))
+const {say,secretMatches,bridge,telegram}=await import(url(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText))
 assert(secretMatches('abc','abc'));assert(!secretMatches('ab','abc'));assert(!secretMatches(null,'abc'));assert(!secretMatches('abc',undefined))
 process.env.TELEGRAM_BOT_TOKEN='synthetic'
 const messages=[]
@@ -38,3 +39,11 @@ for (const [description,status,count] of [['Bad Request: message is not modified
  if(count===2) assert.equal(calls[1].method,'sendMessage')
 }
 console.log('PASS edit transport: edit target, unchanged success, deleted/expired fallback, invalid buttons and rate limits remain retryable')
+
+// Multipart files share the exact same API path and respect provider cooldowns.
+globalThis.apiRateCalls=[]
+const multipart=new FormData();multipart.set('chat_id','42');multipart.set('document',new Blob(['synthetic']),'test.txt')
+globalThis.fetch=async(_,init)=>{assert(init.body instanceof FormData);assert.equal(init.headers,undefined);return Response.json({ok:false,error_code:429,parameters:{retry_after:17}},{status:429})}
+await assert.rejects(()=>telegram('sendDocument',multipart),/HTTP 429/)
+assert.deepEqual(globalThis.apiRateCalls,[['42',17]])
+console.log('PASS multipart API: common transport, provider retry_after persisted before retry')

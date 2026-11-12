@@ -52,7 +52,7 @@ node --env-file=.env.local scripts/setup-telegram.mjs https://<ваш-домен
 4. Настроить внешний планировщик GET или POST `/api/telegram/deliver` с заголовком `Authorization: Bearer <CRON_SECRET>`, например раз в минуту. Автосоздание cron на хостинге в эту задачу не входит. Неудачные задания получают backoff до часа, чтобы не блокировать всю очередь. Веб-действия и webhook также запускают доставку через `after()`, но при сбоях внешний повтор нужен обязательно.
 5. Под каждой тестовой ролью войти на сайт → «Как работает маршрут» → Telegram → создать ссылку → открыть и нажать Start. Ссылка одноразовая, живёт 10 минут. Обычный вход не позволяет выбрать роль или привязать чужой аккаунт через username; закрытый деморежим описан ниже.
 
-`setWebhook` указывает `max_connections=1`; БД дополнительно сериализует шаги одного пользователя. Повтор update_id не повторяет завершённые действия. Сбой до завершения допускает повтор после освобождения lease; регистрация дополнительно идемпотентна по ключу черновика.
+`setWebhook` указывает `max_connections=40`; БД дополнительно сериализует шаги одного пользователя. Повтор update_id не повторяет завершённые действия. Сбой до завершения допускает повтор после освобождения lease; регистрация дополнительно идемпотентна по ключу черновика.
 
 ## Диалог по ролям
 
@@ -103,9 +103,9 @@ docker exec -i supabase_db_modus_IDEA psql -U postgres -d postgres < scripts/che
 
 ## Webhook на Vercel и локальная разработка
 
-Polling отключён. Next.js принимает обновления на `POST /api/telegram/webhook`, ожидает `handleUpdate` перед 200 и возвращает 503 при временной ошибке/занятой обработке. `runtime=nodejs`, `maxDuration=60`. Уведомления обрабатывает durable outbox; внешний планировщик повторов остаётся обязательным для восстановления после сбоев.
+Polling отключён. Next.js принимает обновления на `POST /api/telegram/webhook`, сохраняет update в inbox перед 200 и запускает обработку через `after()`; 503 возвращается при недоступности приёма в БД. `runtime=nodejs`, `maxDuration=60`. Уведомления обрабатывает durable outbox; внешний планировщик повторов остаётся обязательным для восстановления после сбоев.
 
-`pnpm telegram:webhook` берёт HTTPS origin из APP_URL (или аргумента), проверяет защищённый probe и Supabase до setWebhook, затем сверяет getWebhookInfo. Ожидающие обновления не сбрасываются, max_connections=1. `pnpm telegram:check` проверяет тот же endpoint и очередь. Секрет задаётся одинаково локально и в Vercel. Production URL должен принимать запрос Telegram без Vercel Login.
+`pnpm telegram:webhook` берёт HTTPS origin из APP_URL (или аргумента), проверяет защищённый probe и Supabase до setWebhook, затем сверяет getWebhookInfo. Ожидающие обновления не сбрасываются, max_connections=40. `pnpm telegram:check` проверяет тот же endpoint и очередь. Секрет задаётся одинаково локально и в Vercel. Production URL должен принимать запрос Telegram без Vercel Login.
 
 Для локальной разработки: Supabase → `pnpm dev` → HTTPS-туннель к порту 3000 → APP_URL туннеля → `pnpm telegram:webhook`. Для Vercel используйте размещённую Supabase. Старый polling-скрипт намеренно завершается с ошибкой и инструкцией.
 
@@ -168,3 +168,8 @@ Setup регистрирует `/start`, `/home`, `/help`, `/demo`, `/new`, `/dr
 ## UX и навигация
 
 Актуальный [UX-гайд и Navigation Tree](TELEGRAM-UX.md) фиксирует все команды, инлайн-кнопки, состояния, границы ролей, предпросмотр, перезапись и правила editMessageText. После deployment обновите системный каталог через `pnpm telegram:webhook` (с проверкой getMyCommands); добавлены демоалиасы `/login`, `/switch`.
+
+
+## Асинхронная обработка и запуск новой версии
+
+После миграции `20261112181447_telegram_async_inbox.sql` webhook сохраняет update до ACK и запускает inbox в `after()`. Защищённый `/api/telegram/deliver` теперь дренирует inbox и outbox; внешний планировщик с CRON_SECRET нужен для восстановления без трафика (рекомендуется раз в минуту). Перерегистрировать webhook через `pnpm telegram:webhook`: max_connections теперь 40. До применения миграции новую версию не размещать. [Полный runbook, гарантии и ограничения нагрузки](10-e2e-flows-and-traceability.md#запуск-и-проверка).

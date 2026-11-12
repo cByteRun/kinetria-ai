@@ -106,3 +106,8 @@ Telegram-демовход повторяет список внутренних �
 ## Telegram UX после ревью webhook
 
 Telegram предпросмотр показывает те же title/description/kind/category/tags/proposal и вложения; зарегистрированная карточка дополняет их владельцем, сроком и результатом. Полный [UX-гайд и дерево роутов](TELEGRAM-UX.md); [проверки](VALIDATION.md#telegram-ux-после-ревью-webhook).
+
+
+## Асинхронный Telegram и трассируемость
+
+Webhook сохраняет update в PostgreSQL до HTTP 200; `after()` и планировщик обрабатывают очередь с изоляцией пользователя, повтором и общим лимитером Telegram API. Требуются новая миграция, deployment и перерегистрация webhook; 50–100 RPS в целевой среде ещё не измерены. [Сценарии четырёх ролей, матрица Vision/ТЗ и границы проверки](10-e2e-flows-and-traceability.md).

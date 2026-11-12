@@ -126,3 +126,8 @@ Telegram bridge выбирает list/reserve по created_at DESC, number DESC 
 ## Telegram UX после ревью webhook
 
 Инлайн-навигация использует editMessageText; цель сообщения изолирована на update через AsyncLocalStorage. Сбои сети остаются retryable, удалённое сообщение допускает новую отправку. Полный [UX-гайд и дерево роутов](TELEGRAM-UX.md); [проверки](VALIDATION.md#telegram-ux-после-ревью-webhook).
+
+
+## Асинхронный Telegram и трассируемость
+
+Webhook сохраняет update в PostgreSQL до HTTP 200; `after()` и планировщик обрабатывают очередь с изоляцией пользователя, повтором и общим лимитером Telegram API. Требуются новая миграция, deployment и перерегистрация webhook; 50–100 RPS в целевой среде ещё не измерены. [Сценарии четырёх ролей, матрица Vision/ТЗ и границы проверки](10-e2e-flows-and-traceability.md).
