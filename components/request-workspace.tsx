@@ -1,10 +1,10 @@
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
+import { CheckCheck, ClipboardList, Clock3, MessageCircle } from 'lucide-react'
 import { aiConfig } from '../lib/ai'
 import { getFormatter, getLocale, getTranslations } from 'next-intl/server'
 import { updateRequest, saveRouting } from '../app/workspace/actions'
 import { isLocale } from '../i18n/settings'
-import { requestKindLabels, sentimentLabel, terminalStatuses, topicTags, transitions, uuidPattern, type Category, type RequestStatus } from '../lib/requests'
+import { feedbackStage, feedbackStages, sentimentLabel, terminalStatuses, topicTags, transitions, uuidPattern, type Category, type RequestStatus } from '../lib/requests'
 import { isRole } from '../lib/roles'
 import { createClient } from '../lib/supabase/server'
 import { IdeaOverview } from './idea-overview'
@@ -12,6 +12,8 @@ import { RequestForm } from './request-form'
 import { RequestRegistry, type RegistryRow } from './request-registry'
 import { RequestSummary } from './request-summary'
 import { RequestDrawer } from './request-drawer'
+import { CaseAssignment, CaseCategory, CaseKind, CaseStatus } from './case-labels'
+import { CaseReviewFields } from './case-review-fields'
 
 type RequestRow = RegistryRow
 
@@ -100,6 +102,11 @@ async function RequestDetail({ id, role, error, categoryNames }: {
   const request = detail.data
   if (!request) notFound()
   const available = transitions[request.status]
+  const stage = feedbackStage(request)
+  const tags = topicTags(request.tags)
+  const question = request.status === 'clarification'
+    ? history.data.findLast(event => event.event_type === 'reviewed' && event.status === 'clarification')?.message
+    : null
   const versionFields = <>
     <input type="hidden" name="id" value={id} />
     <input type="hidden" name="version" value={request.version} />
@@ -110,24 +117,44 @@ async function RequestDetail({ id, role, error, categoryNames }: {
       <div className="crm-detail-content">
       {(error === 'conflict' || error === 'invalid' || error === 'saveError') &&
         <p role="alert" className="error">{t(error)}</p>}
-      <p>{reference(request)} · {categoryNames[request.category_id]}</p>
-      <h2>{request.title}</h2>
-      <p>{requestKindLabels[request.kind]} · {sentimentLabel(request.sentiment)}</p>
-      <h3>Теги</h3>
-      <ul className="crm-request-tags">
-        <li>{requestKindLabels[request.kind]}</li>
-        {topicTags(request.tags).map(tag => <li key={tag}>{tag}</li>)}
-      </ul>
-      <p><strong>{t(request.status)}</strong> · {t(request.assignee_id ? 'hasAssignee' : 'unassigned')}</p>
-      {(request.decision || request.next_step) && <section className="crm-outcome">
-        {request.decision && <><h3>{t('decision')}</h3><p className="request-text">{request.decision}</p></>}
-        {request.next_step && <><h3>{t('nextStep')}</h3><p className="request-text">{request.next_step}</p></>}
+      <header className="case-detail-heading">
+        <span className="case-ref">{reference(request)}</span>
+        <h2>{request.title}</h2>
+        <div className="case-labels">
+          <CaseKind kind={request.kind} />
+          <CaseCategory name={categoryNames[request.category_id] ?? request.category_id} />
+        </div>
+      </header>
+      <section className={'case-current case-current-' + stage} aria-label="Состояние обращения">
+        <div className="case-labels">
+          <CaseStatus status={request.status} label={t(request.status)} />
+          <CaseAssignment assigned={Boolean(request.assignee_id)} closed={terminalStatuses.includes(request.status)} />
+        </div>
+        <strong>{feedbackStages[stage]}</strong>
+      </section>
+      {question && <section className="case-section">
+        <h3><MessageCircle size={17} aria-hidden="true" />Запрос уточнения</h3>
+        <p className="request-text">{question}</p>
       </section>}
-      <p className="request-text">{request.description}</p>
+      {(request.decision || request.next_step) && <section className="crm-outcome">
+        {request.decision && <>
+          <h3><CheckCheck size={18} aria-hidden="true" />Решение для автора</h3>
+          <p className="request-text">{request.decision}</p>
+        </>}
+        {request.next_step && <>
+          <h3>{t('nextStep')}</h3><p className="request-text">{request.next_step}</p>
+        </>}
+      </section>}
+      <section className="case-section">
+        <h3><ClipboardList size={17} aria-hidden="true" />Исходное обращение</h3>
+        <p className="request-text">{request.description}</p>
+        {request.proposal && <><h4>{t('proposal')}</h4><p className="request-text">{request.proposal}</p></>}
+        {tags.length > 0 && <ul className="crm-request-tags" aria-label="Темы обращения">
+          {tags.map(tag => <li key={tag}>{tag}</li>)}
+        </ul>}
+        {request.sentiment !== null && <small>Тональность: {sentimentLabel(request.sentiment)}</small>}
+      </section>
       {role !== 'employee' && aiConfig() && <RequestSummary id={id} />}
-      {request.proposal && <><h3>{t('proposal')}</h3><p className="request-text">{request.proposal}</p></>}
-
-
       </div>{((role === 'employee' && request.status === 'clarification') || ((role === 'manager' || role === 'handler') && !terminalStatuses.includes(request.status))) && <aside className="crm-detail-actions"><h3>{role === 'employee' ? 'Нужен ваш ответ' : 'Рассмотрение'}</h3>
       {(role === 'manager' || role === 'handler') && available.length > 0 && <form action={updateRequest} className="request-fields">
         {versionFields}
@@ -135,15 +162,7 @@ async function RequestDetail({ id, role, error, categoryNames }: {
         {request.status === 'new' ? <>
           <input type="hidden" name="status" value="review" />
           <button className="button button-primary">Взять на рассмотрение</button>
-        </> : <>
-        <label>{t('nextStatus')}<select name="status" required>
-          {available.map(status => <option key={status} value={status}>{t(status)}</option>)}
-        </select></label>
-        <label>{t('message')}<textarea name="message" rows={3} maxLength={2000} /></label>
-        <label>{t('nextStep')}<input name="nextStep" maxLength={1000} /></label>
-        <p className="muted">{t('reviewHint')}</p>
-        <button className="button button-primary">{t('save')}</button>
-        </>}
+        </> : <CaseReviewFields key={request.version} available={available} />}
       </form>}
       {role === 'employee' && request.status === 'clarification' &&
         <form action={updateRequest} className="request-fields">
@@ -167,11 +186,11 @@ async function RequestDetail({ id, role, error, categoryNames }: {
       {assignees?.error && <p role="alert">{t('loadError')}</p>}
       </aside>}
       <section className="crm-detail-history">
-      <h3>{t('history')}</h3>
+      <h3><Clock3 size={17} aria-hidden="true" />{t('history')}</h3>
       <ol className="request-history">
         {history.data.map(event => <li key={event.id}>
           <strong>{t(event.event_type)} · {t(event.status)}</strong>
-          <small>{format.dateTime(new Date(event.created_at), { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Qyzylorda' })}</small>
+          <small>{isRole(event.actor_role) ? roleText(event.actor_role) + ' · ' : ''}{format.dateTime(new Date(event.created_at), { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Qyzylorda' })}</small>
           {event.message && <p className="request-text">{event.message}</p>}
           {event.next_step && <p className="request-text">{event.next_step}</p>}
         </li>)}

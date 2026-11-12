@@ -43,3 +43,17 @@ export const transitions: Record<RequestStatus, RequestStatus[]> = {
 
 export const terminalStatuses: RequestStatus[] = ['implemented', 'rejected', 'closed']
 export const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+export function feedbackStage(request: { status: RequestStatus; assignee_id: string | null; decision?: string | null }) {
+  if (terminalStatuses.includes(request.status)) return request.decision?.trim() ? 'resolved' : 'missingOutcome'
+  if (request.status === 'clarification') return 'awaitingAuthor'
+  return request.assignee_id ? 'withOwner' : 'routing'
+}
+
+export const feedbackStages = {
+  routing: 'Нужен ответственный',
+  withOwner: 'Следующий шаг за ответственным',
+  awaitingAuthor: 'Ожидает ответа автора',
+  missingOutcome: 'Закрыто без решения',
+  resolved: 'Решение доступно автору',
+} as const

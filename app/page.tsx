@@ -79,7 +79,7 @@ export default async function Home() {
         <section className="landing-hero idea-dot-field" id="product">
           <div className="container landing-hero-grid">
             <div>
-              <p className="landing-label idea-product-mark">KINETRIA AI <span>Idea Hub</span></p>
+              <p className="landing-label idea-product-mark">Feedback Operations Platform</p>
               <h1>
                 {t('headlineStart')}
                 {' '}
@@ -135,6 +135,7 @@ export default async function Home() {
 
         <section className="landing-section" id="how">
           <div className="container">
+            <p className="landing-label">Closed-Loop Feedback</p>
             <h2>{t('processTitle')}</h2>
             <ol className="landing-steps">
               {steps.map(({ title, text, icon: Icon }) => (

@@ -168,3 +168,104 @@
 .crm-outcome { padding: 16px; margin: 16px 0; border-radius: 10px; background: color-mix(in srgb, var(--purple) 9%, var(--crm-panel)); overflow-wrap: anywhere; }
 .crm-outcome h3:first-child { margin-top: 0; }
 .crm-detail-actions > h3 { margin-top: 0; }
+
+.idea-metrics .crm-metric:first-child {
+  border-color: color-mix(in srgb, var(--purple) 42%, var(--crm-border));
+  background: color-mix(in srgb, var(--purple) 8%, var(--crm-panel));
+}
+.idea-metrics .crm-metric:first-child > strong { color: var(--purple); }
+.feedback-state { color: var(--purple); font-weight: 700; }
+#feedback-registry { scroll-margin-top: 100px; }
+
+/* Registry and case drawer use the same labels. */
+.case-chip, .case-category, .case-assignment, .case-next-step, .crm-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.case-chip svg, .case-category svg, .case-assignment svg, .case-next-step svg, .crm-status svg {
+  flex: none;
+}
+.case-chip, .crm-status {
+  padding: 4px 8px;
+  border-radius: 6px;
+  line-height: 1.4;
+  font-size: 12px;
+  font-weight: 650;
+}
+.case-chip, .crm-status {
+  color: var(--case-tone, var(--purple));
+  background: color-mix(in srgb, var(--case-tone, var(--purple)) 11%, var(--crm-panel));
+}
+.crm-shell {
+  --case-red: #a33551;
+  --case-amber: #865a0b;
+  --case-green: #08745a;
+  --case-blue: #2559a3;
+}
+[data-theme='dark'] .crm-shell {
+  --case-red: #f6a8bd;
+  --case-amber: #f5ca7d;
+  --case-green: #91e0c5;
+  --case-blue: #a1c6ff;
+}
+.kind-problem, .status-rejected { --case-tone: var(--case-red); }
+.kind-praise, .status-implemented { --case-tone: var(--case-green); }
+.status-clarification { --case-tone: var(--case-amber); }
+.status-in_progress { --case-tone: var(--case-blue); }
+.status-new, .status-closed { --case-tone: var(--crm-muted); }
+.case-assignment, .case-category, .case-chevron { color: var(--crm-muted); }
+.case-needs-owner { color: var(--case-amber); }
+.case-stage, .case-next-step { margin-top: 6px; font-size: 11px; }
+.case-stage { display: block; max-width: 22ch; white-space: normal; }
+.case-next-step { align-items: flex-start; color: var(--purple); display: flex; }
+.case-next-step svg { margin-top: 2px; }
+.crm-registry .case-ref, .case-ref {
+  color: var(--purple);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.crm-registry .case-row-title { font-size: 13px; font-weight: 700; }
+.crm-request-row .case-category { max-width: 23ch; white-space: normal; }
+.crm-drawer-inner > header {
+  position: sticky;
+  top: -20px;
+  z-index: 1;
+  background: var(--crm-bg);
+  padding-block: 12px;
+}
+.case-detail-heading h2 { font-size: clamp(22px, 4vw, 29px); margin: 8px 0 14px; overflow-wrap: anywhere; }
+.case-labels { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; }
+.case-current, .case-section, .crm-outcome {
+  padding: 16px;
+  margin: 16px 0;
+  border: 1px solid var(--crm-border);
+  border-radius: 10px;
+}
+.case-current { background: var(--crm-bg); }
+.case-current > strong { display: block; margin-top: 9px; }
+.case-current-resolved {
+  background: color-mix(in srgb, var(--case-green) 9%, var(--crm-panel));
+}
+.case-current-routing, .case-current-awaitingAuthor, .case-current-missingOutcome {
+  background: color-mix(in srgb, var(--case-amber) 9%, var(--crm-panel));
+}
+.case-section h3, .crm-outcome h3, .crm-detail-history h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.case-section h3 { margin-top: 0; }
+.case-section h4 { margin: 14px 0 5px; }
+.crm-detail .request-history li { position: relative; margin-left: 5px; }
+.crm-detail .request-history li::before {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  left: -5px;
+  top: 6px;
+  border-radius: 50%;
+  background: var(--purple);
+}

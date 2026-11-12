@@ -22,7 +22,7 @@ export default async function RoleWorkspace({ params, searchParams }: {
   const name = profile.displayName || (localPreview ? accounts.find(account => account.id === role)?.name : undefined)
   return <DashboardShell role={role} view={view} theme={theme} name={name}>
     {role === 'client' ? <section className="workspace-panel request-panel">
-      <h1>Feedback Portal</h1><p>Клиентский канал предусмотрен на следующем этапе развития Kinetria AI.</p>
+      <h1>Feedback Portal</h1><p>Клиентский канал предусмотрен на следующем этапе развития IdeaRoute.</p>
     </section> : hasSupabase
       ? <RequestWorkspace role={role} id={id} error={error} view={view} />
       : <PreviewWorkspace role={role} view={view} id={id} />}

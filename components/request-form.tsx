@@ -71,7 +71,7 @@ export function RequestForm({ categories, aiEnabled, routes = {}, preview = fals
     <div className="crm-mode-tabs"><button aria-pressed={mode === 'ai'} onClick={() => setMode('ai')}>С помощью AI</button><button aria-pressed={mode === 'manual'} onClick={() => setMode('manual')}>Заполнить вручную</button></div>
     <div className={mode === 'ai' ? 'crm-compose' : 'idea-form-layout'}>
     {mode === 'ai' && <section className="crm-chat">
-      <div className="crm-chat-head"><Sparkles size={20} /><div><strong>Помощник Kinetria</strong><small style={{ display: 'block', marginTop: 4 }}>От идеи до зарегистрированного обращения</small></div></div>
+      <div className="crm-chat-head"><Sparkles size={20} /><div><strong>Помощник IdeaRoute</strong><small style={{ display: 'block', marginTop: 4 }}>Подготовка черновика обращения</small></div></div>
       <div className="crm-chat-body" aria-live="polite">
         <div className="crm-bubble">Расскажите о проблеме или предложите улучшение. Укажите категорию и предполагаемое решение, если оно есть.</div>
         {chat.map((item, index) => <div key={index} className={'crm-bubble' + (item.user ? ' user' : '')}>{item.text}</div>)}

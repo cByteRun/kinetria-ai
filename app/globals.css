@@ -1,19 +1,19 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Tektur:wght@600;700&display=swap');
 
 :root {
-  --hub-bg: #f7f5fc;
+  --hub-bg: #f4f6fc;
   --hub-panel: #fff;
-  --hub-primary: #603ac2;
-  --hub-primary-hover: #5030a8;
+  --hub-primary: #453cc5;
+  --hub-primary-hover: #382ea4;
   --hub-on-primary: #fff;
   --hub-radius: 14px;
   --hub-body: Inter, Arial, sans-serif;
   --hub-heading: Manrope, Inter, Arial, sans-serif;
   --ink: #19142a;
   --muted: #625a71;
-  --purple: #603ac2;
+  --purple: #453cc5;
   --deep: #392080;
-  --line: #e6e0ef;
+  --line: #dfe4f0;
   --surface: #f7f4fd;
   --white: #fff;
   --green: #218264;
@@ -161,7 +161,7 @@ h3 {
 .button-primary {
   color: white;
   background: var(--purple);
-  box-shadow: 0 6px 18px #603ac230;
+  box-shadow: 0 6px 18px #453cc530;
 }
 .button-primary:hover {
   background: #5130ad;
@@ -856,21 +856,21 @@ h3 {
 
 .preferences-group button[aria-pressed='true'] {
   color: #fff;
-  background: #603ac2;
+  background: #453cc5;
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --hub-bg: #111017;
-  --hub-panel: #191622;
-  --hub-primary: #c3a6ff;
-  --hub-primary-hover: #d4beff;
-  --hub-on-primary: #211432;
+  --hub-bg: #101522;
+  --hub-panel: #171e2e;
+  --hub-primary: #b7bcff;
+  --hub-primary-hover: #d4d7ff;
+  --hub-on-primary: #161b37;
   --ink: #f7f4fc;
   --muted: #b8b0c7;
-  --purple: #c3a6ff;
+  --purple: #b7bcff;
   --deep: #ded0ff;
-  --line: #3b314a;
+  --line: #333e55;
   --surface: #262033;
   --green: #a8e3ca;
 }
@@ -878,16 +878,16 @@ h3 {
 [data-theme='dark'] body,
 [data-theme='dark'] .site-header,
 [data-theme='dark'] .workspace {
-  background: #111017;
+  background: #101522;
 }
 
 [data-theme='dark'] .login {
   background:
-    radial-gradient(ellipse at 50% 16%, #302044, transparent 62%), #111017;
+    radial-gradient(ellipse at 50% 16%, #302044, transparent 62%), #101522;
 }
 
 [data-theme='dark'] .button-primary {
-  color: #211432;
+  color: #161b37;
 }
 
 [data-theme='dark'] .button-primary:hover {
@@ -1053,3 +1053,20 @@ h3 {
 @media (prefers-reduced-motion: reduce) {
   .idea-dot-field::before { animation: none; }
 }
+
+.brand:has(.route-brand-icon) {
+  font-family: var(--hub-heading);
+  letter-spacing: -.04em;
+  font-weight: 800;
+}
+.route-brand-icon {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  color: var(--hub-on-primary);
+  background: var(--hub-primary);
+}
+.route-brand-word { color: var(--purple); }

@@ -37,7 +37,7 @@
 .landing-progress > div {
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, #8852e7, #d3b9ff);
+  background: linear-gradient(90deg, var(--hub-primary), var(--hub-primary-hover));
   transform: scaleX(0);
   transform-origin: left;
 }
@@ -143,7 +143,7 @@
   padding: clamp(64px, 8vw, 110px) 0;
   border-bottom: 1px solid var(--landing-line);
   background:
-    radial-gradient(ellipse at 82% 30%, #30204c 0%, transparent 60%),
+    radial-gradient(ellipse at 82% 30%, #262d50 0%, transparent 60%),
     var(--landing-bg);
 }
 
@@ -350,7 +350,7 @@
 
 .landing-contact {
   background:
-    radial-gradient(ellipse at 18% 40%, #291b3f, transparent 65%),
+    radial-gradient(ellipse at 18% 40%, #242a4a, transparent 65%),
     var(--landing-bg);
 }
 .landing-text-link {
@@ -483,7 +483,7 @@
 
 [data-theme='light'] :is(.landing-hero, .landing-contact) {
   background:
-    radial-gradient(ellipse at 80% 40%, #efe6ff, transparent 72%),
+    radial-gradient(ellipse at 80% 40%, #e7eafd, transparent 72%),
     var(--landing-bg);
 }
 

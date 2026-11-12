@@ -21,7 +21,7 @@ export async function DashboardShell({ role, view, theme, name, children }: {
   return <div className="crm-shell">
     <aside className="crm-sidebar">
       <div className="crm-brand"><Brand /></div>
-      <p className="crm-sidebar-label">CRM · Idea Hub</p>
+      <p className="crm-sidebar-label">Feedback Operations</p>
       <nav aria-label="Разделы кабинета">{items.map(item => <Link key={item.id}
         href={base + '?view=' + item.id} className={view === item.id ? 'active' : ''}
         aria-current={view === item.id ? 'page' : undefined}>

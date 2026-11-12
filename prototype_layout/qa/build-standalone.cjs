@@ -1,0 +1,14 @@
+const fs=require('node:fs');
+const path=require('node:path');
+const root=path.resolve(__dirname,'..');
+const read=file=>fs.readFileSync(path.join(root,file),'utf8');
+let html=read('index.html');
+const script=file=>read(file).replace(/<\/script/gi,'<\\/script');
+html=html.replace('<script src="vendor/tailwind-v4.js"></script>',()=>'<script>'+script('vendor/tailwind-v4.js')+'</script>');
+let css=read('styles.css');
+for(const name of ['manrope-latin.woff2','manrope-cyrillic.woff2'])css=css.replaceAll('vendor/'+name,'data:font/woff2;base64,'+fs.readFileSync(path.join(root,'vendor',name)).toString('base64'));
+html=html.replace('<link rel="stylesheet" href="styles.css">',()=>'<style>'+css+'</style>');
+for(const file of ['vendor/lucide.min.js','data.js','app.js'])html=html.replace(`<script src="${file}" defer></script>`,'');
+html=html.replace('</body>',()=>['vendor/lucide.min.js','data.js','app.js'].map(file=>'<script>'+script(file)+'</script>').join('\n')+'\n</body>');
+fs.writeFileSync(path.join(root,'IdeaRoute.html'),html);
+console.log('Standalone IdeaRoute.html: '+Buffer.byteLength(html)+' bytes; fonts, icons, Tailwind 4.3.5 and state included.');

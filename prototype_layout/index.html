@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#6951d5">
+  <meta name="description" content="IdeaRoute — от обращения сотрудника к решению, действиям и обратной связи. Интерактивный UX/UI прототип.">
+  <title>IdeaRoute — от идеи к результату</title>
+  <link rel="icon" href="data:,">
+  <script src="vendor/tailwind-v4.js"></script>
+  <style type="text/tailwindcss">
+    @theme {
+      --font-sans: 'Manrope', 'Segoe UI', sans-serif;
+      --color-brand: #6951d5;
+      --color-ink: #282633;
+      --color-muted: #777580;
+      --color-line: #e9e8ef;
+    }
+  </style>
+  <link rel="stylesheet" href="styles.css">
+  <script src="vendor/lucide.min.js" defer></script>
+  <script src="data.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a href="#main" class="skip-link" data-action="skip">Перейти к содержимому</a>
+  <div id="app"></div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <dialog id="modal" aria-labelledby="modal-title"></dialog>
+  <noscript>Для интерактивного макета IdeaRoute необходимо включить JavaScript.</noscript>
+</body>
+</html>
