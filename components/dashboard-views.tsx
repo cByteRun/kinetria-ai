@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link'
+import { recurringProblems } from '../lib/insights'
 import { useState, useTransition } from 'react'
 import {
   Bell,
@@ -40,6 +41,8 @@ export function DashboardViews({
         Date.parse(r.created_at) >= Date.now() - Number(period) * 86400000),
   )
   const done = data.filter(hasResult)
+  const repeats = recurringProblems(data)
+  const registryLink = (params: Record<string, string>) => path + '?' + new URLSearchParams({ view: 'registry', period, ...params }).toString()
   const avg = (field: 'first_response_at' | 'resolved_at') => {
     const values = data
       .filter((r) => r.created_at && r[field])
@@ -316,6 +319,23 @@ export function DashboardViews({
           )
         })}
       </div>
+      <section className="card ir-section-gap" aria-label="Повторяющиеся проблемы">
+        <div className="card-head"><div><h2>Повторяющиеся проблемы</h2>
+          <p>Два и более обращения типа «Проблема» с общей категорией и тематическим тегом.</p></div></div>
+        <div className="detail-block">
+          {repeats.map(group => <div className="result-item" key={group.category + ':' + group.tag}>
+            <Link href={registryLink({ category: group.category, tag: group.tag, kind: 'problem' })}>
+              <h3>{group.tag} · {categories[group.category]}</h3>
+              <p>{group.rows.length} обращений · с решением: {group.results} · просрочено: {group.overdue}</p>
+            </Link>
+            {group.rows.filter(hasResult).map(r => <p key={r.id}>
+              <Link href={path + '?view=registry&id=' + r.id}>{requestNumber(r)}: {r.decision}</Link>
+            </p>)}
+          </div>)}
+          {!repeats.length && <p>Повторяющихся тем пока нет. Добавьте одинаковый тематический тег похожим проблемам при регистрации.</p>}
+        </div>
+        <p className="stat-definition">Одна проблема может входить в несколько тем. Совпадение тега — сигнал для проверки руководителем; система не объединяет обращения и не подтверждает общую причину автоматически.</p>
+      </section>
       <div className="settings-grid">
         <section className="card">
           <div className="card-head">
@@ -335,7 +355,7 @@ export function DashboardViews({
               .sort((a, b) => b.count - a.count)
               .map((c) => (
                 <div className="chart-bar" key={c.id}>
-                  <Link href={path + '?view=registry&category=' + c.id}>
+                  <Link href={registryLink({ category: c.id })}>
                     {c.name}
                   </Link>
                   <div className="chart-track">
@@ -372,7 +392,7 @@ export function DashboardViews({
               ).length
               return (
                 <div className="chart-bar" key={id}>
-                  <Link href={path + '?view=registry&filter=' + id}>
+                  <Link href={registryLink({ filter: id })}>
                     {label}
                   </Link>
                   <div className="chart-track green-track">

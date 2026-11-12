@@ -1,6 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { useState } from 'react'
+import { normalizeTopic } from '../lib/insights'
 import { useSearchParams } from 'next/navigation'
 import {
   Search,
@@ -51,6 +52,7 @@ export type RegistryRow = {
   acknowledged_at?: string | null
   is_demo?: boolean
   version?: number
+  tags?: string[]
 }
 export const requestNumber = (row: RegistryRow) =>
   row.source_ref ?? 'R-' + String(row.number).padStart(3, '0')
@@ -215,7 +217,7 @@ export function CaseTable({
     </div>
   )
 }
-export function RequestRegistry({
+function RegistryFilters({
   rows,
   categories,
   path,
@@ -231,8 +233,14 @@ export function RequestRegistry({
     [department, setDepartment] = useState(''),
     [deadline, setDeadline] = useState(''),
     [board, setBoard] = useState(false)
+  const tag = params.get('tag') || ''
+  const kind = params.get('kind') || ''
+  const period = params.get('period') || 'all'
   const filtered = rows.filter(
     (r) =>
+      (!tag || (r.tags || []).some(t => normalizeTopic(t) === normalizeTopic(tag))) &&
+      (!kind || r.kind === kind) &&
+      (period === 'all' || (r.created_at && Date.parse(r.created_at) >= Date.now() - Number(period) * 86400000)) &&
       (!status ||
         (status === 'open'
           ? !isDone(r)
@@ -257,6 +265,7 @@ export function RequestRegistry({
         requestNumber(r),
         categories[r.category_id],
         r.department,
+        ...(r.tags || []),
       ]
         .join(' ')
         .toLocaleLowerCase()
@@ -333,6 +342,10 @@ export function RequestRegistry({
           </button>
         </div>
       </div>
+      {(tag || kind || period !== 'all') && <div className="detail-block">
+        <p>Выборка из аналитики: {kind === 'problem' ? 'проблемы' : 'все типы'}{tag && ` · тема «${tag}»`}{period !== 'all' && ` · за ${period} дней`}.</p>
+        <Link className="btn sm" href={path + '?view=registry'}>Открыть весь реестр</Link>
+      </div>}
       <div className="filters">
         <label className="search-input">
           <Search />
@@ -445,4 +458,9 @@ export function RequestRegistry({
       </footer>
     </section>
   )
+}
+
+export function RequestRegistry(props: Parameters<typeof RegistryFilters>[0]) {
+  const params = useSearchParams()
+  return <RegistryFilters key={params.toString()} {...props} />
 }

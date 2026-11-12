@@ -115,6 +115,7 @@ export function RequestForm({
         if ('draft' in response) {
           setDraft((previous) => ({
             ...response.draft,
+            description: previous.description,
             category: previous.category || response.draft.category,
             proposal: previous.proposal || response.draft.proposal,
           }))
@@ -320,6 +321,7 @@ export function RequestForm({
                         if ('draft' in response)
                           setDraft((previous) => ({
                             ...response.draft,
+                            description: previous.description,
                             category:
                               previous.category || response.draft.category,
                             proposal:
@@ -354,11 +356,14 @@ export function RequestForm({
               />
             </label>
             <div className="upload-zone">
-              <Paperclip />
+              <button type="button" className="btn" onClick={() => fileInput.current?.click()}>
+                <Paperclip size={16} /> Выбрать файлы
+              </button>
               <p>Добавьте материалы, если они помогут разобраться</p>
               <input
                 ref={fileInput}
                 name="attachments"
+                hidden
                 type="file"
                 multiple
                 aria-label="Материалы обращения"

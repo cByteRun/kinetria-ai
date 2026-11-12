@@ -7,3 +7,5 @@ out/
 next-env.d.ts
 tmp
 docs/qa
+AGENTS.md
+docs/evidence
