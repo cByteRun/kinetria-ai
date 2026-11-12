@@ -21,7 +21,7 @@ const sql = query => new Promise((resolve, reject) => { waiting.push({ resolve, 
 const toUrl = value => 'data:text/javascript;base64,' + Buffer.from(value).toString('base64')
 const compile = source => toUrl(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText)
 const source = path => readFile(new URL('../' + path, import.meta.url), 'utf8')
-const messages = [], operations = [], afterTasks = []
+const messages = [], operations = [], afterTasks = [], documents = []
 let failSend = false, temporaryDbFailure = false, updateId = 980000000
 try {
   db.stdin.write(`begin;
@@ -73,7 +73,7 @@ try {
       },
     }),
     async say(tg, text, buttons = []) { if (failSend) { failSend = false; throw new Error('fetch failed') } messages.push({ tg, text, buttons }); return { message_id: messages.length } },
-    async telegram() { return true },
+    async telegram(method, body) { if (method === 'sendDocument') documents.push({tg:Number(body.get('chat_id')), name:body.get('document').name, content:await body.get('document').text()}); return true },
     async transcribe() { return 'В каталоге SYN-001 и SYN001 обозначают один товар. Согласовать единый артикул.' },
     async downloadTelegramFile() { return Buffer.from('test') },
     after: task => afterTasks.push(task),
@@ -113,12 +113,20 @@ try {
   let state = (await context('employee')).state
   assert.equal(state.source, 'voice'); assert(!operations.some(x => x.op === 'submit'))
   await click('employee', 'cat:' + (await context('employee')).categories.findIndex(x => x.id === 'catalog'))
+  await click('employee', 'attach')
   await send('employee', '', { document: { file_id: 'synthetic-file', file_name: 'test.txt', file_size: 4 } })
   state = (await context('employee')).state
   const submitted = await click('employee', 'submit:' + state.key)
   const record = (await api.bridge(ids.employee, 'list'))[0]
   const id = record.id
   assert.equal((await detail('employee', id)).files.length, 1)
+  const fileId = (await detail('employee', id)).files[0].id
+  for (const role of ['employee', 'manager', 'admin']) {
+    await open(role, id); await click(role, 'file:' + fileId)
+    assert.deepEqual(documents.at(-1), {tg:ids[role], name:'test.txt', content:'test'})
+  }
+  await assert.rejects(() => api.bridge(ids.handler, 'file', {id, file:fileId}), /unavailable/)
+
   const beforeReplay = messages.length
   assert.equal((await post(submitted)).status, 200); assert.equal(messages.length, beforeReplay)
   await open('manager', id); await click('manager', 'assign:' + id)
@@ -129,7 +137,9 @@ try {
   const firstConfirm = button('confirmAssign:'); assert(firstConfirm)
   await click('manager', firstConfirm)
   assert.equal((await detail('handler', id)).due_at, '2026-12-01')
-  await open('handler', id); await click('handler', 'review:review:' + id)
+  await open('handler', id); await click('handler', 'file:' + fileId)
+  assert.deepEqual(documents.at(-1), {tg:ids.handler, name:'test.txt', content:'test'})
+  await click('handler', 'review:review:' + id)
   await click('handler', 'review:clarification:' + id)
   const question = ('Уточните, где встречаются артикулы SYN-001/SYN001. ' + 'Нужен контекст закупки. '.repeat(30)).trim()
   await send('handler', question)

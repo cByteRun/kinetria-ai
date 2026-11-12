@@ -49,14 +49,15 @@ async function setupRun({healthy=true,match=true}={}) {
   if(target==='https://app.example/api/telegram/webhook'){calls.push('probe');return Response.json({ok:healthy,username:'synthetic_bot',database:healthy?'ready':'unavailable'},{status:healthy?200:502})}
   const method=target.split('/').at(-1);calls.push(method)
   const body=JSON.parse(options.body)
-  if(method==='setMyCommands') { globalThis.registeredTestCommands=body.commands; for (const command of ['start','new','help','demo','login','switch']) assert(body.commands.some(c=>c.command===command)); assert(body.commands.some(c=>c.command==='home')); assert(body.commands.some(c=>c.command==='draft')); assert(body.commands.some(c=>c.command==='reserve')) }
-  const results={getMe:{id:1,username:'synthetic_bot'},getChat:{type:'channel'},getChatMember:{status:'administrator',can_post_messages:true,can_edit_messages:true},setMyCommands:true,getMyCommands:globalThis.registeredTestCommands,setWebhook:true,getWebhookInfo:{url:match?'https://app.example/api/telegram/webhook':'https://wrong.example',max_connections:40}}
+  if(method==='setMyCommands') { assert(!body.commands.some(c=>['demo','switch'].includes(c.command))); assert(['default','all_private_chats'].includes(body.scope.type)); globalThis.registeredTestCommands=body.commands; for (const command of ['start','new','help','login']) assert(body.commands.some(c=>c.command===command)); assert(body.commands.some(c=>c.command==='home')); assert(body.commands.some(c=>c.command==='draft')); assert(body.commands.some(c=>c.command==='reserve')) }
+  const results={getMe:{id:1,username:'synthetic_bot'},getChat:{type:'channel'},getChatMember:{status:'administrator',can_post_messages:true,can_edit_messages:true},deleteMyCommands:true,setChatMenuButton:true,setMyCommands:true,getMyCommands:globalThis.registeredTestCommands,setWebhook:true,getWebhookInfo:{url:match?'https://app.example/api/telegram/webhook':'https://wrong.example',max_connections:40}}
+  if(method==='setChatMenuButton') assert.equal(body.menu_button.type,'commands');
   if(method==='setWebhook'){assert.equal(body.secret_token,'a'.repeat(24));assert.equal(body.max_connections,40);assert(!body.drop_pending_updates)}
   return Response.json({ok:true,result:results[method]})
  }})
  try {await vm.runInContext('(async()=>{'+setup+'})()',context);return {calls}}catch(error){return {calls,error}}
 }
-let result=await setupRun();assert(!result.error);assert.equal(result.calls[0],'probe');assert.equal(result.calls.at(-1),'getWebhookInfo')
+let result=await setupRun();assert(!result.error);assert.equal(result.calls.filter(c=>c==='setMyCommands').length,2);assert(result.calls.includes('setChatMenuButton'));assert.equal(result.calls[0],'probe');assert.equal(result.calls.at(-1),'getWebhookInfo')
 result=await setupRun({healthy:false});assert(result.error);assert(!result.calls.includes('setWebhook'),'Never switch Telegram to an unhealthy deployment')
 result=await setupRun({match:false});assert(result.error)
 console.log('PASS webhook setup: APP_URL default, health before registration, secret and concurrent delivery, no dropped updates, registration readback')

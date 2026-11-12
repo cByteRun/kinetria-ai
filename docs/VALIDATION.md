@@ -161,3 +161,10 @@ Runbook: [README](../README.md#быстрый-запуск-telegram-и-бесп�
 Локально прошли `tsc --noEmit --noUnusedLocals`, `check-telegram.mjs`, `check-telegram-api.mjs`, `check-telegram-webhook.mjs`, `check-telegram-inbox.mjs`. SQL `check-telegram-inbox.sql` проверил 100 пользователей, повторный enqueue, головы чатов, backoff, token fencing, очистку payload, global/per-chat/cooldown и закрытые grants с ROLLBACK. `check-telegram-inbox-concurrency.mjs` проверил 100 пользователей и повторную подачу через 10 SQL-соединений, уникальные lease, последовательность одного чата и общий лимитер в изолированной удаляемой схеме. `check-telegram-webhook-workflow.mjs` прошёл через route → inbox → bot → реальную локальную БД до решения/ознакомления и отката; голос, Telegram и транспорт лимитера в нём имитированы.
 
 HTTP-тест 100 параллельных admissions использует имитацию БД. Фактические 50–100 RPS, задержки ACK целевой среды, настоящий 429, голосовой провайдер и восстановление production scheduler пока не измерены. Миграция `20261112181447_telegram_async_inbox.sql` проверена локально в тестовых транзакциях/схеме; к целевой БД не применена. Перед размещением применить миграцию, затем перерегистрировать max_connections=40 и настроить регулярный `/api/telegram/deliver` с CRON_SECRET.
+
+
+## Telegram: инструкция, возвраты, вложения и меню (12.11.2026)
+
+Проверено локально: `check-telegram.mjs` (все редакторы → Назад без изменений, сброс ожидания, PDF/DOCX/фото, имена, лимиты и payload), `check-telegram-api.mjs`, `check-telegram-webhook.mjs` (регистрация default/all_private_chats без дублей и menu commands), `npx tsc --noEmit --noUnusedLocals`, `check-i18n.mjs`, `git diff --check`.
+
+`check-telegram-webhook-workflow.mjs` прошёл на реальной локальной PostgreSQL с ROLLBACK: явный attach → сохранение файла при регистрации → выдача через sendDocument автору, руководителю, администратору и назначенному ответственному; неназначенному доступ отклонён. Telegram и Whisper в этом тесте имитируются. Новые deployment, реальный голос и применение системного меню в этой итерации не выполнялись. После deployment нужен `pnpm telegram:webhook`; [контракт и дерево](TELEGRAM-UX.md).

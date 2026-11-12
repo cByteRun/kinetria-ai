@@ -27,8 +27,6 @@ const commands = [
   {command:'home',description:'Главная · меню текущей роли'},
   {command:'help',description:'Как работает бот · помощь по роли'},
   {command:'login',description:'Выбрать аккаунт закрытого демо'},
-  {command:'switch',description:'Сменить аккаунт закрытого демо'},
-  {command:'demo',description:'Сменить аккаунт закрытого демо'},
   {command:'new',description:'Новое обращение · сотрудник'},
   {command:'draft',description:'Продолжить черновик · сотрудник'},
   {command:'list',description:'Мои обращения / рабочая очередь'},
@@ -37,9 +35,15 @@ const commands = [
   {command:'cancel',description:'Отменить текущий шаг'},
   {command:'unlink',description:'Отключить аккаунт'},
 ]
-await api('setMyCommands', {commands})
-const registeredCommands = await api('getMyCommands', {})
-if (JSON.stringify(registeredCommands) !== JSON.stringify(commands)) throw new Error('Bot command registration readback failed.')
+// Register both scopes: private-chat commands override the default catalog.
+for (const scope of [{type:'default'}, {type:'all_private_chats'}]) {
+  // Remove old Russian overrides so they cannot hide the new fallback catalog.
+  await api('deleteMyCommands', {scope, language_code:'ru'})
+  await api('setMyCommands', {commands, scope})
+  const registeredCommands = await api('getMyCommands', {scope})
+  if (JSON.stringify(registeredCommands) !== JSON.stringify(commands)) throw new Error('Bot command registration readback failed: ' + scope.type)
+}
+await api('setChatMenuButton', {menu_button:{type:'commands'}})
 await api('setWebhook', {url: webhookUrl,secret_token:secret,max_connections:40,allowed_updates:['message','callback_query']})
 const registered = await api('getWebhookInfo', {})
 if (registered.url !== webhookUrl || registered.max_connections !== 40) throw new Error('Webhook registration readback failed.')
