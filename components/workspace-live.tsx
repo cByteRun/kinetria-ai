@@ -10,10 +10,13 @@ export function WorkspaceLive({ path }: { path: string }) {
   }, [screen])
   useEffect(() => {
     let authPending = false
-    const pauseForAuth = () => { authPending = true }
+    const pauseForAuth = () => {
+      authPending = true
+    }
     const refresh = () => {
       if (
-        !authPending && document.visibilityState === 'visible' &&
+        !authPending &&
+        document.visibilityState === 'visible' &&
         !document.querySelector('form:focus-within')
       )
         router.refresh()
@@ -31,7 +34,7 @@ export function WorkspaceLive({ path }: { path: string }) {
         setTimeout(
           () =>
             document
-              .querySelector<HTMLInputElement>('[aria-label="Поиск обращений"]')
+              .querySelector<HTMLInputElement>('[data-request-search]')
               ?.focus(),
           200,
         )

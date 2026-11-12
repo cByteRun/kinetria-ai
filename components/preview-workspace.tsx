@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl'
 import { DashboardViews } from './dashboard-views'
 import { IdeaOverview } from './idea-overview'
 import samples from '../lib/demo-requests.json'
@@ -6,27 +7,6 @@ import { RequestForm } from './request-form'
 import { RequestRegistry } from './request-registry'
 import { requestKindLabels, type RequestStatus } from '../lib/requests'
 import { canViewInsights, type Role } from '../lib/roles'
-
-const names: Record<string, string> = {
-  collaboration: 'Межотдельное взаимодействие',
-  visibility: 'Информационная прозрачность',
-  catalog: 'Каталог и данные',
-  training: 'Обучение',
-  documents: 'Документооборот',
-  processes: 'Регламенты',
-  it: 'Интеграции и IT',
-  mentoring: 'Знания и наставничество',
-  contracts: 'Договорная работа',
-  tasks: 'Задачи и коммуникации',
-  timing: 'Оперативность',
-  communication: 'Коммуникации',
-  projects: 'Проектная деятельность',
-  planning: 'Планирование ресурсов',
-  briefs: 'Постановка задач',
-  workplace: 'Корпоративная среда',
-  filing: 'Хранение документов',
-  results: 'Прозрачность результатов',
-}
 
 export function PreviewWorkspace({
   role,
@@ -37,6 +17,28 @@ export function PreviewWorkspace({
   view: string
   id?: string
 }) {
+  const ui = useTranslations('ui')
+
+  const names: Record<string, string> = {
+    collaboration: ui('crossTeamCollaboration'),
+    visibility: ui('informationTransparency'),
+    catalog: ui('catalogAndData'),
+    training: ui('training'),
+    documents: ui('documentWorkflow'),
+    processes: ui('procedures'),
+    it: ui('integrationsAndIt'),
+    mentoring: ui('knowledgeAndMentoring'),
+    contracts: ui('contractManagement'),
+    tasks: ui('tasksAndCommunication'),
+    timing: ui('responseTimes'),
+    communication: ui('communication'),
+    projects: ui('projectWork'),
+    planning: ui('resourcePlanning'),
+    briefs: ui('taskBriefs'),
+    workplace: ui('workplaceEnvironment'),
+    filing: ui('documentStorage'),
+    results: ui('outcomeTransparency'),
+  }
   const categories = Object.entries(names).map(([id, name]) => ({
     id,
     name,
@@ -67,19 +69,18 @@ export function PreviewWorkspace({
               path={'/workspace/' + role}
             />
           ) : view === 'new' ? (
-            'Расскажите о своей идее'
+            ui('tellUsAboutYourIdea')
           ) : view === 'routing' ? (
-            'Маршрутизация'
+            ui('routing')
           ) : view === 'categories' ? (
-            'Категории обращений'
+            ui('requestCategories')
           ) : (
-            'Реестр обращений'
+            ui('requestRegistry')
           )}
         </h1>
       )}
       <p className="muted">
-        Предпросмотр на синтетическом датасете. Для регистрации и
-        рассмотрения подключите Supabase.
+        {ui('previewUsingASyntheticDatasetConnectSupabaseTo')}
       </p>
       {view === 'overview' ? (
         <IdeaOverview
@@ -108,15 +109,15 @@ export function PreviewWorkspace({
           <table>
             <thead>
               <tr>
-                <th>Категория</th>
-                <th>Маршрут</th>
+                <th>{ui('category')}</th>
+                <th>{ui('route')}</th>
               </tr>
             </thead>
             <tbody>
               {categories.map((category) => (
                 <tr key={category.id}>
                   <td>{category.name}</td>
-                  <td>Настраивается в подключённой базе</td>
+                  <td>{ui('configuredInTheConnectedDatabase')}</td>
                 </tr>
               ))}
             </tbody>
@@ -144,13 +145,12 @@ export function PreviewWorkspace({
         <RequestDrawer closeHref={'/workspace/' + role + '?view=registry'}>
           <section className="workspace-panel request-panel">
             <small>
-              {selected.id} · {names[selected.category]} · Учебный пример
+              {selected.id} · {names[selected.category]} {ui('trainingExample')}
             </small>
             <h2>{selected.title}</h2>
             <p className="request-text">{selected.description}</p>
             <p className="muted">
-              Для рассмотрения обращения и сохранения истории подключите
-              Supabase.
+              {ui('connectSupabaseToReviewRequestsAndSaveTheir')}
             </p>
           </section>
         </RequestDrawer>

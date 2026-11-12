@@ -3,10 +3,7 @@
 import { useActionState, useRef, useState, useTransition } from 'react'
 import { useTranslations } from 'next-intl'
 import { prepareDraft, submitRequest } from '../app/workspace/actions'
-import {
-  requestKinds,
-  type Draft,
-} from '../lib/requests'
+import { requestKinds, type Draft } from '../lib/requests'
 import samples from '../lib/demo-requests.json'
 import {
   Sparkles,
@@ -45,6 +42,8 @@ export function RequestForm({
   routes?: Record<string, string>
   preview?: boolean
 }) {
+  const ui = useTranslations('ui')
+
   const t = useTranslations('requestsMvp')
   const key = useRef<string | null>(null)
   const [files, setFiles] = useState<File[]>([])
@@ -52,7 +51,9 @@ export function RequestForm({
   const fileInput = useRef<HTMLInputElement>(null)
   const [mode, setMode] = useState('manual')
   const [message, setMessage] = useState('')
-  const [chat, setChat] = useState<{ text: string; user?: boolean }[]>([])
+  const [chat, setChat] = useState<
+    ({ text: string; user: true } | { key: string; user?: false })[]
+  >([])
   const [draft, setDraft] = useState<Draft>(emptyDraft)
   const [aiError, setAiError] = useState<'invalid' | 'aiUnavailable'>()
   const [isDrafting, startDraft] = useTransition()
@@ -84,7 +85,7 @@ export function RequestForm({
     setChat([
       { text: sample.description, user: true },
       {
-        text: 'Пример добавлен в карточку. Проверьте категорию и получателя перед регистрацией.',
+        key: 'theExampleIsInTheCardCheckIts',
       },
     ])
   }
@@ -105,7 +106,7 @@ export function RequestForm({
         setChat((previous) => [
           ...previous,
           {
-            text: 'Описание добавлено. Заполните тему и выберите категорию в карточке справа. Для автоматического заполнения требуется подключение AI.',
+            key: 'descriptionAddedFillInTheSubjectAndSelect',
           },
         ])
         return
@@ -122,7 +123,7 @@ export function RequestForm({
           setChat((previous) => [
             ...previous,
             {
-              text: 'Карточка подготовлена. Проверьте описание, категорию и получателя. После подтверждения обращение появится в реестре.',
+              key: 'theCardIsReadyReviewTheDescriptionCategory',
             },
           ])
         } else setAiError(response.error)
@@ -136,13 +137,13 @@ export function RequestForm({
     <div>
       <div className="crm-mode-tabs">
         <button aria-pressed={mode === 'ai'} onClick={() => setMode('ai')}>
-          С помощью AI
+          {ui('withAi')}
         </button>
         <button
           aria-pressed={mode === 'manual'}
           onClick={() => setMode('manual')}
         >
-          Заполнить вручную
+          {ui('fillInManually')}
         </button>
       </div>
       <div className={mode === 'ai' ? 'crm-compose' : 'idea-form-layout'}>
@@ -151,32 +152,33 @@ export function RequestForm({
             <div className="crm-chat-head">
               <Sparkles size={20} />
               <div>
-                <strong>Помощник IdeaRoute</strong>
+                <strong>{ui('idearouteAssistant')}</strong>
                 <small style={{ display: 'block', marginTop: 4 }}>
-                  Подготовка черновика обращения
+                  {ui('preparingARequestDraft')}
                 </small>
               </div>
             </div>
             <div className="crm-chat-body" aria-live="polite">
               <div className="crm-bubble">
-                Расскажите о проблеме или предложите улучшение. Укажите
-                категорию и предполагаемое решение, если оно есть.
+                {ui('reportAProblemOrSuggestAnImprovementInclude')}
               </div>
               {chat.map((item, index) => (
                 <div
                   key={index}
                   className={'crm-bubble' + (item.user ? ' user' : '')}
                 >
-                  {item.text}
+                  {'text' in item ? item.text : ui(item.key)}
                 </div>
               ))}
-              {isDrafting && <small>Готовим карточку…</small>}
+              {isDrafting && <small>{ui('preparingTheCard')}</small>}
               {aiError && <p role="alert">{t(aiError)}</p>}
             </div>
             <div className="crm-chat-compose">
               <textarea
-                aria-label="Сообщение помощнику"
-                placeholder="Например, предлагаю упростить заявки на оборудование…"
+                aria-label={ui('messageToTheAssistant')}
+                placeholder={ui(
+                  'forExampleISuggestSimplifyingEquipmentRequests',
+                )}
                 rows={3}
                 maxLength={4000}
                 value={message}
@@ -189,7 +191,7 @@ export function RequestForm({
                   onClick={sendMessage}
                 >
                   <Send size={15} />
-                  Отправить
+                  {ui('send')}
                 </button>
                 <button
                   className="button button-outline"
@@ -200,14 +202,14 @@ export function RequestForm({
                     )
                   }
                 >
-                  Случайный пример
+                  {ui('randomExample')}
                 </button>
                 <select
-                  aria-label="Пример из датасета"
+                  aria-label={ui('datasetExample')}
                   value=""
                   onChange={(e) => loadSample(e.target.value)}
                 >
-                  <option value="">Выбрать из 20 примеров</option>
+                  <option value="">{ui('chooseFrom20Examples')}</option>
                   {samples.map((sample) => (
                     <option key={sample.id} value={sample.id}>
                       {sample.id} · {sample.title}
@@ -224,10 +226,11 @@ export function RequestForm({
         >
           <fieldset disabled={isDrafting || isSubmitting}>
             <div className="form-step">
-              <span className="step-token">01</span>Выберите тему обращения
+              <span className="step-token">01</span>
+              {ui('chooseTheRequestTopic')}
             </div>
             <label>
-              Категория *
+              {ui('category2')}
               <select
                 name="category"
                 required
@@ -235,7 +238,7 @@ export function RequestForm({
                 onChange={(e) => update('category', e.target.value)}
               >
                 <option value="" disabled>
-                  Выберите категорию
+                  {ui('chooseACategory')}
                 </option>
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -244,12 +247,11 @@ export function RequestForm({
                 ))}
               </select>
               <span className="form-hint">
-                От категории зависит маршрут к ответственному. Если не уверены,
-                выберите «Другое».
+                {ui('theCategoryDeterminesRoutingToTheOwnerIf')}
               </span>
             </label>
             <div>
-              <span className="form-label">Тип обращения</span>
+              <span className="form-label">{ui('requestType')}</span>
               <div className="choice-grid">
                 {requestKinds.map((kind) => (
                   <label className="choice" key={kind}>
@@ -268,31 +270,32 @@ export function RequestForm({
                       <HeartHandshake />
                     )}
                     {kind === 'praise'
-                      ? 'Положительный отзыв'
+                      ? ui('positiveFeedback')
                       : kind === 'idea'
-                        ? 'Предложение'
-                        : 'Проблема'}
+                        ? ui('suggestion')
+                        : ui('problem')}
                   </label>
                 ))}
               </div>
             </div>
             <div className="rule" />
             <div className="form-step">
-              <span className="step-token">02</span>Опишите ситуацию
+              <span className="step-token">02</span>
+              {ui('describeTheSituation')}
             </div>
             <label>
-              Короткая тема *
+              {ui('shortSubject')}
               <input
                 name="title"
                 maxLength={120}
                 required
                 value={draft.title}
-                placeholder="Например, обязательные параметры в заявке"
+                placeholder={ui('forExampleRequiredFieldsInARequest')}
                 onChange={(e) => update('title', e.target.value)}
               />
             </label>
             <label>
-              Что произошло или что вы предлагаете? *
+              {ui('whatHappenedOrWhatDoYouSuggest')}
               <textarea
                 name="description"
                 rows={5}
@@ -300,11 +303,10 @@ export function RequestForm({
                 required
                 value={draft.description}
                 onChange={(e) => update('description', e.target.value)}
-                placeholder="Опишите ситуацию: что происходит и как влияет на работу"
+                placeholder={ui('describeWhatIsHappeningAndHowItAffects')}
               />
               <span className="form-hint">
-                Не включайте коммерческие условия, персональные данные и другую
-                закрытую информацию.
+                {ui('doNotIncludeCommercialTermsPersonalDataOr')}
               </span>
             </label>
             {aiEnabled && mode === 'manual' && (
@@ -335,7 +337,9 @@ export function RequestForm({
                   }
                 >
                   <Sparkles size={15} />
-                  {isDrafting ? 'Готовим карточку…' : 'Помочь оформить с ИИ'}
+                  {isDrafting
+                    ? ui('preparingTheCard')
+                    : ui('helpMeDraftWithAi')}
                 </button>
                 {aiError && (
                   <p className="error" role="alert">
@@ -345,37 +349,39 @@ export function RequestForm({
               </div>
             )}
             <label>
-              Как это можно решить · необязательно
+              {ui('howThisCouldBeSolvedOptional')}
               <textarea
                 name="proposal"
                 rows={3}
                 maxLength={2000}
                 value={draft.proposal}
                 onChange={(e) => update('proposal', e.target.value)}
-                placeholder="Предложите следующий шаг или улучшение"
+                placeholder={ui('suggestANextStepOrImprovement')}
               />
             </label>
             <div className="upload-zone">
-              <button type="button" className="btn" onClick={() => fileInput.current?.click()}>
-                <Paperclip size={16} /> Выбрать файлы
+              <button
+                type="button"
+                className="btn"
+                onClick={() => fileInput.current?.click()}
+              >
+                <Paperclip size={16} /> {ui('chooseFiles')}
               </button>
-              <p>Добавьте материалы, если они помогут разобраться</p>
+              <p>{ui('addMaterialsIfTheyHelpExplainTheSituation')}</p>
               <input
                 ref={fileInput}
                 name="attachments"
                 hidden
                 type="file"
                 multiple
-                aria-label="Материалы обращения"
+                aria-label={ui('requestMaterials')}
                 onChange={(e) => {
                   const selected = Array.from(e.target.files || [])
                   if (
                     selected.length > 3 ||
                     selected.some((f) => f.size > 1048576 || f.size === 0)
                   ) {
-                    setFileError(
-                      'Выберите до 3 непустых файлов, не более 1 МБ каждый.',
-                    )
+                    setFileError('chooseUpTo3NonemptyFilesNoLarger')
                     setFiles([])
                     e.target.value = ''
                   } else {
@@ -384,13 +390,11 @@ export function RequestForm({
                   }
                 }}
               />
-              <p className="form-hint">
-                До 3 файлов · по 1 МБ каждый · доступны участникам обращения
-              </p>
+              <p className="form-hint">{ui('upTo3Files1MbEachAccessible')}</p>
             </div>
             {fileError && (
               <p className="form-error" role="alert">
-                {fileError}
+                {ui(fileError)}
               </p>
             )}
             {files.length > 0 && (
@@ -401,7 +405,7 @@ export function RequestForm({
                     {f.name}
                     <button
                       type="button"
-                      aria-label={'Убрать ' + f.name}
+                      aria-label={ui('remove') + f.name}
                       onClick={() =>
                         setFiles((previous) =>
                           previous.filter((_, index) => index !== i),
@@ -415,9 +419,9 @@ export function RequestForm({
               </div>
             )}
             <details className="idea-metadata">
-              <summary>Дополнительно: теги и тональность</summary>
+              <summary>{ui('moreTagsAndSentiment')}</summary>
               <label>
-                Тональность
+                {ui('sentiment')}
                 <select
                   name="sentiment"
                   value={draft.sentiment}
@@ -427,18 +431,18 @@ export function RequestForm({
                     <option key={n} value={n}>
                       {n}
                       {n === 5
-                        ? ' — нейтральная'
+                        ? ui('neutral2')
                         : n === 0
-                          ? ' — негативная'
+                          ? ui('negative2')
                           : n === 10
-                            ? ' — позитивная'
+                            ? ui('positive2')
                             : ''}
                     </option>
                   ))}
                 </select>
               </label>
               <label>
-                Теги через запятую
+                {ui('commaSeparatedTags')}
                 <input
                   name="tags"
                   value={draft.tags.join(',')}
@@ -458,13 +462,13 @@ export function RequestForm({
                 className="btn"
                 onClick={() => loadSample('A-001')}
               >
-                Заполнить пример
+                {ui('fillInAnExample')}
               </button>
               <button
                 className="btn primary"
                 disabled={preview || isSubmitting || Boolean(fileError)}
               >
-                {isSubmitting ? 'Регистрируем…' : 'Зарегистрировать'}
+                {isSubmitting ? ui('submitting') : ui('submit')}
                 <ArrowRight />
               </button>
             </div>
@@ -483,45 +487,45 @@ export function RequestForm({
               }}
             >
               <RotateCcw size={14} />
-              Очистить и начать заново
+              {ui('clearAndStartAgain')}
             </button>
           </fieldset>
         </form>
         {mode === 'manual' && (
           <aside className="ir-form-aside">
             <section className="card flow-preview">
-              <h2>Ваш маршрут к результату</h2>
+              <h2>{ui('yourRouteToAnOutcome')}</h2>
               <p className="form-hint">
-                До отправки понятно, куда попадёт обращение.
+                {ui('seeWhereTheRequestWillGoBeforeYou')}
               </p>
               {[
                 [
                   MessageSquareWarning,
-                  'Регистрация обращения',
+                  ui('requestSubmission'),
                   categories.find((c) => c.id === draft.category)?.name ||
-                    'Выберите тему',
+                    ui('chooseATopic'),
                 ],
                 [
                   GitBranch,
                   draft.category
-                    ? routes[draft.category] || 'Резервная очередь'
-                    : 'Назначение ответственного',
+                    ? routes[draft.category] || ui('fallbackQueue')
+                    : ui('ownerAssignment'),
                   draft.category && !routes[draft.category]
-                    ? 'Администратор назначит ответственного'
-                    : 'Автоматически по категории',
+                    ? ui('theAdministratorWillAssignAnOwner')
+                    : ui('automaticallyByCategory'),
                 ],
                 [
                   Clock3,
-                  'Контроль срока',
+                  ui('deadlineTracking'),
                   (categories.find((c) => c.id === draft.category)?.days
                     ? categories.find((c) => c.id === draft.category)?.days +
-                      ' дн. · '
-                    : '') + 'Срок появится в карточке обращения',
+                      ui('days')
+                    : '') + ui('theDeadlineWillAppearInTheRequestCard'),
                 ],
                 [
                   CircleCheck,
-                  'Решение и обратная связь',
-                  'Результат в вашем личном кабинете',
+                  ui('decisionAndFeedback'),
+                  ui('theResultInYourWorkspace'),
                 ],
               ].map(([Icon, title, note], i) => {
                 const I = Icon as typeof Route
@@ -540,23 +544,18 @@ export function RequestForm({
             </section>
             <section className="card detail-block">
               <h2>
-                <ShieldCheck size={17} /> Кто увидит обращение
+                <ShieldCheck size={17} /> {ui('whoCanSeeTheRequest')}
               </h2>
               <p className="form-hint">
-                Вы, ответственный, руководитель направления и администратор
-                системы.
+                {ui('youTheOwnerTheAreaManagerAndThe')}
               </p>
               <p className="form-hint">
-                Подача от вашего имени. Обращение не публикуется для всех
-                сотрудников.
+                {ui('submittedUnderYourNameTheRequestIsNot')}
               </p>
             </section>
             <div className="repeat-card">
-              <h3>Что будет после отправки?</h3>
-              <p>
-                Вы получите номер обращения. Статус, комментарии и итог
-                рассмотрения появятся в разделе «Мои обращения».
-              </p>
+              <h3>{ui('whatHappensAfterSubmission')}</h3>
+              <p>{ui('youWillReceiveARequestNumberStatusComments')}</p>
             </div>
           </aside>
         )}

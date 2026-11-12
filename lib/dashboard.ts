@@ -1,13 +1,5 @@
+import monthLabels from '../messages/date-months.json'
 import { terminalStatuses, type RequestStatus } from './requests'
-export const statusNames: Record<RequestStatus, string> = {
-  new: 'Новое',
-  review: 'На рассмотрении',
-  clarification: 'Ожидает уточнения',
-  in_progress: 'В работе',
-  implemented: 'Реализовано',
-  rejected: 'Отклонено',
-  closed: 'Закрыто',
-}
 export const isDone = (r: { status: RequestStatus }) =>
   terminalStatuses.includes(r.status)
 export const hasResult = (r: {
@@ -26,12 +18,24 @@ export const isOverdue = (r: {
   status: RequestStatus
   due_at?: string | null
 }) => !isDone(r) && Boolean(r.due_at && r.due_at.slice(0, 10) < today())
-export function dateLabel(value?: string | null) {
-  return value
-    ? new Date(value).toLocaleDateString('ru-RU', {
-        day: 'numeric',
-        month: 'short',
-        timeZone: 'Asia/Qyzylorda',
-      })
-    : 'Не задан'
+// Some browser ICU builds lack Kazakh month names. Numeric calendar parts use
+// the same supported locale everywhere; translated month labels are explicit.
+const shortMonths: Record<string, readonly string[]> = monthLabels
+export function dateLabel(
+  value: string | null | undefined,
+  locale: string,
+  notSet: string,
+) {
+  if (!value) return notSet
+  const date = new Date(value)
+  if (!Number.isFinite(date.getTime())) return notSet
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric',
+    month: 'numeric',
+    timeZone: 'Asia/Qyzylorda',
+  }).formatToParts(date)
+  const day = parts.find((part) => part.type === 'day')!.value
+  const month = Number(parts.find((part) => part.type === 'month')!.value) - 1
+  const label = (shortMonths[locale] || shortMonths.ru)[month]
+  return locale === 'en' ? `${label} ${day}` : `${day} ${label}`
 }

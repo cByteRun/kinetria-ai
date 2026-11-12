@@ -1,3 +1,6 @@
+import { demoCategoryIds } from '../../i18n/demo-categories'
+import { getTheme } from '../../i18n/theme'
+import { Preferences } from '../../components/preferences'
 import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
@@ -25,6 +28,10 @@ export default async function Login({
 }: {
   searchParams: Promise<{ error?: string }>
 }) {
+  const theme = await getTheme()
+  const categoryText = await getTranslations('categories')
+  const ui = await getTranslations('ui')
+
   if (await getRole()) redirect('/workspace')
   const { error } = await searchParams
   const t = await getTranslations('login'),
@@ -42,34 +49,40 @@ export default async function Login({
             Idea<span style={{ fontWeight: 500 }}>Route</span>
           </span>
         </Link>
-        <Link className="ir-home-link" href="/">
-          <ArrowLeft size={15} />
-          На главную
-        </Link>
+        <div className="ir-login-header-actions">
+          <Link className="ir-home-link" href="/">
+            <ArrowLeft size={15} />
+            {ui('backToHome')}
+          </Link>
+          <Preferences theme={theme} compact />
+        </div>
       </header>
       <div className="ir-login-grid">
         <section className="ir-login-story">
-          <div className="eyebrow">ОБРАТНАЯ СВЯЗЬ СОТРУДНИКОВ</div>
+          <div className="eyebrow">{ui('employeeFeedback')}</div>
           <h1>
-            Каждое обращение —<br />к результату.
+            {ui('everyRequest')}
+            <br />
+            {ui('toAnOutcome')}
           </h1>
           <p className="ir-login-lead">
-            Идеи становятся улучшениями,
-            <br />а проблемы находят решение.
+            {ui('ideasBecomeImprovements')}
+            <br />
+            {ui('andProblemsFindSolutions')}
           </p>
           <div className="ir-login-route card">
             <div className="card-head">
               <div>
-                <h2>Понятный маршрут. Видимый результат.</h2>
-                <p>От первого сообщения до ответа автору</p>
+                <h2>{ui('aClearRouteAVisibleResult')}</h2>
+                <p>{ui('fromTheFirstMessageToAResponseFor')}</p>
               </div>
               <Route />
             </div>
             <div className="ir-login-stages">
               {[
-                [Inbox, '01', 'Обращение'],
-                [Sparkles, '02', 'Рассмотрение'],
-                [CircleCheck, '03', 'Результат'],
+                [Inbox, '01', ui('request')],
+                [Sparkles, '02', ui('review')],
+                [CircleCheck, '03', ui('result')],
               ].map(([Icon, n, label]) => {
                 const I = Icon as typeof Inbox
                 return (
@@ -84,44 +97,50 @@ export default async function Login({
               })}
             </div>
             <div className="route-foot">
-              <Check size={15} />У каждого обращения — ответственный и следующий
-              шаг
+              <Check size={15} />
+              {ui('everyRequestHasAnOwnerAndANext')}
             </div>
           </div>
           <div className="ir-login-promises">
             <span>
               <LockKeyhole size={15} />
-              Доступ по вашей роли
+              {ui('accessBasedOnYourRole')}
             </span>
             <span>
               <CircleCheck size={15} />
-              История решений
+              {ui('decisionHistory')}
             </span>
           </div>
         </section>
         <section className="ir-login-panel">
           <div className="ir-login-panel-head">
-            <span className="workspace-avatar">МТ</span>
+            <span className="workspace-avatar">{ui('mt')}</span>
             <div>
-              <strong>Модус Трейд</strong>
-              <small>Рабочее пространство</small>
+              <strong>{ui('modusTrade')}</strong>
+              <small>{ui('workspace')}</small>
             </div>
           </div>
-          <h2>Добро пожаловать</h2>
+          <h2>{ui('welcome')}</h2>
           <p className="ir-login-description">
-            Войдите, чтобы предложить улучшение,
+            {ui('signInToSuggestAnImprovement')}
             <br />
-            рассмотреть обращения и увидеть результат.
+            {ui('reviewRequestsAndSeeTheOutcome')}
           </p>
           {error && (
             <p className="form-error" role="alert">
-              {error === 'connection' ? 'Не удалось связаться с сервером. Попробуйте войти ещё раз.' : t(errors.find((k) => k === error) || 'fallback')}
+              {error === 'connection'
+                ? ui('unableToReachTheServerTrySigningIn')
+                : t(errors.find((k) => k === error) || 'fallback')}
             </p>
           )}
           {hasSupabase && (
-            <AuthForm action="/auth/login" className="ir-login-form" pendingLabel="Входим в рабочее пространство…">
+            <AuthForm
+              action="/auth/login"
+              className="ir-login-form"
+              pendingLabel={ui('signingIntoTheWorkspace')}
+            >
               <label>
-                Рабочая почта
+                {ui('workEmail')}
                 <input
                   className="form-field"
                   name="email"
@@ -132,28 +151,34 @@ export default async function Login({
                 />
               </label>
               <label>
-                Пароль
+                {ui('password')}
                 <input
                   className="form-field"
                   name="password"
                   type="password"
-                  placeholder="Введите пароль"
+                  placeholder={ui('enterYourPassword')}
                   autoComplete="current-password"
                   required
                 />
               </label>
               <button className="btn primary">
-                Войти в рабочее пространство <ArrowRight size={16} />
+                {ui('signInToWorkspace')}
+                <ArrowRight size={16} />
               </button>
             </AuthForm>
           )}
           {showRoles && (
             <details className="ir-demo-login" open>
               <summary>
-                <span className="tiny-pill">Демо</span> Попробовать по роли
+                <span className="tiny-pill">{ui('demo2')}</span>{' '}
+                {ui('tryARole')}
               </summary>
-              <p>Тестовые аккаунты и синтетические обращения.</p>
-              <AuthForm action="/auth/login" className="ir-demo-accounts" pendingLabel="Открываем выбранный кабинет…">
+              <p>{ui('testAccountsAndSyntheticRequests')}</p>
+              <AuthForm
+                action="/auth/login"
+                className="ir-demo-accounts"
+                pendingLabel={ui('openingTheSelectedWorkspace')}
+              >
                 {hasSupabase
                   ? accounts
                       .filter((a) => a.role !== 'client')
@@ -163,7 +188,12 @@ export default async function Login({
                             <strong>{a.name}</strong>
                             <small>
                               {roleText(a.role as Role)}
-                              {a.category ? ' · ' + a.category : ''}
+                              {a.category
+                                ? ' · ' +
+                                  (demoCategoryIds[a.category]
+                                    ? categoryText(demoCategoryIds[a.category])
+                                    : a.category)
+                                : ''}
                             </small>
                           </span>
                           <ArrowUpRight size={15} />
@@ -183,13 +213,13 @@ export default async function Login({
           {!hasSupabase && !localPreview && <p>{t('disabled')}</p>}
           <p className="ir-login-security">
             <LockKeyhole size={13} />
-            Обращения доступны в рамках вашей роли
+            {ui('requestsAreAccessibleWithinYourRole')}
           </p>
         </section>
       </div>
       <footer className="ir-login-footer">
-        <span>IdeaRoute / Feedback Operations</span>
-        <span>От идеи к результату</span>
+        <span>IdeaRoute / {ui('feedbackOperations')}</span>
+        <span>{ui('fromIdeaToOutcome')}</span>
       </footer>
     </main>
   )

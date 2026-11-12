@@ -1076,3 +1076,39 @@ form[aria-busy='true'] { cursor: progress; }
 form[aria-busy='true'] button { pointer-events: none; opacity: .6; }
 .auth-progress { display: block; font-size: 13px; line-height: 1.6; color: inherit; padding: 10px 0; }
 .side-user .auth-progress { position: fixed; inset: auto 16px 20px auto; z-index: 100; padding: 12px 18px; border-radius: 9px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); }
+
+.preferences-compact {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+.preferences-compact select {
+  min-width: 58px;
+  min-height: 44px;
+  padding: 8px;
+  border: 1px solid var(--line, #777);
+  border-radius: 8px;
+  background: var(--surface, transparent);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.preferences-compact .theme-toggle {
+  min-width: 44px;
+  min-height: 44px;
+  display: grid;
+  place-items: center;
+}
+.preferences-error {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 50;
+  width: 240px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 4px 20px #0003;
+}

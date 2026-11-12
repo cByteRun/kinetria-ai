@@ -1,0 +1,21 @@
+// Labels from the synthetic account fixtures; actual category names come from the database.
+export const demoCategoryIds: Record<string, string> = {
+  'Межотдельное взаимодействие': 'collaboration',
+  'Информационная прозрачность': 'visibility',
+  'Каталог и данные': 'catalog',
+  Обучение: 'training',
+  Документооборот: 'documents',
+  Регламенты: 'processes',
+  'Интеграции и IT': 'it',
+  'Знания и наставничество': 'mentoring',
+  'Договорная работа': 'contracts',
+  'Задачи и коммуникации': 'tasks',
+  Оперативность: 'timing',
+  Коммуникации: 'communication',
+  'Проектная деятельность': 'projects',
+  'Планирование ресурсов': 'planning',
+  'Постановка задач': 'briefs',
+  'Корпоративная среда': 'workplace',
+  'Хранение документов': 'filing',
+  'Прозрачность результатов': 'results',
+}

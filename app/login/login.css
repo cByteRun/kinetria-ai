@@ -328,3 +328,87 @@
     display: none;
   }
 }
+
+.ir-login-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+html[data-theme="dark"] .ir-login {
+  --ink: #eeeaf5;
+  --muted: #bab1c9;
+  --line: #393245;
+  --surface: #211c2c;
+  --bg: #17131f;
+  background: var(--bg);
+  color: var(--ink);
+  color-scheme: dark;
+}
+html[data-theme="dark"]
+  .ir-login
+  :is(
+    .ir-login-panel,
+    .card,
+    .ir-demo-accounts button,
+    .ir-login-stages > div,
+    .form-field
+  ) {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--ink);
+}
+html[data-theme="dark"]
+  .ir-login
+  :is(.brand-lockup, h1, h2, h3, label, .card-head h2) {
+  color: var(--ink);
+}
+html[data-theme="dark"]
+  .ir-login
+  :is(
+    .ir-home-link,
+    .ir-login-lead,
+    .ir-login-description,
+    .ir-login-promises,
+    .ir-login-security,
+    .ir-login-footer,
+    .ir-login-panel-head small,
+    .ir-demo-login p,
+    .ir-demo-accounts small,
+    .card-head p,
+    .route-foot
+  ) {
+  color: var(--muted);
+}
+html[data-theme="dark"] .ir-login .ir-login-stages > div:last-child {
+  background: #19382d;
+  border-color: #315d4b;
+  color: #a2dfbd;
+}
+html[data-theme="dark"] .ir-login .ir-demo-accounts button:hover {
+  background: #312642;
+  border-color: #a88bdf;
+}
+@media (max-width: 600px) {
+  .ir-login-header {
+    height: auto;
+    min-height: 90px;
+    padding: 12px 16px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .ir-login-header-actions {
+    gap: 8px;
+    margin-left: auto;
+  }
+  .ir-login .brand-lockup {
+    font-size: 20px;
+  }
+  .ir-login .ir-home-link {
+    font-size: 12px;
+  }
+}
+
+html[data-theme='dark'] .ir-login .route-foot { background: var(--surface); border-color: var(--line); }
+html[data-theme='dark'] .ir-login .theme-toggle { background: var(--surface); color: var(--ink); border: 1px solid var(--line); }
+html[data-theme='dark'] .ir-login .workspace-avatar { background: #34294a; color: #d9c9ff; }
+html[data-theme='dark'] .ir-login .ir-demo-login { border-color: var(--line); }

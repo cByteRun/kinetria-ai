@@ -1,6 +1,13 @@
+import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { CheckCheck, Circle, ClipboardList, Clock3, MessageCircle } from 'lucide-react'
+import {
+  CheckCheck,
+  Circle,
+  ClipboardList,
+  Clock3,
+  MessageCircle,
+} from 'lucide-react'
 import { aiConfig } from '../lib/ai'
 import { getFormatter, getLocale, getTranslations } from 'next-intl/server'
 import {
@@ -9,11 +16,9 @@ import {
   saveCategory,
   dashboardAction,
 } from '../app/workspace/actions'
-import { isLocale } from '../i18n/settings'
+import { locales, isLocale } from '../i18n/settings'
 import {
   feedbackStage,
-  feedbackStages,
-  sentimentLabel,
   terminalStatuses,
   topicTags,
   transitions,
@@ -60,21 +65,26 @@ export async function RequestWorkspace({
   error?: string
   view?: string
 }) {
+  const ui = await getTranslations('ui')
+
   const t = await getTranslations('requestsMvp')
   const locale = await getLocale()
   const path = '/workspace/' + role
-  if ((view === 'analytics' || view === 'insights') && !canViewInsights(role)) notFound()
+  if ((view === 'analytics' || view === 'insights') && !canViewInsights(role))
+    notFound()
   if (id && (typeof id !== 'string' || !uuidPattern.test(id))) notFound()
   const supabase = await createClient()
   const [list, categoryList] = await Promise.all([
-    id || view === 'new' || view === 'help' ? {data: [] as RequestRow[], error: null} : supabase
-      .from('requests')
-      .select(
-        'id,number,source_ref,category_id,title,status,assignee_id,kind,sentiment,description,next_step,decision,updated_at,created_at,due_at,department,priority,first_response_at,resolved_at,acknowledged_at,is_demo,version,tags',
-      )
-      .order('updated_at', { ascending: false })
-      .order('id')
-      .returns<RequestRow[]>(),
+    id || view === 'new' || view === 'help'
+      ? { data: [] as RequestRow[], error: null }
+      : supabase
+          .from('requests')
+          .select(
+            'id,number,source_ref,category_id,title,status,assignee_id,kind,sentiment,description,next_step,decision,updated_at,created_at,due_at,department,priority,first_response_at,resolved_at,acknowledged_at,is_demo,version,tags',
+          )
+          .order('updated_at', { ascending: false })
+          .order('id')
+          .returns<RequestRow[]>(),
     supabase
       .from('request_categories')
       .select('id,name_ru,name_en,name_kk,active,department,sla_days')
@@ -87,21 +97,34 @@ export async function RequestWorkspace({
   const categories = categoryList.data
     .map((category) => ({
       id: category.id,
+      name_ru: category.name_ru,
+      name_en: category.name_en,
+      name_kk: category.name_kk,
       name: category[`name_${isLocale(locale) ? locale : 'ru'}`],
       active: category.active,
       department: category.department,
       days: category.sla_days,
     }))
     .sort((a, b) => a.name.localeCompare(b.name, locale))
-  const [{data: routing}, managers] = await Promise.all([
-    view === 'new' || view === 'routing' ? supabase.rpc('routing_preview') : {data: []},
-    role === 'admin' && view === 'routing' ? supabase.rpc('routing_managers') : null,
+  const [{ data: routing }, managers] = await Promise.all([
+    view === 'new' || view === 'routing'
+      ? supabase.rpc('routing_preview')
+      : { data: [] },
+    role === 'admin' && view === 'routing'
+      ? supabase.rpc('routing_managers')
+      : null,
   ])
   const routes = Object.fromEntries(
     (Array.isArray(routing) ? routing : []).map(
       (route: { category_id: string; recipient: string }) => [
         route.category_id,
-        route.recipient,
+        route.recipient === 'Резервная очередь · администратор'
+          ? ui('fallbackQueue')
+          : route.recipient === 'Руководитель направления'
+            ? ui('chooseAManager')
+            : route.recipient === 'Ответственный специалист'
+              ? ui('owner')
+              : route.recipient,
       ],
     ),
   )
@@ -135,7 +158,9 @@ export async function RequestWorkspace({
         path={path}
       />
     )
-  if (['results', 'analytics', 'insights', 'notifications', 'help'].includes(view))
+  if (
+    ['results', 'analytics', 'insights', 'notifications', 'help'].includes(view)
+  )
     return (
       <DashboardViews
         rows={list.data}
@@ -149,8 +174,8 @@ export async function RequestWorkspace({
     return (
       <>
         <Heading
-          title="Расскажите, что можно улучшить."
-          description="Вы описываете ситуацию. IdeaRoute помогает довести её до результата."
+          title={ui('tellUsWhatCouldBeImproved')}
+          description={ui('youDescribeTheSituationIdearouteHelpsBringIt')}
         />
         <RequestForm
           categories={categories.filter((c) => c.active)}
@@ -163,11 +188,11 @@ export async function RequestWorkspace({
     return (
       <>
         <Heading
-          title={view === 'routing' ? 'Маршрутизация' : 'Категории'}
+          title={view === 'routing' ? ui('routing') : ui('categories')}
           description={
             view === 'routing'
-              ? 'Категория → ответственный → срок. Без маршрута обращение попадёт в резервную очередь.'
-              : 'Настройте темы обращений, подразделения и сроки рассмотрения.'
+              ? ui('categoryOwnerDeadlineWithoutARouteTheRequest')
+              : ui('configureRequestTopicsDepartmentsAndReviewDeadlines')
           }
         />
         {error && (
@@ -179,8 +204,8 @@ export async function RequestWorkspace({
           <section className="card ir-section-gap">
             <div className="card-head">
               <div>
-                <h2>Резервная очередь</h2>
-                <p>Назначьте ответственного в карточке обращения.</p>
+                <h2>{ui('fallbackQueue')}</h2>
+                <p>{ui('assignAnOwnerInTheRequestCard')}</p>
               </div>
             </div>
             <RequestRegistry
@@ -195,16 +220,16 @@ export async function RequestWorkspace({
           <div className="card-head">
             <h2>
               {view === 'routing'
-                ? 'Правила передачи обращений'
-                : 'Категории обращений'}
+                ? ui('requestRoutingRules')
+                : ui('requestCategories')}
             </h2>
           </div>
           <div className="table-scroll">
             <table className="case-table settings-table">
               <thead>
                 <tr>
-                  <th>Категория</th>
-                  <th>{view === 'routing' ? 'Ответственный' : 'Настройки'}</th>
+                  <th>{ui('category')}</th>
+                  <th>{view === 'routing' ? ui('owner') : ui('settings')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -213,28 +238,28 @@ export async function RequestWorkspace({
                     <td>
                       <strong>{c.name}</strong>
                       <p className="case-caption">
-                        {c.department} · {c.days} дн. ·{' '}
-                        {c.active ? 'Активна' : 'Архив'}
+                        {c.department} · {c.days} {ui('days2')}{' '}
+                        {c.active ? ui('active') : ui('archived')}
                       </p>
                     </td>
                     <td>
                       {view === 'routing' ? (
                         <form action={saveRouting} className="ir-flex ir-wrap">
                           <input type="hidden" name="category" value={c.id} />
-                          <span>{routes[c.id] || 'Резервная очередь'}</span>
+                          <span>{routes[c.id] || ui('fallbackQueue')}</span>
                           <select
                             className="form-field"
                             style={{ width: 'auto' }}
                             name="manager"
-                            aria-label={'Получатель: ' + c.name}
+                            aria-label={ui('recipient') + c.name}
                             required
                             defaultValue=""
                           >
                             <option value="" disabled>
-                              Выберите действие
+                              {ui('chooseAnAction')}
                             </option>
                             <option value="disabled">
-                              Отключить маршрут → резерв
+                              {ui('disableRouteFallbackQueue')}
                             </option>
                             {Array.isArray(managers?.data) &&
                               managers.data.map(
@@ -245,11 +270,11 @@ export async function RequestWorkspace({
                                 ),
                               )}
                           </select>
-                          <button className="btn sm">Сохранить маршрут</button>
+                          <button className="btn sm">{ui('saveRoute')}</button>
                         </form>
                       ) : (
                         <details>
-                          <summary>Изменить категорию</summary>
+                          <summary>{ui('editCategory')}</summary>
                           <CategoryForm category={c} />
                         </details>
                       )}
@@ -262,7 +287,7 @@ export async function RequestWorkspace({
         </section>
         {view === 'categories' && (
           <section className="card help-section ir-section-gap">
-            <h2>Новая категория</h2>
+            <h2>{ui('newCategory')}</h2>
             <CategoryForm />
           </section>
         )}
@@ -271,8 +296,8 @@ export async function RequestWorkspace({
   return (
     <>
       <Heading
-        title={role === 'employee' ? 'Мои обращения' : 'Реестр обращений'}
-        description="Вся история, ответственные, сроки и результаты в одном месте."
+        title={role === 'employee' ? ui('myRequests') : ui('requestRegistry')}
+        description={ui('historyOwnersDeadlinesAndResultsInOnePlace')}
       />
       <RequestRegistry
         showRecurrence={canViewInsights(role)}
@@ -291,37 +316,53 @@ function CategoryForm({
   category?: {
     id: string
     name: string
+    name_ru: string
+    name_en: string
+    name_kk: string
     department: string
     days: number
     active: boolean
   }
 }) {
+  const ui = useTranslations('ui')
+
   return (
     <form action={saveCategory} className="ir-category-form">
       <input type="hidden" name="category" value={category?.id || ''} />
+      {locales.map((language) => (
+        <label key={language}>
+          {ui('localeName', {
+            language: ui(
+              language === 'ru'
+                ? 'languageRu'
+                : language === 'en'
+                  ? 'languageEn'
+                  : 'languageKk',
+            ),
+          })}
+          <input
+            className="form-field"
+            name={'name_' + language}
+            lang={language}
+            required
+            minLength={3}
+            maxLength={100}
+            defaultValue={category?.[`name_${language}`]}
+          />
+        </label>
+      ))}
       <label>
-        Название
-        <input
-          className="form-field"
-          name="name"
-          required
-          minLength={3}
-          maxLength={100}
-          defaultValue={category?.name}
-        />
-      </label>
-      <label>
-        Подразделение
+        {ui('department')}
         <input
           className="form-field"
           name="department"
           required
           maxLength={100}
-          defaultValue={category?.department || 'Операционные процессы'}
+          defaultValue={category?.department || ui('operationalProcesses')}
         />
       </label>
       <label>
-        Срок, дней
+        {ui('deadlineDays')}
         <input
           className="form-field"
           name="days"
@@ -338,9 +379,9 @@ function CategoryForm({
           type="checkbox"
           defaultChecked={category?.active ?? true}
         />
-        Доступна в форме
+        {ui('availableInTheForm')}
       </label>
-      <button className="btn primary">Сохранить категорию</button>
+      <button className="btn primary">{ui('saveCategory')}</button>
     </form>
   )
 }
@@ -356,6 +397,10 @@ async function RequestDetail({
   error?: string
   categoryNames: Record<string, string>
 }) {
+  const locale = await getLocale()
+
+  const ui = await getTranslations('ui')
+
   const t = await getTranslations('requestsMvp')
   const roleText = await getTranslations('roles')
   const format = await getFormatter()
@@ -432,7 +477,7 @@ async function RequestDetail({
         href={'/workspace/' + role + '?view=registry'}
         className="btn ghost ir-section-gap"
       >
-        ← Вернуться к обращениям
+        {ui('backToRequests')}
       </Link>
       {(error === 'conflict' ||
         error === 'invalid' ||
@@ -453,29 +498,44 @@ async function RequestDetail({
             />
           </div>
           {request.is_demo && (
-            <span className="tiny-pill">Демо · синтетическое обращение</span>
+            <span className="tiny-pill">{ui('demoSyntheticRequest')}</span>
           )}
         </header>
-        <div className="detail-route" aria-label="Этапы рассмотрения">
+        <div className="detail-route" aria-label={ui('reviewStages')}>
           {[
-            ['new', 'Получено'], ['review', 'Рассмотрение'],
-            ['clarification', 'Уточнение'], ['in_progress', 'Действия'],
-            ['result', 'Результат'],
+            ['new', ui('received')],
+            ['review', ui('review')],
+            ['clarification', ui('clarification')],
+            ['in_progress', ui('actions2')],
+            ['result', ui('result')],
           ].map(([status, label]) => {
-            const current = status === 'result' ? isDone(request) : request.status === status
-            const completed = !current && (status === 'new' || history.data.some(event => event.status === status))
+            const current =
+              status === 'result' ? isDone(request) : request.status === status
+            const completed =
+              !current &&
+              (status === 'new' ||
+                history.data.some((event) => event.status === status))
             const Icon = completed ? CheckCheck : current ? Clock3 : Circle
-            return <div key={status} className={'detail-step ' + (current ? 'current' : completed ? 'done' : '')}
-              aria-current={current ? 'step' : undefined}>
-              <Icon size={14} aria-hidden="true" />{label}
-            </div>
+            return (
+              <div
+                key={status}
+                className={
+                  'detail-step ' +
+                  (current ? 'current' : completed ? 'done' : '')
+                }
+                aria-current={current ? 'step' : undefined}
+              >
+                <Icon size={14} aria-hidden="true" />
+                {label}
+              </div>
+            )
           })}
         </div>
         <div className="crm-detail-content">
           {!isDone(request) && (
             <section
               className={'case-current case-current-' + stage}
-              aria-label="Состояние обращения"
+              aria-label={ui('requestState')}
             >
               <div className="case-labels">
                 <CaseStatus status={request.status} label={t(request.status)} />
@@ -484,25 +544,42 @@ async function RequestDetail({
                   closed={terminalStatuses.includes(request.status)}
                 />
               </div>
-              <strong>{feedbackStages[stage]}</strong>
+              <strong>
+                {ui(
+                  (
+                    {
+                      routing: 'routingStage',
+                      withOwner: 'withOwnerStage',
+                      awaitingAuthor: 'awaitingAuthorStage',
+                      missingOutcome: 'missingOutcomeStage',
+                      resolved: 'resolvedStage',
+                    } as const
+                  )[stage],
+                )}
+              </strong>
             </section>
           )}
           {question && (
             <section className="case-section">
               <h3>
                 <MessageCircle size={17} aria-hidden="true" />
-                Запрос уточнения
+                {ui('clarificationRequest')}
               </h3>
               <p className="request-text">{question}</p>
             </section>
           )}
           {(request.decision || request.next_step) && (
-            <section className={'crm-outcome ' + (isDone(request) ? 'is-result' : 'is-next-step')}>
+            <section
+              className={
+                'crm-outcome ' +
+                (isDone(request) ? 'is-result' : 'is-next-step')
+              }
+            >
               {request.decision && (
                 <>
                   <h3>
                     <CheckCheck size={18} aria-hidden="true" />
-                    Решение для автора
+                    {ui('decisionForTheAuthor')}
                   </h3>
                   <p className="request-text">{request.decision}</p>
                 </>
@@ -518,29 +595,42 @@ async function RequestDetail({
           <section className="case-section">
             <h3>
               <ClipboardList size={17} aria-hidden="true" />
-              Исходное обращение
+              {ui('originalRequest')}
             </h3>
             <p className="request-text">{request.description}</p>
             {request.proposal && (
               <>
-                <h4>Предложение автора</h4>
+                <h4>{ui('authorSProposal')}</h4>
                 <p className="request-text">{request.proposal}</p>
               </>
             )}
             {tags.length > 0 && (
-              <ul className="crm-request-tags" aria-label="Темы обращения">
+              <ul
+                className="crm-request-tags"
+                aria-label={ui('requestTopics2')}
+              >
                 {tags.map((tag) => (
                   <li key={tag}>{tag}</li>
                 ))}
               </ul>
             )}
             {request.sentiment !== null && (
-              <small>Тональность: {sentimentLabel(request.sentiment)}</small>
+              <small>
+                {ui('sentiment2')}
+                {ui(
+                  request.sentiment < 5
+                    ? 'negative'
+                    : request.sentiment > 5
+                      ? 'positive'
+                      : 'neutral',
+                )}{' '}
+                · {format.number(request.sentiment)}/10
+              </small>
             )}
           </section>
           {materials.data && materials.data.length > 0 && (
             <section className="case-section">
-              <h3>Материалы обращения</h3>
+              <h3>{ui('requestMaterials')}</h3>
               <div className="attachments">
                 {materials.data.map((f) => (
                   <a
@@ -548,7 +638,7 @@ async function RequestDetail({
                     key={f.id}
                     href={'/api/attachments/' + f.id}
                   >
-                    {f.name} · {Math.ceil(f.size / 1024)} КБ
+                    {f.name} · {Math.ceil(f.size / 1024)} {ui('kb')}
                   </a>
                 ))}
               </div>
@@ -560,104 +650,158 @@ async function RequestDetail({
               <section className="crm-outcome">
                 {request.acknowledged_at ? (
                   <p>
-                    <CheckCheck size={16} /> Вы ознакомились с результатом ·{' '}
-                    {dateLabel(request.acknowledged_at)}
+                    <CheckCheck size={16} /> {ui('youAcknowledgedTheResult')}{' '}
+                    {dateLabel(request.acknowledged_at, locale, ui('notSet'))}
                   </p>
                 ) : (
                   <form action={dashboardAction}>
                     {versionFields}
                     <input type="hidden" name="action" value="acknowledged" />
                     <button className="btn primary">
-                      Ознакомился с результатом
+                      {ui('acknowledgeResult')}
                     </button>
                   </form>
                 )}
               </section>
             )}
           {role !== 'employee' && aiConfig() && <RequestSummary id={id} />}
-        <section className="crm-detail-history">
-          <h3>
-            <Clock3 size={17} aria-hidden="true" />
-            История обращения
-          </h3>
-          <p className="history-description">Последние изменения сверху: решения, ответы и следующие шаги.</p>
-          <ol className="request-history">
-            {[...history.data].reverse().map((event) => (
-              <li key={event.id}>
-                <strong>
-                  {(
-                    {
-                      commented: 'Комментарий',
-                      metadata: 'Параметры обновлены',
-                      acknowledged: 'Автор ознакомился',
-                    } as Record<string, string>
-                  )[event.event_type] || t(event.event_type)}
-                  <span className="history-status">{t(event.status)}</span>
-                </strong>
-                <small>
-                  {isRole(event.actor_role)
-                    ? roleText(event.actor_role) + ' · '
-                    : ''}
-                  {format.dateTime(new Date(event.created_at), {
-                    dateStyle: 'medium',
-                    timeStyle: 'short',
-                    timeZone: 'Asia/Qyzylorda',
-                  })}
-                </small>
-                {event.message && (
-                  <p className="request-text">{event.event_type === 'metadata' ? event.message.replace(/Приоритет: high/g, 'Приоритет: высокий').replace(/Приоритет: normal/g, 'Приоритет: обычный').replace(/Приоритет: low/g, 'Приоритет: низкий') : event.message}</p>
-                )}
-                {event.next_step && (
-                  <p className="request-text history-next-step"><strong>Следующий шаг</strong>{event.next_step}</p>
-                )}
-              </li>
-            ))}
-          </ol>
-          <form action={dashboardAction} className="request-fields comment-box">
-            {versionFields}
-            <input type="hidden" name="action" value="commented" />
-            <label>
-              Комментарий
-              <textarea
-                name="message"
-                rows={3}
-                maxLength={2000}
-                required
-                placeholder="Дополните обращение или обсудите следующий шаг"
-              />
-            </label>
-            <button className="btn primary">Добавить комментарий</button>
-          </form>
-        </section>
+          <section className="crm-detail-history">
+            <h3>
+              <Clock3 size={17} aria-hidden="true" />
+              {ui('requestHistory')}
+            </h3>
+            <p className="history-description">
+              {ui('latestChangesFirstDecisionsRepliesAndNextSteps')}
+            </p>
+            <ol className="request-history">
+              {[...history.data].reverse().map((event) => (
+                <li key={event.id}>
+                  <strong>
+                    {(
+                      {
+                        commented: ui('comment'),
+                        metadata: ui('parametersUpdated'),
+                        acknowledged: ui('acknowledgedByAuthor'),
+                      } as Record<string, string>
+                    )[event.event_type] || t(event.event_type)}
+                    <span className="history-status">{t(event.status)}</span>
+                  </strong>
+                  <small>
+                    {isRole(event.actor_role)
+                      ? roleText(event.actor_role) + ' · '
+                      : ''}
+                    {format.dateTime(new Date(event.created_at), {
+                      dateStyle: 'medium',
+                      timeStyle: 'short',
+                      timeZone: 'Asia/Qyzylorda',
+                    })}
+                  </small>
+                  {event.message && (
+                    <p className="request-text">
+                      {(() => {
+                        const metadata =
+                          event.event_type === 'metadata' &&
+                          /^Приоритет: (high|normal|low)\. Срок: (\d{4}-\d{2}-\d{2})$/.exec(
+                            event.message,
+                          )
+                        if (metadata)
+                          return ui('metadataEvent', {
+                            priority: ui(
+                              metadata[1] === 'high'
+                                ? 'high'
+                                : metadata[1] === 'low'
+                                  ? 'low'
+                                  : 'normal',
+                            ),
+                            date: dateLabel(metadata[2], locale, ui('notSet')),
+                          })
+                        if (
+                          event.event_type === 'assigned' &&
+                          event.message ===
+                            'Назначен ответственный из резервной очереди'
+                        )
+                          return ui('reserveAssignedEvent')
+                        return event.message
+                      })()}
+                    </p>
+                  )}
+                  {event.next_step && (
+                    <p className="request-text history-next-step">
+                      <strong>{ui('nextStep')}</strong>
+                      {event.next_step}
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ol>
+            <form
+              action={dashboardAction}
+              className="request-fields comment-box"
+            >
+              {versionFields}
+              <input type="hidden" name="action" value="commented" />
+              <label>
+                {ui('comment')}
+                <textarea
+                  name="message"
+                  rows={3}
+                  maxLength={2000}
+                  required
+                  placeholder={ui('addDetailsOrDiscussTheNextStep')}
+                />
+              </label>
+              <button className="btn primary">{ui('addComment')}</button>
+            </form>
+          </section>
         </div>
         <aside className="crm-detail-actions">
-          <h3>Ответственность и срок</h3>
+          <h3>{ui('responsibilityAndDeadline')}</h3>
           <dl className="ir-properties">
             <div>
-              <dt>Ответственный</dt>
-              <dd>{people.data?.[0]?.assignee_name || 'Резервная очередь'}</dd>
+              <dt>{ui('owner')}</dt>
+              <dd>
+                {(people.data?.[0]?.assignee_name === 'Резервная очередь'
+                  ? null
+                  : people.data?.[0]?.assignee_name) || ui('fallbackQueue')}
+              </dd>
             </div>
             <div>
-              <dt>Автор</dt>
-              <dd>{people.data?.[0]?.author_name || 'Сотрудник'}</dd>
+              <dt>{ui('author')}</dt>
+              <dd>
+                {(people.data?.[0]?.author_name === 'Сотрудник'
+                  ? null
+                  : people.data?.[0]?.author_name) || ui('employee')}
+              </dd>
             </div>
             <div>
-              <dt>Подразделение</dt>
+              <dt>{ui('department')}</dt>
               <dd>{request.department}</dd>
             </div>
             <div>
-              <dt>{isDone(request) ? 'Результат опубликован' : 'Срок рассмотрения'}</dt>
-              <dd className={isOverdue(request) ? 'red' : ''}>{dateLabel(isDone(request) ? request.resolved_at : request.due_at)}</dd>
-              {isOverdue(request) && <small className="red">Срок прошёл · ожидается ответ ответственного</small>}
+              <dt>
+                {isDone(request) ? ui('resultPublished') : ui('reviewDeadline')}
+              </dt>
+              <dd className={isOverdue(request) ? 'red' : ''}>
+                {dateLabel(
+                  isDone(request) ? request.resolved_at : request.due_at,
+                  locale,
+                  ui('notSet'),
+                )}
+              </dd>
+              {isOverdue(request) && (
+                <small className="red">
+                  {ui('deadlinePassedWaitingForTheOwnerSResponse')}
+                </small>
+              )}
             </div>
             <div>
-              <dt>Приоритет</dt>
+              <dt>{ui('priority')}</dt>
               <dd>
                 {request.priority === 'high'
-                  ? 'Высокий'
+                  ? ui('high')
                   : request.priority === 'low'
-                    ? 'Низкий'
-                    : 'Обычный'}
+                    ? ui('low')
+                    : ui('normal')}
               </dd>
             </div>
           </dl>
@@ -665,7 +809,9 @@ async function RequestDetail({
           {((role === 'employee' && request.status === 'clarification') ||
             ((role === 'manager' || role === 'handler') &&
               !isDone(request))) && (
-            <h3>{role === 'employee' ? 'Нужен ваш ответ' : 'Рассмотрение'}</h3>
+            <h3>
+              {role === 'employee' ? ui('yourReplyIsNeeded') : ui('review')}
+            </h3>
           )}
           {(role === 'manager' || role === 'handler') &&
             available.length > 0 && (
@@ -676,7 +822,7 @@ async function RequestDetail({
                   <>
                     <input type="hidden" name="status" value="review" />
                     <button className="button button-primary">
-                      Взять на рассмотрение
+                      {ui('startReview')}
                     </button>
                   </>
                 ) : (
@@ -732,12 +878,12 @@ async function RequestDetail({
           {role !== 'employee' &&
             !terminalStatuses.includes(request.status) && (
               <section className="card help-section ir-detail-metadata">
-                <h3>Срок и приоритет</h3>
+                <h3>{ui('deadlineAndPriority')}</h3>
                 <form action={dashboardAction} className="ir-flex ir-wrap">
                   {versionFields}
                   <input type="hidden" name="action" value="metadata" />
                   <label>
-                    Срок
+                    {ui('dueDate')}
                     <input
                       className="form-field"
                       type="date"
@@ -747,18 +893,18 @@ async function RequestDetail({
                     />
                   </label>
                   <label>
-                    Приоритет
+                    {ui('priority')}
                     <select
                       className="form-field"
                       name="priority"
                       defaultValue={request.priority || 'normal'}
                     >
-                      <option value="low">Низкий</option>
-                      <option value="normal">Обычный</option>
-                      <option value="high">Высокий</option>
+                      <option value="low">{ui('low')}</option>
+                      <option value="normal">{ui('normal')}</option>
+                      <option value="high">{ui('high')}</option>
                     </select>
                   </label>
-                  <button className="btn">Сохранить параметры</button>
+                  <button className="btn">{ui('saveParameters')}</button>
                 </form>
                 {role === 'admin' && !request.assignee_id && (
                   <form
@@ -768,9 +914,9 @@ async function RequestDetail({
                     {versionFields}
                     <input type="hidden" name="action" value="assigned" />
                     <label>
-                      Ответственный
+                      {ui('owner')}
                       <select className="form-field" name="assignee" required>
-                        <option value="">Выберите руководителя</option>
+                        <option value="">{ui('chooseAManager')}</option>
                         {Array.isArray(assignees?.data) &&
                           assignees.data.map(
                             (m: { id: string; display_name: string }) => (
@@ -782,14 +928,13 @@ async function RequestDetail({
                       </select>
                     </label>
                     <button className="btn primary">
-                      Назначить из резерва
+                      {ui('assignFromFallbackQueue')}
                     </button>
                   </form>
                 )}
               </section>
             )}
         </aside>
-
       </article>
     </>
   )

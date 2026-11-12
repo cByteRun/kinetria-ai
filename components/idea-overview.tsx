@@ -1,4 +1,5 @@
 'use client'
+import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { useState } from 'react'
 import {
@@ -16,11 +17,7 @@ import {
   Send,
   CheckCheck,
 } from 'lucide-react'
-import {
-  CaseTable,
-  StatusBadge,
-  type RegistryRow,
-} from './request-registry'
+import { CaseTable, StatusBadge, type RegistryRow } from './request-registry'
 import { canViewInsights, type Role } from '../lib/roles'
 import { recurringProblems, prioritizeRequests } from '../lib/insights'
 import { hasResult, isDone, isOverdue } from '../lib/dashboard'
@@ -36,6 +33,8 @@ export function IdeaOverview({
   role: Role
   path: string
 }) {
+  const ui = useTranslations('ui')
+
   const [tab, setTab] = useState('attention')
   const employee = role === 'employee',
     admin = role === 'admin'
@@ -57,11 +56,11 @@ export function IdeaOverview({
     canViewInsights(role),
   )
   const stages = [
-    ['new', 'Получено', 'Категория и маршрут'],
-    ['review', 'Рассмотрение', 'Ответственный назначен'],
-    ['clarification', 'Уточнение', 'Диалог с автором'],
-    ['in_progress', 'Действия', 'Решение выполняется'],
-    ['done', 'Результат', 'Ответ опубликован'],
+    ['new', ui('received'), ui('categoryAndRoute')],
+    ['review', ui('review'), ui('ownerAssigned')],
+    ['clarification', ui('clarification'), ui('dialogueWithTheAuthor')],
+    ['in_progress', ui('actions2'), ui('theDecisionIsBeingCarriedOut')],
+    ['done', ui('result'), ui('responsePublished')],
   ]
   const recurring = canViewInsights(role)
     ? recurringProblems(rows)[0]
@@ -73,24 +72,24 @@ export function IdeaOverview({
         <div>
           <div className="eyebrow">
             {employee
-              ? 'ВАШИ ИДЕИ И ОБРАТНАЯ СВЯЗЬ'
+              ? ui('yourIdeasAndFeedback')
               : admin
-                ? 'НАДЁЖНЫЙ МАРШРУТ ОБРАЩЕНИЙ'
-                : 'ОБРАТНАЯ СВЯЗЬ СОТРУДНИКОВ'}
+                ? ui('reliableRequestRouting')
+                : ui('employeeFeedback')}
           </div>
           <h1>
             {employee
-              ? 'Изменения начинаются с вас.'
+              ? ui('changeStartsWithYou')
               : admin
-                ? 'Ни одно обращение не потеряется.'
-                : 'Каждое обращение — к результату.'}
+                ? ui('noRequestGetsLost')
+                : ui('everyRequestLeadsToAnOutcome')}
           </h1>
           <p>
             {employee
-              ? 'Расскажите о проблеме. Предложите улучшение. Следите за результатом.'
+              ? ui('reportAProblemSuggestAnImprovementFollowThe')
               : admin
-                ? 'Настройте категории, ответственных и правила передачи обращений.'
-                : 'Помогайте предложениям двигаться вперёд, а проблемам — находить решение.'}
+                ? ui('configureCategoriesOwnersAndRoutingRules')
+                : ui('helpSuggestionsMoveForwardAndProblemsFindSolutions')}
           </p>
         </div>
         <Link
@@ -104,10 +103,10 @@ export function IdeaOverview({
           }
         >
           {employee
-            ? 'Новое обращение'
+            ? ui('newRequest')
             : admin
-              ? 'Настроить маршруты'
-              : 'Рассмотреть обращения'}{' '}
+              ? ui('configureRouting')
+              : ui('reviewRequests')}{' '}
           <ArrowUpRight />
         </Link>
       </div>
@@ -115,74 +114,69 @@ export function IdeaOverview({
         <span className="ir-flex">
           <Building2 />
           {employee
-            ? 'Мой рабочий маршрут'
+            ? ui('myWorkRoute')
             : admin
-              ? 'Все подразделения'
-              : 'Моё направление'}{' '}
-          · {rows.length} обращений
+              ? ui('allDepartments')
+              : ui('myArea')}{' '}
+          · {ui('countRequests', { count: rows.length })}
         </span>
         <span className="ir-flex">
           <CalendarDays />
-          За всё время
+          {ui('allTime')}
           {rows.some((r) => r.is_demo) && (
-            <span className="tiny-pill">Есть демо-данные</span>
+            <span className="tiny-pill">{ui('includesDemoData')}</span>
           )}
         </span>
       </div>
       <div className="ir-metric-grid">
         {[
           {
-            label: 'В работе и на рассмотрении',
+            label: ui('inProgressAndUnderReview'),
             value: active.length,
-            note: 'обращений ждут своего результата',
+            note: ui('requestsAwaitingAnOutcome'),
             icon: Inbox,
             filter: 'open',
             tone: '',
           },
           {
             label: employee
-              ? 'Нужен ваш ответ'
+              ? ui('yourReplyIsNeeded')
               : admin
-                ? 'Без ответственного'
-                : 'Требуют внимания',
+                ? ui('noOwner')
+                : ui('needsAttention'),
             value: attention.length,
             note: employee
-              ? 'руководитель запросил уточнение'
+              ? ui('theManagerRequestedClarification')
               : admin
-                ? 'в резервной очереди администратора'
-                : `${late.length} с нарушенным сроком рассмотрения`,
+                ? ui('inTheAdministratorSFallbackQueue')
+                : ui('pastTheReviewDeadline', { value0: late.length }),
             icon: ClockAlert,
-            filter: employee
-              ? 'clarification'
-              : admin
-                ? 'unassigned'
-                : 'open',
+            filter: employee ? 'clarification' : admin ? 'unassigned' : 'open',
             tone: attention.length ? 'amber' : '',
           },
           {
-            label: 'С зафиксированным решением',
+            label: ui('withARecordedDecision'),
             value: rows.length
               ? Math.round((done.length / rows.length) * 100) + '%'
               : '—',
-            note: `${done.length} из ${rows.length} · результат доступен автору`,
+            note: ui('ofResultAvailableToTheAuthor', {
+              value0: done.length,
+              value1: rows.length,
+            }),
             icon: CircleCheck,
             filter: 'done',
             tone: '',
           },
           {
-            label: 'Реализовано улучшений',
+            label: ui('improvementsImplemented'),
             value: implemented.length,
-            note: 'подтверждённые действия и результаты',
+            note: ui('confirmedActionsAndOutcomes'),
             icon: Lightbulb,
             filter: 'implemented',
             tone: 'green',
           },
         ].map((m) => (
-          <Link
-            className="card metric"
-            key={m.label}
-            href={filter(m.filter)}
-          >
+          <Link className="card metric" key={m.label} href={filter(m.filter)}>
             <div className="ir-flex ir-between">
               <span className="metric-label">{m.label}</span>
               <span className={'metric-icon ' + m.tone}>
@@ -198,10 +192,10 @@ export function IdeaOverview({
         <section className="card route-card">
           <div className="card-head">
             <div>
-              <h2>Маршрут обращения</h2>
-              <p>Понятный следующий шаг на каждом этапе</p>
+              <h2>{ui('requestRoute')}</h2>
+              <p>{ui('aClearNextStepAtEveryStage')}</p>
             </div>
-            <span className="tiny-pill">От идеи к результату</span>
+            <span className="tiny-pill">{ui('fromIdeaToOutcome')}</span>
           </div>
           <div className="route-stages">
             {stages.map(([s, label, note], i) => {
@@ -235,22 +229,24 @@ export function IdeaOverview({
           </div>
           <div className="route-foot">
             <Info />
-            Решение, действия и ответ автору сохраняются в одной истории.
+            {ui('theDecisionActionsAndResponseToTheAuthor')}
           </div>
         </section>
         <section className="card loop-card">
           <div>
-            <div className="eyebrow">Цикл обратной связи</div>
+            <div className="eyebrow">{ui('feedbackLoop')}</div>
             <h2>
-              Результат есть.
+              {ui('thereIsAResult')}
               <br />
-              Ответ доступен автору.
+              {ui('theAuthorCanSeeTheResponse')}
             </h2>
           </div>
           <div>
             <div className="ir-flex">
               <span className="loop-number mono">{done.length}</span>
-              <span className="subtle">из {rows.length} обращений</span>
+              <span className="subtle">
+                {ui('of')} {ui('countRequests', { count: rows.length })}
+              </span>
             </div>
             <div className="progress-track">
               <span
@@ -263,14 +259,15 @@ export function IdeaOverview({
             </div>
             <div className="loop-check">
               <Check />
-              Решение зафиксировано
+              {ui('decisionRecorded')}
             </div>
             <div className="loop-check">
               <Check />
-              Ответ доступен в кабинете
+              {ui('responseAvailableInTheWorkspace')}
             </div>
             <Link className="btn ghost sm" href={path + '?view=results'}>
-              Посмотреть результаты <ArrowRight />
+              {ui('viewResults')}
+              <ArrowRight />
             </Link>
           </div>
         </section>
@@ -279,18 +276,16 @@ export function IdeaOverview({
         <section className="card">
           <div className="card-head">
             <div>
-              <h2>
-                {employee ? 'Ваш следующий шаг' : 'В фокусе внимания'}
-              </h2>
+              <h2>{employee ? ui('yourNextStep') : ui('inFocus')}</h2>
               <p>
                 {employee
-                  ? 'Уточнения и обращения, по которым ещё нет результата'
-                  : 'Начните с обращений, которым нужно ваше действие'}
+                  ? ui('clarificationsAndRequestsStillAwaitingAnOutcome')
+                  : ui('startWithRequestsThatNeedYourAction')}
               </p>
             </div>
             <Link
               href={path + '?view=registry'}
-              aria-label="Открыть весь реестр"
+              aria-label={ui('openFullRegistry')}
             >
               <ArrowUpRight />
             </Link>
@@ -300,14 +295,14 @@ export function IdeaOverview({
               [
                 'attention',
                 employee
-                  ? 'Нужен ответ'
+                  ? ui('replyNeeded')
                   : admin
-                    ? 'Без назначения'
-                    : 'Требуют внимания',
+                    ? ui('unassigned')
+                    : ui('needsAttention'),
                 attention.length,
               ],
-              ['overdue', 'Просрочены', late.length],
-              ['all', 'Все активные', active.length],
+              ['overdue', ui('overdue2'), late.length],
+              ['all', ui('allActive'), active.length],
             ].map(([id, label, count]) => (
               <button
                 className={'tab ' + (tab === id ? 'active' : '')}
@@ -329,14 +324,15 @@ export function IdeaOverview({
           <div className="table-foot">
             <span>
               {queue.length
-                ? 'Показано ' +
-                  Math.min(4, queue.length) +
-                  ' из ' +
-                  queue.length
-                : 'Все обращения под контролем'}
+                ? ui('showingCount', {
+                    shown: Math.min(4, queue.length),
+                    total: queue.length,
+                  })
+                : ui('allRequestsAreUnderControl')}
             </span>
             <Link className="brand" href={path + '?view=registry'}>
-              Перейти в реестр <ArrowRight />
+              {ui('goToRegistry')}
+              <ArrowRight />
             </Link>
           </div>
         </section>
@@ -344,8 +340,8 @@ export function IdeaOverview({
           <section className="card">
             <div className="card-head">
               <div>
-                <h2>Последние результаты</h2>
-                <p>Что изменилось благодаря обратной связи</p>
+                <h2>{ui('latestResults')}</h2>
+                <p>{ui('whatChangedThroughFeedback')}</p>
               </div>
               <CircleCheck className="green" />
             </div>
@@ -374,27 +370,25 @@ export function IdeaOverview({
                   <div className="ir-result-meta">
                     {r.acknowledged_at ? <CheckCheck /> : <Send />}
                     {r.acknowledged_at
-                      ? 'Автор ознакомился'
-                      : 'Ответ опубликован для автора'}
+                      ? ui('acknowledgedByAuthor')
+                      : ui('responsePublishedForTheAuthor')}
                   </div>
                 </Link>
               ))}
             {!done.length && (
               <div className="empty">
                 <CircleCheck />
-                <p>Результаты появятся после рассмотрения обращений.</p>
+                <p>{ui('resultsWillAppearAfterRequestsAreReviewed')}</p>
               </div>
             )}
           </section>
           {canViewInsights(role) && (
             <section className="card repeat-card">
               <div className="ir-flex ir-between">
-                <h3>Повторяющаяся тема</h3>
+                <h3>{ui('recurringTopic')}</h3>
                 <Layers className="brand" />
               </div>
-              <p>
-                {recurring ? recurring.tag : 'Повторяющихся тем пока нет.'}
-              </p>
+              <p>{recurring ? recurring.tag : ui('noRecurringTopicsYet')}</p>
               {recurring && (
                 <Link
                   className="ir-flex ir-between"
@@ -411,20 +405,17 @@ export function IdeaOverview({
                   }
                 >
                   <span className="tiny-pill">
-                    {recurring.rows.length} обращений в теме
+                    {recurring.rows.length} {ui('requestsInThisTopic')}
                   </span>
                   <ArrowUpRight />
                 </Link>
               )}
               <p className="ir-disclaimer">
-                Общая категория и тег — сигнал для проверки. Связь
-                дубликатов требует подтверждения.
+                {ui('aSharedCategoryAndTagSuggestATopic')}
               </p>
-              <Link
-                className="btn ghost sm"
-                href={path + '?view=insights'}
-              >
-                Аналитика повторов <ArrowRight />
+              <Link className="btn ghost sm" href={path + '?view=insights'}>
+                {ui('recurrenceAnalytics')}
+                <ArrowRight />
               </Link>
             </section>
           )}

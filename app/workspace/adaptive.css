@@ -750,3 +750,19 @@
   background: var(--surface);
   border-color: var(--brand);
 }
+
+/* Locale controls remain reachable at 320px and with longer translations. */
+@media (max-width: 740px) {
+  .ir-app .topbar {
+    flex-wrap: wrap;
+  }
+  .ir-app .topbar .crumbs {
+    flex: 1 1 90px;
+  }
+  .ir-app .topbar .preferences {
+    gap: 4px;
+  }
+  .ir-app .topbar .preferences select {
+    font-size: 12px;
+  }
+}

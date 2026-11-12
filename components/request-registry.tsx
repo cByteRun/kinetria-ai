@@ -1,4 +1,5 @@
 'use client'
+import { useLocale, useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { useState } from 'react'
 import {
@@ -30,7 +31,6 @@ import {
   hasResult,
   isDone,
   isOverdue,
-  statusNames,
   today,
 } from '../lib/dashboard'
 
@@ -62,6 +62,7 @@ export type RegistryRow = {
 export const requestNumber = (row: RegistryRow) =>
   row.source_ref ?? 'R-' + String(row.number).padStart(3, '0')
 export function StatusBadge({ row }: { row: RegistryRow }) {
+  const statusText = useTranslations('requestsMvp')
   return (
     <span
       className={
@@ -74,11 +75,15 @@ export function StatusBadge({ row }: { row: RegistryRow }) {
         )[row.status] || row.status)
       }
     >
-      {statusNames[row.status]}
+      {statusText(row.status)}
     </span>
   )
 }
 export function DueLabel({ row }: { row: RegistryRow }) {
+  const locale = useLocale()
+
+  const ui = useTranslations('ui')
+
   return (
     <span
       className={
@@ -92,17 +97,19 @@ export function DueLabel({ row }: { row: RegistryRow }) {
     >
       {isOverdue(row) && <ClockAlert size={14} />}{' '}
       {isDone(row)
-        ? dateLabel(row.resolved_at)
+        ? dateLabel(row.resolved_at, locale, ui('notSet'))
         : isOverdue(row)
-          ? Math.max(
-              1,
-              Math.ceil(
-                (Date.parse(today()) - Date.parse(row.due_at!)) / 86400000,
+          ? ui('countOverdue', {
+              count: Math.max(
+                1,
+                Math.ceil(
+                  (Date.parse(today()) - Date.parse(row.due_at!)) / 86400000,
+                ),
               ),
-            ) + ' д. просрочки'
+            })
           : row.due_at?.slice(0, 10) === today()
-            ? 'Сегодня'
-            : dateLabel(row.due_at)}
+            ? ui('today')
+            : dateLabel(row.due_at, locale, ui('notSet'))}
     </span>
   )
 }
@@ -117,27 +124,29 @@ export function CaseTable({
   path: string
   compact?: boolean
 }) {
+  const ui = useTranslations('ui')
+
   return (
     <div className="table-scroll">
       <table className="case-table">
         <thead>
           <tr>
-            <th>Обращение</th>
-            <th>Статус</th>
+            <th>{ui('request')}</th>
+            <th>{ui('status')}</th>
             {!compact && (
               <>
-                <th>Подразделение</th>
-                <th>Приоритет</th>
+                <th>{ui('department')}</th>
+                <th>{ui('priority')}</th>
               </>
             )}
-            <th>Срок</th>
-            <th aria-label="Открыть" />
+            <th>{ui('dueDate')}</th>
+            <th aria-label={ui('open')} />
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => (
             <tr key={row.id}>
-              <td data-label="Обращение">
+              <td data-label={ui('request')}>
                 <div className="ir-case-cell">
                   <span
                     className={
@@ -167,49 +176,47 @@ export function CaseTable({
                     <div className="case-caption">
                       {requestNumber(row)} · {categories[row.category_id]}{' '}
                       {row.is_demo && (
-                        <span className="tiny-pill">Демо</span>
+                        <span className="tiny-pill">{ui('demo2')}</span>
                       )}
                     </div>
                   </div>
                 </div>
               </td>
-              <td data-label="Статус">
+              <td data-label={ui('status')}>
                 <StatusBadge row={row} />
                 {row.status === 'clarification' && (
-                  <div className="case-caption">Ждём ответ автора</div>
+                  <div className="case-caption">
+                    {ui('waitingForTheAuthorSReply')}
+                  </div>
                 )}
                 {!row.assignee_id && !isDone(row) && (
-                  <div className="case-caption">Резервная очередь</div>
+                  <div className="case-caption">{ui('fallbackQueue')}</div>
                 )}
               </td>
               {!compact && (
                 <>
-                  <td data-label="Подразделение">
-                    {row.department || '—'}
-                  </td>
-                  <td data-label="Приоритет">
+                  <td data-label={ui('department')}>{row.department || '—'}</td>
+                  <td data-label={ui('priority')}>
                     <span
-                      className={
-                        row.priority === 'high' ? 'amber' : 'muted'
-                      }
+                      className={row.priority === 'high' ? 'amber' : 'muted'}
                     >
                       {row.priority === 'high'
-                        ? 'Высокий'
+                        ? ui('high')
                         : row.priority === 'low'
-                          ? 'Низкий'
-                          : 'Обычный'}
+                          ? ui('low')
+                          : ui('normal')}
                     </span>
                   </td>
                 </>
               )}
-              <td data-label="Срок">
+              <td data-label={ui('dueDate')}>
                 <DueLabel row={row} />
               </td>
               <td className="case-open">
                 <Link
                   className="icon-button"
                   href={path + '?view=registry&id=' + row.id}
-                  aria-label={'Открыть ' + requestNumber(row)}
+                  aria-label={ui('open2') + requestNumber(row)}
                 >
                   <ArrowUpRight />
                 </Link>
@@ -221,8 +228,8 @@ export function CaseTable({
       {!rows.length && (
         <div className="empty">
           <Inbox />
-          <h3>Обращений пока нет</h3>
-          <p>Измените фильтры или зарегистрируйте новое обращение.</p>
+          <h3>{ui('noRequestsYet')}</h3>
+          <p>{ui('changeTheFiltersOrSubmitANewRequest')}</p>
         </div>
       )}
     </div>
@@ -239,6 +246,9 @@ function RegistryFilters({
   categories: Record<string, string>
   path: string
 }) {
+  const ui = useTranslations('ui')
+
+  const statusText = useTranslations('requestsMvp')
   const params = useSearchParams()
   const [query, setQuery] = useState(params.get('q') || ''),
     [status, setStatus] = useState(params.get('filter') || ''),
@@ -298,10 +308,7 @@ function RegistryFilters({
       ? [...filtered].sort((a, b) =>
           (b.updated_at || '').localeCompare(a.updated_at || ''),
         )
-      : prioritizeRequests(
-          filtered,
-          showRecurrence && sort === 'recurrence',
-        )
+      : prioritizeRequests(filtered, showRecurrence && sort === 'recurrence')
   const groups = showRecurrence ? recurringProblems(sorted) : []
   if (sort === 'priority')
     groups.sort(
@@ -321,9 +328,7 @@ function RegistryFilters({
           .at(-1) || '',
       ),
     )
-  const groupedIds = new Set(
-    groups.flatMap((g) => g.rows.map((r) => r.id)),
-  )
+  const groupedIds = new Set(groups.flatMap((g) => g.rows.map((r) => r.id)))
   const singles = sorted.filter((r) => !groupedIds.has(r.id))
   function exportCsv() {
     const q = (v: unknown) => {
@@ -333,24 +338,24 @@ function RegistryFilters({
     }
     const data = [
       [
-        'Номер',
-        'Тема',
-        'Категория',
-        'Подразделение',
-        'Статус',
-        'Срок',
-        'Решение',
-        'Демо',
+        ui('number'),
+        ui('subject'),
+        ui('category'),
+        ui('department'),
+        ui('status'),
+        ui('dueDate'),
+        ui('decision'),
+        ui('demo2'),
       ],
       ...sorted.map((r) => [
         requestNumber(r),
         r.title,
         categories[r.category_id],
         r.department,
-        statusNames[r.status],
+        statusText(r.status),
         r.due_at,
         r.decision,
-        r.is_demo ? 'Да' : 'Нет',
+        r.is_demo ? ui('yes') : ui('no'),
       ]),
     ]
       .map((r) => r.map(q).join(';'))
@@ -368,33 +373,31 @@ function RegistryFilters({
     <section className="card">
       <div className="card-head">
         <div>
-          <h2>Единый реестр обращений</h2>
+          <h2>{ui('unifiedRequestRegistry')}</h2>
           <p aria-live="polite">
-            Найдено {filtered.length} из {rows.length}
+            {ui('foundCount', { shown: filtered.length, total: rows.length })}
           </p>
         </div>
         <div className="ir-flex">
           <button className="btn sm" onClick={exportCsv}>
             <Download />
-            Экспорт CSV
+            {ui('exportCsv')}
           </button>
           <div
             className="registry-modes"
             role="group"
-            aria-label="Вид реестра"
+            aria-label={ui('registryView')}
           >
             {[
               ...(showRecurrence
-                ? [{ id: 'groups', label: 'Темы', icon: Layers }]
+                ? [{ id: 'groups', label: ui('topics'), icon: Layers }]
                 : []),
-              { id: 'table', label: 'Список', icon: List },
-              { id: 'board', label: 'Доска', icon: Columns3 },
+              { id: 'table', label: ui('list'), icon: List },
+              { id: 'board', label: ui('board'), icon: Columns3 },
             ].map((item) => (
               <button
                 key={item.id}
-                className={
-                  'btn sm ' + (mode === item.id ? 'selected' : '')
-                }
+                className={'btn sm ' + (mode === item.id ? 'selected' : '')}
                 aria-pressed={mode === item.id}
                 onClick={() => setMode(item.id)}
               >
@@ -408,13 +411,13 @@ function RegistryFilters({
       {(tag || kind || period !== 'all') && (
         <div className="detail-block">
           <p>
-            Выборка из аналитики:{' '}
-            {kind === 'problem' ? 'проблемы' : 'все типы'}
-            {tag && ` · тема «${tag}»`}
-            {period !== 'all' && ` · за ${period} дней`}.
+            {ui('selectionFromAnalytics')}{' '}
+            {kind === 'problem' ? ui('problems') : ui('allTypes')}
+            {tag && ui('topic', { value0: tag })}
+            {period !== 'all' && ui('lastDays', { value0: period })}.
           </p>
           <Link className="btn sm" href={path + '?view=registry'}>
-            Открыть весь реестр
+            {ui('openFullRegistry')}
           </Link>
         </div>
       )}
@@ -422,36 +425,37 @@ function RegistryFilters({
         <label className="search-input">
           <Search />
           <input
-            aria-label="Поиск обращений"
-            placeholder="Номер, тема, описание или решение"
+            data-request-search
+            aria-label={ui('searchRequests')}
+            placeholder={ui('numberSubjectDescriptionOrDecision')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </label>
         <select
           className="filter-select"
-          aria-label="Фильтр по статусу"
+          aria-label={ui('filterByStatus')}
           value={status}
           onChange={(e) => setStatus(e.target.value)}
         >
-          <option value="">Все статусы</option>
-          <option value="open">Все активные</option>
-          <option value="done">С решением</option>
-          <option value="overdue">Просрочены</option>
-          <option value="unassigned">Без ответственного</option>
+          <option value="">{ui('allStatuses')}</option>
+          <option value="open">{ui('allActive')}</option>
+          <option value="done">{ui('withADecision')}</option>
+          <option value="overdue">{ui('overdue2')}</option>
+          <option value="unassigned">{ui('noOwner')}</option>
           {statuses.map((s) => (
             <option key={s} value={s}>
-              {statusNames[s]}
+              {statusText(s)}
             </option>
           ))}
         </select>
         <select
           className="filter-select"
-          aria-label="Фильтр по категории"
+          aria-label={ui('filterByCategory')}
           value={category}
           onChange={(e) => setCategory(e.target.value)}
         >
-          <option value="">Все категории</option>
+          <option value="">{ui('allCategories')}</option>
           {Object.entries(categories).map(([id, name]) => (
             <option key={id} value={id}>
               {name}
@@ -460,11 +464,11 @@ function RegistryFilters({
         </select>
         <select
           className="filter-select"
-          aria-label="Фильтр по подразделению"
+          aria-label={ui('filterByDepartment')}
           value={department}
           onChange={(e) => setDepartment(e.target.value)}
         >
-          <option value="">Все подразделения</option>
+          <option value="">{ui('allDepartments')}</option>
           {[...new Set(rows.map((r) => r.department).filter(Boolean))].map(
             (d) => (
               <option key={d}>{d}</option>
@@ -473,25 +477,25 @@ function RegistryFilters({
         </select>
         <select
           className="filter-select"
-          aria-label="Фильтр по сроку"
+          aria-label={ui('filterByDeadline')}
           value={deadline}
           onChange={(e) => setDeadline(e.target.value)}
         >
-          <option value="">Любой срок</option>
-          <option value="overdue">Просрочено</option>
-          <option value="today">Сегодня</option>
+          <option value="">{ui('anyDeadline')}</option>
+          <option value="overdue">{ui('overdue')}</option>
+          <option value="today">{ui('today')}</option>
         </select>
         <select
           className="filter-select"
-          aria-label="Порядок обращений"
+          aria-label={ui('requestOrder')}
           value={sort}
           onChange={(e) => setSort(e.target.value)}
         >
           {showRecurrence && (
-            <option value="recurrence">Сначала повторяющиеся</option>
+            <option value="recurrence">{ui('recurringFirst')}</option>
           )}
-          <option value="priority">По приоритету</option>
-          <option value="recent">Сначала обновлённые</option>
+          <option value="priority">{ui('byPriority')}</option>
+          <option value="recent">{ui('recentlyUpdatedFirst')}</option>
         </select>
         {(query || status || category || department || deadline) && (
           <button
@@ -504,16 +508,14 @@ function RegistryFilters({
               setDeadline('')
             }}
           >
-            Сбросить
+            {ui('reset')}
           </button>
         )}
       </div>
       {mode === 'groups' && showRecurrence ? (
         <div className="registry-groups">
           <p className="stat-definition">
-            Количество указано один раз у темы. Группы образованы общей
-            категорией и тегом; это возможные повторы. Одна карточка может
-            входить в несколько тем. Счётчики учитывают текущие фильтры.
+            {ui('theCountAppearsOncePerTopicGroupsShare')}
           </p>
           {groups.map((group) => (
             <details
@@ -526,10 +528,15 @@ function RegistryFilters({
                   <small>{categories[group.category]}</small>
                 </span>
                 <span className="group-count">
-                  <strong>{group.rows.length}</strong> обращений
+                  <strong>
+                    {ui('countRequests', { count: group.rows.length })}
+                  </strong>
                 </span>
                 <span className="group-outcomes">
-                  С решением: {group.results} · просрочено: {group.overdue}
+                  {ui('groupOutcomes', {
+                    results: group.results,
+                    overdue: group.overdue,
+                  })}
                 </span>
               </summary>
               <CaseTable
@@ -540,15 +547,12 @@ function RegistryFilters({
             </details>
           ))}
           {singles.length > 0 && (
-            <section aria-label="Без повторяющейся темы">
+            <section aria-label={ui('withoutARecurringTopic')}>
               <h3 className="singles-heading">
-                Без повторяющейся темы · {singles.length}
+                {ui('withoutARecurringTopic2')}
+                {singles.length}
               </h3>
-              <CaseTable
-                rows={singles}
-                categories={categories}
-                path={path}
-              />
+              <CaseTable rows={singles} categories={categories} path={path} />
             </section>
           )}
           {!sorted.length && (
@@ -560,7 +564,7 @@ function RegistryFilters({
           {[...statuses].map((s) => (
             <section className="board-col" key={s}>
               <strong>
-                {statusNames[s]} ·{' '}
+                {statusText(s)} ·{' '}
                 {filtered.filter((r) => r.status === s).length}
               </strong>
               {sorted
@@ -574,7 +578,9 @@ function RegistryFilters({
                     <small className="case-id">{requestNumber(r)}</small>
                     <h3>{r.title}</h3>
                     <DueLabel row={r} />
-                    {r.is_demo && <span className="tiny-pill">Демо</span>}
+                    {r.is_demo && (
+                      <span className="tiny-pill">{ui('demo2')}</span>
+                    )}
                   </Link>
                 ))}
             </section>
@@ -584,16 +590,14 @@ function RegistryFilters({
         <CaseTable rows={sorted} categories={categories} path={path} />
       )}
       <footer className="table-foot">
-        Показано {filtered.length} из {rows.length}
-        <span>Доступ определяется вашей ролью</span>
+        {ui('showingCount', { shown: filtered.length, total: rows.length })}
+        <span>{ui('accessIsDeterminedByYourRole')}</span>
       </footer>
     </section>
   )
 }
 
-export function RequestRegistry(
-  props: Parameters<typeof RegistryFilters>[0],
-) {
+export function RequestRegistry(props: Parameters<typeof RegistryFilters>[0]) {
   const params = useSearchParams()
   return <RegistryFilters key={params.toString()} {...props} />
 }

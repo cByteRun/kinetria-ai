@@ -1,4 +1,5 @@
 'use client'
+import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { recurrenceSummary } from '../lib/insights'
 import { Heading } from './workspace-heading'
@@ -18,55 +19,51 @@ export function RecurringAnalytics({
   period: string
   setPeriod: (value: string) => void
 }) {
+  const ui = useTranslations('ui')
+
   const summary = recurrenceSummary(rows)
   const link = (params: Record<string, string>) =>
-    path +
-    '?' +
-    new URLSearchParams({ view: 'registry', period, ...params })
+    path + '?' + new URLSearchParams({ view: 'registry', period, ...params })
   const percent = summary.problems
     ? Math.round((summary.recurring / summary.problems) * 100)
     : 0
   return (
     <>
       <Heading
-        title="Повторяющиеся темы"
-        description="Какие проблемы возвращаются и где уже есть решение. Только в вашей области доступа."
+        title={ui('recurringTopics')}
+        description={ui('whichProblemsRecurAndWhereASolutionAlready')}
         action={
           <select
             className="filter-select"
-            aria-label="Период аналитики"
+            aria-label={ui('analyticsPeriod')}
             value={period}
             onChange={(e) => setPeriod(e.target.value)}
           >
-            <option value="all">За всё время</option>
-            <option value="7">За 7 дней</option>
-            <option value="30">За 30 дней</option>
-            <option value="90">За 90 дней</option>
+            <option value="all">{ui('allTime')}</option>
+            <option value="7">{ui('last7Days')}</option>
+            <option value="30">{ui('last30Days')}</option>
+            <option value="90">{ui('last90Days')}</option>
           </select>
         }
       />
       <div className="ir-metric-grid">
         {[
           [
-            'Повторяющиеся темы',
+            ui('recurringTopics'),
             summary.groups.length,
-            'Категория и общий тематический тег',
+            ui('categoryAndSharedTopicTag'),
           ],
           [
-            'Обращений в темах',
+            ui('requestsInTopics'),
             summary.recurring,
-            'Каждая карточка учитывается один раз',
+            ui('eachCardIsCountedOnce'),
           ],
           [
-            'С решением',
+            ui('withADecision'),
             summary.results,
-            'Из обращений в повторяющихся темах',
+            ui('amongRequestsInRecurringTopics'),
           ],
-          [
-            'Просрочено',
-            summary.overdue,
-            'Активные обращения в этих темах',
-          ],
+          [ui('overdue'), summary.overdue, ui('activeRequestsInTheseTopics')],
         ].map(([label, value, note]) => (
           <section className="card metric" key={label}>
             <h2 className="metric-label">{label}</h2>
@@ -76,60 +73,60 @@ export function RecurringAnalytics({
         ))}
       </div>
       <div className="settings-grid ir-section-gap">
-        <section className="card" aria-label="Доля повторяющихся проблем">
+        <section className="card" aria-label={ui('shareOfRecurringProblems')}>
           <div className="card-head">
             <div>
-              <h2>Доля повторяющихся проблем</h2>
-              <p>От всех проблем выбранного периода</p>
+              <h2>{ui('shareOfRecurringProblems')}</h2>
+              <p>{ui('ofAllProblemsInTheSelectedPeriod')}</p>
             </div>
           </div>
           <div className="recurrence-share">
             <div
               className={
-                'recurrence-donut' +
-                (!summary.problems ? ' empty-donut' : '')
+                'recurrence-donut' + (!summary.problems ? ' empty-donut' : '')
               }
               style={{
                 background: `conic-gradient(var(--brand) ${percent}%, var(--line) 0)`,
               }}
               role="img"
-              aria-label={`${summary.recurring} из ${summary.problems} проблем входят в повторяющиеся темы, ${percent}%`}
+              aria-label={ui('ofProblemsBelongToRecurringTopics', {
+                value0: summary.recurring,
+                value1: summary.problems,
+                value2: percent,
+              })}
             >
               <div>
                 <strong>{summary.problems ? percent + '%' : '—'}</strong>
-                <span>повторяются</span>
+                <span>{ui('recurring')}</span>
               </div>
             </div>
             <ul className="chart-legend">
               <li>
-                <span className="legend-dot" />В повторяющихся темах{' '}
-                <strong>{summary.recurring}</strong>
+                <span className="legend-dot" />
+                {ui('inRecurringTopics')} <strong>{summary.recurring}</strong>
               </li>
               <li>
                 <span className="legend-dot single" />
-                Без повторов <strong>{summary.single}</strong>
+                {ui('withoutRecurrence')}
+                <strong>{summary.single}</strong>
               </li>
             </ul>
           </div>
           <p className="stat-definition">
-            Пожелания и отзывы исключены. Несколько тегов одной карточки не
-            увеличивают эту долю.
+            {ui('suggestionsAndFeedbackAreExcludedMultipleTagsOn')}
           </p>
         </section>
-        <section
-          className="card"
-          aria-label="Результаты повторяющихся проблем"
-        >
+        <section className="card" aria-label={ui('recurringProblemOutcomes')}>
           <div className="card-head">
             <div>
-              <h2>Решения по повторяющимся проблемам</h2>
-              <p>Уникальные обращения в темах</p>
+              <h2>{ui('decisionsOnRecurringProblems')}</h2>
+              <p>{ui('uniqueRequestsInTopics')}</p>
             </div>
           </div>
           <div className="detail-block">
             {[
-              [summary.results, 'С решением'],
-              [summary.open, 'Без решения'],
+              [summary.results, ui('withADecision')],
+              [summary.open, ui('withoutADecision')],
             ].map(([count, label]) => (
               <div className="chart-bar" key={label}>
                 <span>{label}</span>
@@ -137,8 +134,7 @@ export function RecurringAnalytics({
                   <span
                     style={{
                       width:
-                        (Number(count) / Math.max(1, summary.recurring)) *
-                          100 +
+                        (Number(count) / Math.max(1, summary.recurring)) * 100 +
                         '%',
                     }}
                   />
@@ -148,25 +144,21 @@ export function RecurringAnalytics({
             ))}
           </div>
           <p className="stat-definition">
-            Результат — итоговый статус и непустое решение. Ознакомление
-            автора учитывается отдельно.
+            {ui('aResultRequiresAFinalStatusAndA')}
           </p>
         </section>
       </div>
       <section
         className="card ir-section-gap"
-        aria-label="Повторяющиеся проблемы"
+        aria-label={ui('recurringProblems')}
       >
         <div className="card-head">
           <div>
-            <h2>Темы по частоте обращений</h2>
-            <p>
-              Сначала больше обращений, при равенстве — выше заданный
-              приоритет.
-            </p>
+            <h2>{ui('topicsByRequestFrequency')}</h2>
+            <p>{ui('moreRequestsFirstTiesAreOrderedByAssigned')}</p>
           </div>
           <Link className="btn sm" href={link({ mode: 'groups' })}>
-            Открыть группы в реестре
+            {ui('openGroupsInRegistry')}
           </Link>
         </div>
         <div className="detail-block">
@@ -202,8 +194,9 @@ export function RecurringAnalytics({
                 <strong>{group.rows.length}</strong>
               </Link>
               <p>
-                {group.rows.length} обращений · с решением: {group.results}{' '}
-                · просрочено: {group.overdue}
+                {group.rows.length} {ui('requestsWithADecision')}
+                {group.results} {ui('overdue3')}
+                {group.overdue}
               </p>
               {group.rows.filter(hasResult).map((r) => (
                 <p key={r.id}>
@@ -216,19 +209,13 @@ export function RecurringAnalytics({
           ))}
           {!summary.groups.length && (
             <div className="empty">
-              <h3>Повторяющихся тем пока нет</h3>
-              <p>
-                Для группы нужны две проблемы с общей категорией и
-                тематическим тегом.
-              </p>
+              <h3>{ui('noRecurringTopicsYet2')}</h3>
+              <p>{ui('aGroupNeedsTwoProblemsWithTheSame')}</p>
             </div>
           )}
         </div>
         <p className="stat-definition">
-          Одна проблема может входить в несколько тем: бары показывают
-          частоты тем, их нельзя складывать. Совпадение тега — сигнал для
-          проверки, а не подтверждённый дубликат. Карточки и их решения
-          сохраняются отдельно.
+          {ui('oneProblemCanBelongToMultipleTopicsBars')}
         </p>
       </section>
     </>

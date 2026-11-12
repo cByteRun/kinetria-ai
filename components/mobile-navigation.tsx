@@ -1,9 +1,12 @@
 'use client'
+import { useTranslations } from 'next-intl'
 import { Menu, X } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useEffect } from 'react'
 export function MobileNavigation() {
+  const ui = useTranslations('ui')
+
   const [open, setOpen] = useState(false)
   const toggle = useRef<HTMLButtonElement>(null)
   const pathname = usePathname(),
@@ -60,7 +63,7 @@ export function MobileNavigation() {
         aria-controls="workspace-navigation"
         className="ir-mobile-toggle"
         onClick={() => setOpen(!open)}
-        aria-label={open ? 'Закрыть меню' : 'Открыть меню'}
+        aria-label={open ? ui('closeMenu') : ui('openMenu')}
         aria-expanded={open}
       >
         {open ? <X /> : <Menu />}
@@ -69,13 +72,11 @@ export function MobileNavigation() {
         <>
           <button
             className="ir-scrim"
-            aria-label="Закрыть меню"
+            aria-label={ui('closeMenu')}
             onClick={() => setOpen(false)}
           />
           <style>
-            {
-              '.ir-app .sidebar{visibility:visible;transform:translateX(0)}'
-            }
+            {'.ir-app .sidebar{visibility:visible;transform:translateX(0)}'}
           </style>
         </>
       )}

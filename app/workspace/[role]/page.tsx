@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { getTheme } from '../../../i18n/theme'
 import { canViewInsights, isRole } from '../../../lib/roles'
@@ -20,15 +21,13 @@ export default async function RoleWorkspace({
   params: Promise<{ role: string }>
   searchParams: Promise<{ error?: string; id?: string; view?: string }>
 }) {
+  const ui = await getTranslations('ui')
   const profile = await requireProfile()
   const { role } = await params
   if (!isRole(role) || role !== profile.role) notFound()
   const { error, id, view: selection } = await searchParams
   const view = selection || (id ? 'registry' : 'overview')
-  if (
-    (view === 'analytics' || view === 'insights') &&
-    !canViewInsights(role)
-  )
+  if ((view === 'analytics' || view === 'insights') && !canViewInsights(role))
     notFound()
   const theme = await getTheme()
   const name =
@@ -40,11 +39,8 @@ export default async function RoleWorkspace({
     <DashboardShell role={role} view={view} theme={theme} name={name}>
       {role === 'client' ? (
         <section className="workspace-panel request-panel">
-          <h1>Feedback Portal</h1>
-          <p>
-            Клиентский канал предусмотрен на следующем этапе развития
-            IdeaRoute.
-          </p>
+          <h1>{ui('clientPortal')}</h1>
+          <p>{ui('clientFuture')}</p>
         </section>
       ) : hasSupabase ? (
         <RequestWorkspace role={role} id={id} error={error} view={view} />

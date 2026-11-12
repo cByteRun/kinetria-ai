@@ -7,6 +7,7 @@ export default getRequestConfig(async () => {
   const locale = isLocale(stored) ? stored : 'ru'
   return {
     locale,
+    timeZone: 'Asia/Qyzylorda',
     messages: (await import(`../messages/${locale}.json`)).default,
   }
 })

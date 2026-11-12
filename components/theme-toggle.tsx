@@ -1,10 +1,13 @@
 'use client'
+import { useTranslations } from 'next-intl'
 import { Moon, Sun } from 'lucide-react'
 import { useTransition } from 'react'
 import { setTheme } from '../i18n/actions'
 import type { Theme } from '../i18n/settings'
 
 export function ThemeToggle({ theme }: { theme: Theme }) {
+  const ui = useTranslations('ui')
+
   const [pending, start] = useTransition()
   return (
     <button
@@ -12,9 +15,7 @@ export function ThemeToggle({ theme }: { theme: Theme }) {
       className="icon-button theme-toggle"
       disabled={pending}
       aria-label={
-        theme === 'light'
-          ? 'Включить тёмную тему'
-          : 'Включить светлую тему'
+        theme === 'light' ? ui('switchToDarkTheme') : ui('switchToLightTheme')
       }
       onClick={() =>
         start(() => setTheme(theme === 'light' ? 'dark' : 'light'))

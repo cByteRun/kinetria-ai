@@ -23,7 +23,7 @@ import { WorkspaceLive } from './workspace-live'
 import { createClient } from '../lib/supabase/server'
 import { hasSupabase } from '../lib/supabase/config'
 import { terminalStatuses } from '../lib/requests'
-import { ThemeToggle } from './theme-toggle'
+import { Preferences } from './preferences'
 import { MobileNavigation } from './mobile-navigation'
 
 export async function DashboardShell({
@@ -39,6 +39,8 @@ export async function DashboardShell({
   name?: string
   children: React.ReactNode
 }) {
+  const ui = await getTranslations('ui')
+
   const t = await getTranslations('roles')
   const initials =
     name
@@ -66,8 +68,7 @@ export async function DashboardShell({
       if (terminalStatuses.includes(r.status) && r.decision?.trim())
         resultCount++
       if ((seen.get(r.id) || 0) < r.version) unreadCount++
-      if (!r.assignee_id && !terminalStatuses.includes(r.status))
-        reserveCount++
+      if (!r.assignee_id && !terminalStatuses.includes(r.status)) reserveCount++
     }
   }
   const counts: Record<string, number> = {
@@ -77,24 +78,24 @@ export async function DashboardShell({
     routing: reserveCount,
   }
   const items = [
-    { id: 'overview', label: 'Обзор', icon: LayoutDashboard },
+    { id: 'overview', label: ui('overview'), icon: LayoutDashboard },
     {
       id: 'registry',
-      label: role === 'employee' ? 'Мои обращения' : 'Обращения',
+      label: role === 'employee' ? ui('myRequests') : ui('requests'),
       icon: Inbox,
     },
     ...(role === 'employee'
-      ? [{ id: 'new', label: 'Новое обращение', icon: PlusCircle }]
+      ? [{ id: 'new', label: ui('newRequest'), icon: PlusCircle }]
       : []),
-    { id: 'results', label: 'Результаты', icon: CheckCheck },
+    { id: 'results', label: ui('results'), icon: CheckCheck },
     ...(canViewInsights(role)
       ? [
           {
             id: 'analytics',
-            label: 'Аналитика',
+            label: ui('analytics'),
             icon: ChartNoAxesCombined,
           },
-          { id: 'insights', label: 'Повторяющиеся темы', icon: Tags },
+          { id: 'insights', label: ui('recurringTopics'), icon: Tags },
         ]
       : []),
   ]
@@ -116,22 +117,22 @@ export async function DashboardShell({
   const label =
     [
       ...items,
-      { id: 'routing', label: 'Маршрутизация' },
-      { id: 'categories', label: 'Категории' },
-      { id: 'notifications', label: 'Уведомления' },
-      { id: 'help', label: 'Как устроен маршрут' },
-    ].find((i) => i.id === view)?.label || 'Обращение'
+      { id: 'routing', label: ui('routing') },
+      { id: 'categories', label: ui('categories') },
+      { id: 'notifications', label: ui('notifications') },
+      { id: 'help', label: ui('howRoutingWorks') },
+    ].find((i) => i.id === view)?.label || ui('request')
   return (
     <div className="ir-app">
       <a href="#main" className="skip-link">
-        Перейти к содержимому
+        {ui('skipToContent')}
       </a>
       <MobileNavigation />
       <WorkspaceLive path={base} />
       <aside
         id="workspace-navigation"
         className="sidebar"
-        aria-label="Основная навигация"
+        aria-label={ui('mainNavigation')}
       >
         <Link className="brand-lockup" href={base}>
           <span className="brand-mark">
@@ -142,34 +143,34 @@ export async function DashboardShell({
           </span>
         </Link>
         <div className="workspace">
-          <span className="workspace-avatar">МТ</span>
+          <span className="workspace-avatar">{ui('mt')}</span>
           <div>
-            <strong>Модус Трейд</strong>
-            <small>Рабочее пространство</small>
+            <strong>{ui('modusTrade')}</strong>
+            <small>{ui('workspace')}</small>
           </div>
           <ChevronsUpDown size={13} />
         </div>
         <nav className="ir-navigation">
           <div className="nav-group">
-            <div className="eyebrow">Рабочее пространство</div>
+            <div className="eyebrow">{ui('workspace')}</div>
             {items.map(nav)}
           </div>
           {role === 'admin' && (
             <div className="nav-group">
-              <div className="eyebrow">Управление системой</div>
-              {nav({ id: 'categories', label: 'Категории', icon: Tags })}
+              <div className="eyebrow">{ui('systemManagement')}</div>
+              {nav({ id: 'categories', label: ui('categories'), icon: Tags })}
               {nav({
                 id: 'routing',
-                label: 'Маршрутизация',
+                label: ui('routing'),
                 icon: GitBranch,
               })}
             </div>
           )}
           <div className="nav-group">
-            <div className="eyebrow">Личное</div>
+            <div className="eyebrow">{ui('personal')}</div>
             {nav({
               id: 'notifications',
-              label: 'Уведомления',
+              label: ui('notifications'),
               icon: Bell,
             })}
           </div>
@@ -177,14 +178,16 @@ export async function DashboardShell({
         <div className="side-bottom">
           <div className="side-manifesto">
             <strong className="brand">
-              <Route size={15} /> От идеи к результату
+              <Route size={15} /> {ui('fromIdeaToOutcome')}
             </strong>
             <p>
-              У каждого обращения —<br />
-              ответственный и понятный итог.
+              {ui('everyRequestHas')}
+              <br />
+              {ui('anOwnerAndAClearOutcome')}
             </p>
             <Link className="btn ghost sm" href={base + '?view=help'}>
-              Как устроен маршрут <ArrowUpRight />
+              {ui('howRoutingWorks')}
+              <ArrowUpRight />
             </Link>
           </div>
           <div className="side-user">
@@ -193,8 +196,8 @@ export async function DashboardShell({
               <strong>{name || t(role)}</strong>
               <small>{t(role)}</small>
             </div>
-            <AuthForm action="/auth/logout" pendingLabel="Выходим…">
-              <button className="ir-logout" aria-label="Выйти">
+            <AuthForm action="/auth/logout" pendingLabel={ui('signingOut')}>
+              <button className="ir-logout" aria-label={ui('signOut')}>
                 <LogOut size={16} />
               </button>
             </AuthForm>
@@ -204,7 +207,7 @@ export async function DashboardShell({
       <div className="shell">
         <header className="topbar">
           <div className="crumbs">
-            <span className="crumb-root">Рабочее пространство</span>
+            <span className="crumb-root">{ui('workspace')}</span>
             <span className="crumb-root">/</span>
             <strong>{label}</strong>
           </div>
@@ -214,23 +217,28 @@ export async function DashboardShell({
               href={base + '?view=registry'}
             >
               <Search />
-              <span>Найти обращение</span>
+              <span>{ui('findARequest')}</span>
               <kbd>/</kbd>
             </Link>
-            <ThemeToggle theme={theme} />
+            <Preferences theme={theme} compact />
             <span className="role-select">{t(role)}</span>
             <Link
               className="icon-button"
               href={base + '?view=notifications'}
-              aria-label="Уведомления"
+              aria-label={ui('notifications')}
             >
               <Bell />
               {unreadCount > 0 && <span className="notification-dot" />}
             </Link>
           </div>
         </header>
-        <nav className="mobile-tabs" aria-label="Разделы кабинета">
-          {[...items.filter(item => ['overview', 'registry', 'new', 'results'].includes(item.id)), {id: 'notifications', label: 'Уведомления', icon: Bell}].map((item) => (
+        <nav className="mobile-tabs" aria-label={ui('workspaceSections')}>
+          {[
+            ...items.filter((item) =>
+              ['overview', 'registry', 'new', 'results'].includes(item.id),
+            ),
+            { id: 'notifications', label: ui('notifications'), icon: Bell },
+          ].map((item) => (
             <Link
               key={item.id}
               prefetch={false}
@@ -240,10 +248,14 @@ export async function DashboardShell({
               <item.icon size={20} />
               <span>
                 {item.id === 'new'
-                  ? 'Создать'
+                  ? ui('create')
                   : item.id === 'insights'
-                    ? 'Повторы'
-                    : item.id === 'registry' ? 'Обращения' : item.id === 'notifications' ? 'События' : item.label}
+                    ? ui('recurrence')
+                    : item.id === 'registry'
+                      ? ui('requests')
+                      : item.id === 'notifications'
+                        ? ui('updates')
+                        : item.label}
               </span>
             </Link>
           ))}
@@ -254,14 +266,14 @@ export async function DashboardShell({
             <div>
               <LockKeyhole size={13} />{' '}
               {role === 'employee'
-                ? 'Видны только ваши обращения'
+                ? ui('onlyYourRequestsAreVisible')
                 : role === 'admin'
-                  ? 'Доступны внутренние обращения и настройки'
-                  : 'Видны обращения в вашей области ответственности'}
+                  ? ui('internalRequestsAndSettingsAreAvailable')
+                  : ui('requestsWithinYourAreaOfResponsibilityAreVisible')}
               <br />
-              IdeaRoute · защищённое рабочее пространство
+              {ui('idearouteSecureWorkspace')}
             </div>
-            <span>IdeaRoute / Feedback Operations</span>
+            <span>IdeaRoute / {ui('feedbackOperations')}</span>
           </footer>
         </main>
       </div>
