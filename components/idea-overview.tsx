@@ -16,7 +16,13 @@ import {
   Send,
   CheckCheck,
 } from 'lucide-react'
-import { CaseTable, StatusBadge, type RegistryRow } from './request-registry'
+import {
+  CaseTable,
+  StatusBadge,
+  type RegistryRow,
+} from './request-registry'
+import { canViewInsights, type Role } from '../lib/roles'
+import { recurringProblems, prioritizeRequests } from '../lib/insights'
 import { hasResult, isDone, isOverdue } from '../lib/dashboard'
 
 export function IdeaOverview({
@@ -27,7 +33,7 @@ export function IdeaOverview({
 }: {
   rows: RegistryRow[]
   categories: Record<string, string>
-  role: string
+  role: Role
   path: string
 }) {
   const [tab, setTab] = useState('attention')
@@ -46,13 +52,10 @@ export function IdeaOverview({
           ? !r.assignee_id
           : r.status === 'new' || isOverdue(r)),
   )
-  const queue = (tab === 'all' ? active : tab === 'overdue' ? late : attention)
-    .slice()
-    .sort(
-      (a, b) =>
-        Number(isOverdue(b)) - Number(isOverdue(a)) ||
-        (a.due_at || '9999').localeCompare(b.due_at || '9999'),
-    )
+  const queue = prioritizeRequests(
+    tab === 'all' ? active : tab === 'overdue' ? late : attention,
+    canViewInsights(role),
+  )
   const stages = [
     ['new', 'Получено', 'Категория и маршрут'],
     ['review', 'Рассмотрение', 'Ответственный назначен'],
@@ -60,15 +63,9 @@ export function IdeaOverview({
     ['in_progress', 'Действия', 'Решение выполняется'],
     ['done', 'Результат', 'Ответ опубликован'],
   ]
-  const counts = Object.entries(categories)
-    .map(([id, name]) => ({
-      id,
-      name,
-      count: rows.filter((r) => r.category_id === id).length,
-    }))
-    .filter((x) => x.count > 1)
-    .sort((a, b) => b.count - a.count)
-  const recurring = counts[0]
+  const recurring = canViewInsights(role)
+    ? recurringProblems(rows)[0]
+    : undefined
   const filter = (value: string) => path + '?view=registry&filter=' + value
   return (
     <>
@@ -155,7 +152,11 @@ export function IdeaOverview({
                 ? 'в резервной очереди администратора'
                 : `${late.length} с нарушенным сроком рассмотрения`,
             icon: ClockAlert,
-            filter: employee ? 'clarification' : admin ? 'unassigned' : 'open',
+            filter: employee
+              ? 'clarification'
+              : admin
+                ? 'unassigned'
+                : 'open',
             tone: attention.length ? 'amber' : '',
           },
           {
@@ -177,7 +178,11 @@ export function IdeaOverview({
             tone: 'green',
           },
         ].map((m) => (
-          <Link className="card metric" key={m.label} href={filter(m.filter)}>
+          <Link
+            className="card metric"
+            key={m.label}
+            href={filter(m.filter)}
+          >
             <div className="ir-flex ir-between">
               <span className="metric-label">{m.label}</span>
               <span className={'metric-icon ' + m.tone}>
@@ -274,7 +279,9 @@ export function IdeaOverview({
         <section className="card">
           <div className="card-head">
             <div>
-              <h2>{employee ? 'Ваш следующий шаг' : 'В фокусе внимания'}</h2>
+              <h2>
+                {employee ? 'Ваш следующий шаг' : 'В фокусе внимания'}
+              </h2>
               <p>
                 {employee
                   ? 'Уточнения и обращения, по которым ещё нет результата'
@@ -379,30 +386,48 @@ export function IdeaOverview({
               </div>
             )}
           </section>
-          <section className="card repeat-card">
-            <div className="ir-flex ir-between">
-              <h3>Повторяющаяся тема</h3>
-              <Layers className="brand" />
-            </div>
-            <p>
-              {recurring ? recurring.name : 'Повторяющихся категорий пока нет.'}
-            </p>
-            {recurring && (
+          {canViewInsights(role) && (
+            <section className="card repeat-card">
+              <div className="ir-flex ir-between">
+                <h3>Повторяющаяся тема</h3>
+                <Layers className="brand" />
+              </div>
+              <p>
+                {recurring ? recurring.tag : 'Повторяющихся тем пока нет.'}
+              </p>
+              {recurring && (
+                <Link
+                  className="ir-flex ir-between"
+                  href={
+                    path +
+                    '?' +
+                    new URLSearchParams({
+                      view: 'registry',
+                      category: recurring.category,
+                      tag: recurring.tag,
+                      kind: 'problem',
+                      mode: 'groups',
+                    })
+                  }
+                >
+                  <span className="tiny-pill">
+                    {recurring.rows.length} обращений в теме
+                  </span>
+                  <ArrowUpRight />
+                </Link>
+              )}
+              <p className="ir-disclaimer">
+                Общая категория и тег — сигнал для проверки. Связь
+                дубликатов требует подтверждения.
+              </p>
               <Link
-                className="ir-flex ir-between"
-                href={path + '?view=registry&category=' + recurring.id}
+                className="btn ghost sm"
+                href={path + '?view=insights'}
               >
-                <span className="tiny-pill">
-                  {recurring.count} обращения в категории
-                </span>
-                <ArrowUpRight />
+                Аналитика повторов <ArrowRight />
               </Link>
-            )}
-            <p className="ir-disclaimer">
-              Совпадение категории — повод проверить тему, а не подтверждённый
-              дубликат.
-            </p>
-          </section>
+            </section>
+          )}
         </div>
       </div>
     </>

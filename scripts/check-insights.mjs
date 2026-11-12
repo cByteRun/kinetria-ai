@@ -28,3 +28,21 @@ assert.deepEqual(recurringProblems([{...problem,tags:['Проблема']},{...p
 assert.deepEqual(recurringProblems([rows[0]]),[],'One case is not recurring')
 assert.equal(recurringProblems([rows[0],{...rows[1],decision:'  '}])[0].results,0,'Final status without a decision is not a result')
 console.log('PASS: normalized topics, unique request counts, category isolation, problem-only grouping, results, overdue, no false recurrence')
+
+const { recurrenceSummary, prioritizeRequests } = await import(await moduleUrl('insights'))
+const overlap = [
+  {...problem,id:'a',tags:['каталог','артикул'],priority:'low'},
+  {...problem,id:'b',tags:['каталог','артикул'],priority:'normal'},
+  {...problem,id:'c',tags:['каталог'],priority:'low'},
+  {...problem,id:'d',tags:['доставка'],priority:'high'},
+]
+const summary = recurrenceSummary(overlap)
+assert.equal(summary.groups.length,2)
+assert.equal(summary.recurring,3,'Overlapping groups must not double count requests in the donut or KPIs')
+assert.equal(summary.single,1)
+assert.equal(summary.results + summary.open,summary.recurring)
+assert.equal(recurringProblems([...overlap,overlap[0]])[0].rows.length,3,'Duplicate IDs are counted once')
+assert.deepEqual(prioritizeRequests(overlap).map(r=>r.id),['b','a','c','d'],'Frequency precedes assigned priority')
+assert.equal(prioritizeRequests(overlap,false)[0].id,'d','Explicit priority sort is available')
+assert.equal(recurrenceSummary([]).problems,0)
+console.log('PASS: overlapping topics, distinct IDs, frequency-first sorting, priority override, empty summary')

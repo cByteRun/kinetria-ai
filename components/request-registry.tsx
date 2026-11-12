@@ -1,7 +1,11 @@
 'use client'
 import Link from 'next/link'
 import { useState } from 'react'
-import { normalizeTopic } from '../lib/insights'
+import {
+  normalizeTopic,
+  recurringProblems,
+  prioritizeRequests,
+} from '../lib/insights'
 import { useSearchParams } from 'next/navigation'
 import {
   Search,
@@ -10,6 +14,7 @@ import {
   Download,
   List,
   Columns3,
+  Layers,
   Lightbulb,
   MessageSquareWarning,
   HeartHandshake,
@@ -132,7 +137,7 @@ export function CaseTable({
         <tbody>
           {rows.map((row) => (
             <tr key={row.id}>
-              <td>
+              <td data-label="Обращение">
                 <div className="ir-case-cell">
                   <span
                     className={
@@ -161,12 +166,14 @@ export function CaseTable({
                     </Link>
                     <div className="case-caption">
                       {requestNumber(row)} · {categories[row.category_id]}{' '}
-                      {row.is_demo && <span className="tiny-pill">Демо</span>}
+                      {row.is_demo && (
+                        <span className="tiny-pill">Демо</span>
+                      )}
                     </div>
                   </div>
                 </div>
               </td>
-              <td>
+              <td data-label="Статус">
                 <StatusBadge row={row} />
                 {row.status === 'clarification' && (
                   <div className="case-caption">Ждём ответ автора</div>
@@ -177,10 +184,14 @@ export function CaseTable({
               </td>
               {!compact && (
                 <>
-                  <td>{row.department || '—'}</td>
-                  <td>
+                  <td data-label="Подразделение">
+                    {row.department || '—'}
+                  </td>
+                  <td data-label="Приоритет">
                     <span
-                      className={row.priority === 'high' ? 'amber' : 'muted'}
+                      className={
+                        row.priority === 'high' ? 'amber' : 'muted'
+                      }
                     >
                       {row.priority === 'high'
                         ? 'Высокий'
@@ -191,10 +202,10 @@ export function CaseTable({
                   </td>
                 </>
               )}
-              <td>
+              <td data-label="Срок">
                 <DueLabel row={row} />
               </td>
-              <td>
+              <td className="case-open">
                 <Link
                   className="icon-button"
                   href={path + '?view=registry&id=' + row.id}
@@ -221,7 +232,9 @@ function RegistryFilters({
   rows,
   categories,
   path,
+  showRecurrence = false,
 }: {
+  showRecurrence?: boolean
   rows: RegistryRow[]
   categories: Record<string, string>
   path: string
@@ -232,15 +245,24 @@ function RegistryFilters({
     [category, setCategory] = useState(params.get('category') || ''),
     [department, setDepartment] = useState(''),
     [deadline, setDeadline] = useState(''),
-    [board, setBoard] = useState(false)
+    [mode, setMode] = useState(
+      showRecurrence ? params.get('mode') || 'groups' : 'table',
+    ),
+    [sort, setSort] = useState(showRecurrence ? 'recurrence' : 'priority')
   const tag = params.get('tag') || ''
   const kind = params.get('kind') || ''
   const period = params.get('period') || 'all'
   const filtered = rows.filter(
     (r) =>
-      (!tag || (r.tags || []).some(t => normalizeTopic(t) === normalizeTopic(tag))) &&
+      (!tag ||
+        (r.tags || []).some(
+          (t) => normalizeTopic(t) === normalizeTopic(tag),
+        )) &&
       (!kind || r.kind === kind) &&
-      (period === 'all' || (r.created_at && Date.parse(r.created_at) >= Date.now() - Number(period) * 86400000)) &&
+      (period === 'all' ||
+        (r.created_at &&
+          Date.parse(r.created_at) >=
+            Date.now() - Number(period) * 86400000)) &&
       (!status ||
         (status === 'open'
           ? !isDone(r)
@@ -271,6 +293,38 @@ function RegistryFilters({
         .toLocaleLowerCase()
         .includes(query.trim().toLocaleLowerCase()),
   )
+  const sorted =
+    sort === 'recent'
+      ? [...filtered].sort((a, b) =>
+          (b.updated_at || '').localeCompare(a.updated_at || ''),
+        )
+      : prioritizeRequests(
+          filtered,
+          showRecurrence && sort === 'recurrence',
+        )
+  const groups = showRecurrence ? recurringProblems(sorted) : []
+  if (sort === 'priority')
+    groups.sort(
+      (a, b) => b.priority - a.priority || b.rows.length - a.rows.length,
+    )
+  if (sort === 'recent')
+    groups.sort((a, b) =>
+      (
+        b.rows
+          .map((r) => r.updated_at || '')
+          .sort()
+          .at(-1) || ''
+      ).localeCompare(
+        a.rows
+          .map((r) => r.updated_at || '')
+          .sort()
+          .at(-1) || '',
+      ),
+    )
+  const groupedIds = new Set(
+    groups.flatMap((g) => g.rows.map((r) => r.id)),
+  )
+  const singles = sorted.filter((r) => !groupedIds.has(r.id))
   function exportCsv() {
     const q = (v: unknown) => {
       let s = String(v ?? '')
@@ -288,7 +342,7 @@ function RegistryFilters({
         'Решение',
         'Демо',
       ],
-      ...filtered.map((r) => [
+      ...sorted.map((r) => [
         requestNumber(r),
         r.title,
         categories[r.category_id],
@@ -324,28 +378,46 @@ function RegistryFilters({
             <Download />
             Экспорт CSV
           </button>
-          <button
-            className={'icon-button ' + (!board ? 'selected' : '')}
-            aria-label="Таблица"
-            aria-pressed={!board}
-            onClick={() => setBoard(false)}
+          <div
+            className="registry-modes"
+            role="group"
+            aria-label="Вид реестра"
           >
-            <List />
-          </button>
-          <button
-            className={'icon-button ' + (board ? 'selected' : '')}
-            aria-label="Доска"
-            aria-pressed={board}
-            onClick={() => setBoard(true)}
-          >
-            <Columns3 />
-          </button>
+            {[
+              ...(showRecurrence
+                ? [{ id: 'groups', label: 'Темы', icon: Layers }]
+                : []),
+              { id: 'table', label: 'Список', icon: List },
+              { id: 'board', label: 'Доска', icon: Columns3 },
+            ].map((item) => (
+              <button
+                key={item.id}
+                className={
+                  'btn sm ' + (mode === item.id ? 'selected' : '')
+                }
+                aria-pressed={mode === item.id}
+                onClick={() => setMode(item.id)}
+              >
+                <item.icon />
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
-      {(tag || kind || period !== 'all') && <div className="detail-block">
-        <p>Выборка из аналитики: {kind === 'problem' ? 'проблемы' : 'все типы'}{tag && ` · тема «${tag}»`}{period !== 'all' && ` · за ${period} дней`}.</p>
-        <Link className="btn sm" href={path + '?view=registry'}>Открыть весь реестр</Link>
-      </div>}
+      {(tag || kind || period !== 'all') && (
+        <div className="detail-block">
+          <p>
+            Выборка из аналитики:{' '}
+            {kind === 'problem' ? 'проблемы' : 'все типы'}
+            {tag && ` · тема «${tag}»`}
+            {period !== 'all' && ` · за ${period} дней`}.
+          </p>
+          <Link className="btn sm" href={path + '?view=registry'}>
+            Открыть весь реестр
+          </Link>
+        </div>
+      )}
       <div className="filters">
         <label className="search-input">
           <Search />
@@ -409,6 +481,18 @@ function RegistryFilters({
           <option value="overdue">Просрочено</option>
           <option value="today">Сегодня</option>
         </select>
+        <select
+          className="filter-select"
+          aria-label="Порядок обращений"
+          value={sort}
+          onChange={(e) => setSort(e.target.value)}
+        >
+          {showRecurrence && (
+            <option value="recurrence">Сначала повторяющиеся</option>
+          )}
+          <option value="priority">По приоритету</option>
+          <option value="recent">Сначала обновлённые</option>
+        </select>
         {(query || status || category || department || deadline) && (
           <button
             className="btn sm"
@@ -424,7 +508,54 @@ function RegistryFilters({
           </button>
         )}
       </div>
-      {board ? (
+      {mode === 'groups' && showRecurrence ? (
+        <div className="registry-groups">
+          <p className="stat-definition">
+            Количество указано один раз у темы. Группы образованы общей
+            категорией и тегом; это возможные повторы. Одна карточка может
+            входить в несколько тем. Счётчики учитывают текущие фильтры.
+          </p>
+          {groups.map((group) => (
+            <details
+              className="registry-group"
+              key={JSON.stringify([group.category, group.tag])}
+            >
+              <summary>
+                <span className="group-topic">
+                  <strong>{group.tag}</strong>
+                  <small>{categories[group.category]}</small>
+                </span>
+                <span className="group-count">
+                  <strong>{group.rows.length}</strong> обращений
+                </span>
+                <span className="group-outcomes">
+                  С решением: {group.results} · просрочено: {group.overdue}
+                </span>
+              </summary>
+              <CaseTable
+                rows={group.rows}
+                categories={categories}
+                path={path}
+              />
+            </details>
+          ))}
+          {singles.length > 0 && (
+            <section aria-label="Без повторяющейся темы">
+              <h3 className="singles-heading">
+                Без повторяющейся темы · {singles.length}
+              </h3>
+              <CaseTable
+                rows={singles}
+                categories={categories}
+                path={path}
+              />
+            </section>
+          )}
+          {!sorted.length && (
+            <CaseTable rows={[]} categories={categories} path={path} />
+          )}
+        </div>
+      ) : mode === 'board' ? (
         <div className="board">
           {[...statuses].map((s) => (
             <section className="board-col" key={s}>
@@ -432,7 +563,7 @@ function RegistryFilters({
                 {statusNames[s]} ·{' '}
                 {filtered.filter((r) => r.status === s).length}
               </strong>
-              {filtered
+              {sorted
                 .filter((r) => r.status === s)
                 .map((r) => (
                   <Link
@@ -450,7 +581,7 @@ function RegistryFilters({
           ))}
         </div>
       ) : (
-        <CaseTable rows={filtered} categories={categories} path={path} />
+        <CaseTable rows={sorted} categories={categories} path={path} />
       )}
       <footer className="table-foot">
         Показано {filtered.length} из {rows.length}
@@ -460,7 +591,9 @@ function RegistryFilters({
   )
 }
 
-export function RequestRegistry(props: Parameters<typeof RegistryFilters>[0]) {
+export function RequestRegistry(
+  props: Parameters<typeof RegistryFilters>[0],
+) {
   const params = useSearchParams()
   return <RegistryFilters key={params.toString()} {...props} />
 }

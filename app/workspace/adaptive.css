@@ -1,0 +1,752 @@
+/* Shared colors for the live workspace; both themes use the same controls. */
+.ir-app {
+  --panel-soft: #f5f3fa;
+  --control-text: #51485e;
+  --brand-contrast: #fff;
+  --brand-hover: #5941bd;
+  --crm-text: var(--ink);
+  --crm-muted: var(--muted);
+  --crm-border: var(--line);
+  --crm-panel: var(--surface);
+}
+[data-theme='dark'] .ir-app {
+  color-scheme: dark;
+  --bg: #14131c;
+  --surface: #201e2b;
+  --panel-soft: #282435;
+  --ink: #f1eef8;
+  --control-text: #e4deef;
+  --muted: #b3aabd;
+  --line: #40394e;
+  --brand: #b7a1ff;
+  --brand-soft: #352a50;
+  --brand-hover: #c9baff;
+  --brand-contrast: #201632;
+  --green: #8fd8b7;
+  --green-bg: #1e3a31;
+  --red: #ffa4ae;
+  --red-bg: #442831;
+  --amber: #f2c579;
+  --amber-bg: #40341f;
+}
+.ir-app
+  :is(
+    .sidebar,
+    .topbar,
+    .workspace-avatar,
+    .icon-button,
+    .board-card,
+    .notification,
+    .crm-chat,
+    .ir-request-form,
+    .idea-form-guide,
+    .crm-detail,
+    .crm-detail-actions,
+    .crm-detail-history,
+    .case-section,
+    .request-history li:before
+  ) {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line);
+}
+.ir-app
+  :is(
+    .workspace,
+    .side-manifesto,
+    .loop-card,
+    .repeat-card,
+    .board-col,
+    .route-stage,
+    .route-foot,
+    .crm-chat-head,
+    .crm-bubble,
+    .crm-routing-preview,
+    .upload-zone,
+    .case-current,
+    .notification.unread,
+    .case-table th
+  ) {
+  background: var(--panel-soft);
+  border-color: var(--line);
+  color: var(--control-text);
+}
+.ir-app
+  :is(
+    .btn,
+    .button,
+    .button-outline,
+    .icon-button,
+    .crm-mode-tabs button
+  ) {
+  background: var(--surface);
+  color: var(--control-text);
+  border: 1px solid var(--line);
+}
+.ir-app :is(.btn.primary, .button.button-primary) {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--brand-contrast);
+}
+.ir-app :is(.btn.primary, .button.button-primary):hover:not(:disabled) {
+  background: var(--brand-hover);
+  border-color: var(--brand-hover);
+  color: var(--brand-contrast);
+}
+.ir-app :is(.btn.ghost, .ir-logout) {
+  background: transparent;
+  color: var(--muted);
+}
+.ir-app :is(.btn, .button, .icon-button):disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.ir-app
+  :is(
+    .request-fields input,
+    .request-fields select,
+    .request-fields textarea,
+    .form-field,
+    .filter-select,
+    .search-input,
+    .search-input input,
+    .crm-chat-compose textarea
+  ) {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line);
+  color-scheme: inherit;
+}
+.ir-app
+  :is(
+    .request-fields label,
+    .form-label,
+    .case-title,
+    .stage-name,
+    .crumbs strong,
+    .role-select,
+    .idea-form-guide li strong
+  ) {
+  color: var(--control-text);
+}
+.ir-app
+  :is(
+    .case-caption,
+    .metric-label,
+    .metric-note,
+    .stage-meta,
+    .stage-top,
+    .form-hint,
+    .body-copy,
+    .request-text,
+    .stat-definition,
+    .result-item p,
+    .notification p,
+    .notification time,
+    .footer-note,
+    .case-id,
+    .eyebrow,
+    .side-manifesto p,
+    .loop-check,
+    .help-section p,
+    .help-section li,
+    .case-ref,
+    .ir-disclaimer,
+    .context-line
+  ) {
+  color: var(--muted);
+}
+.ir-app
+  :is(
+    .badge,
+    .badge.new,
+    .badge.progress,
+    .metric-icon,
+    .tiny-pill,
+    .nav-count,
+    .avatar,
+    .tab span,
+    .crm-bubble.user,
+    .step-token,
+    .v-step-icon
+  ) {
+  background: var(--brand-soft);
+  color: var(--brand);
+  border-color: var(--line);
+}
+.ir-app .badge.review {
+  background: var(--panel-soft);
+  color: var(--brand);
+}
+.ir-app
+  :is(
+    .badge.implemented,
+    .badge.closed,
+    .type-icon.positive,
+    .crm-outcome
+  ) {
+  background: var(--green-bg);
+  color: var(--green);
+  border-color: var(--line);
+}
+.ir-app :is(.badge.waiting, .type-icon) {
+  background: var(--amber-bg);
+  color: var(--amber);
+}
+.ir-app .badge.rejected {
+  background: var(--red-bg);
+  color: var(--red);
+}
+.ir-app .type-icon.idea {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+.ir-app .nav-link {
+  color: var(--muted);
+}
+.ir-app
+  :is(
+    .nav-link.active,
+    .nav-link:hover,
+    .btn.selected,
+    .crm-mode-tabs button[aria-pressed='true']
+  ) {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+.ir-app
+  :is(
+    .case-table tbody tr:hover,
+    .icon-button:hover,
+    .btn:not(.primary):hover
+  ) {
+  background: var(--panel-soft);
+  color: var(--ink);
+}
+.ir-app :is(.case-table td, .case-table th) {
+  border-color: var(--line);
+}
+.ir-app :is(.chart-track, .progress-track, .stage-line) {
+  background: var(--line);
+}
+.ir-app :is(.chart-track span, .progress-track span, .stage-line span) {
+  background: var(--brand);
+}
+.ir-app .chart-track.green-track span {
+  background: var(--green);
+}
+.ir-app :is(.loop-number, .case-chip) {
+  color: var(--brand);
+}
+.ir-app .route-stage:last-child {
+  background: var(--green-bg);
+  border-color: var(--line);
+}
+.ir-app .route-stage:last-child :is(.stage-name, .stage-number) {
+  color: var(--green);
+}
+.ir-app
+  .ir-detail
+  .crm-detail-content
+  > :is(.case-section, .case-current, .crm-routing-preview),
+.ir-app .ir-detail > :is(.crm-detail-actions, .crm-detail-history) {
+  background: var(--surface);
+  border-color: var(--line);
+}
+.ir-app .ir-detail .crm-detail-content > .crm-outcome {
+  background: var(--green-bg);
+  border-color: var(--line);
+}
+.ir-app .choice:has(input:checked) {
+  background: var(--brand-soft);
+  border-color: var(--brand);
+}
+.ir-app a:focus-visible,
+.ir-app button:focus-visible,
+.ir-app summary:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+}
+.ir-app .mobile-tabs {
+  display: none;
+}
+.ir-app .card-head {
+  flex-wrap: wrap;
+}
+.ir-app .ir-flex {
+  min-width: 0;
+}
+.ir-app .registry-modes {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.ir-app .registry-group {
+  border-top: 1px solid var(--line);
+}
+.ir-app .registry-group summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px;
+  cursor: pointer;
+}
+.ir-app .registry-group summary::before {
+  content: '›';
+  font-size: 22px;
+  color: var(--brand);
+}
+.ir-app .registry-group[open] summary::before {
+  transform: rotate(90deg);
+}
+.ir-app .group-topic {
+  flex: 1;
+  min-width: 120px;
+  overflow-wrap: anywhere;
+}
+.ir-app .group-topic small {
+  display: block;
+  color: var(--muted);
+}
+.ir-app .group-count {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 10px;
+  white-space: nowrap;
+  color: var(--brand);
+  background: var(--brand-soft);
+}
+.ir-app .group-outcomes {
+  color: var(--muted);
+  font-size: 11px;
+}
+.ir-app .singles-heading {
+  padding: 18px 20px;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+}
+.ir-app .recurrence-entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  margin: 20px 0;
+  gap: 12px;
+}
+.ir-app .recurrence-entry p {
+  color: var(--muted);
+}
+.ir-app .recurrence-share {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 20px;
+}
+.ir-app .recurrence-donut {
+  width: 160px;
+  height: 160px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+.ir-app .recurrence-donut > div {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.ir-app .recurrence-donut strong {
+  font-size: 28px;
+}
+.ir-app .recurrence-donut span {
+  font-size: 11px;
+  color: var(--muted);
+}
+.ir-app .chart-legend {
+  padding: 0;
+  list-style: none;
+  flex: 1;
+  min-width: 160px;
+}
+.ir-app .chart-legend li {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 12px 0;
+}
+.ir-app .chart-legend strong {
+  margin-left: auto;
+}
+.ir-app .legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--brand);
+  flex-shrink: 0;
+}
+.ir-app .legend-dot.single {
+  background: var(--line);
+}
+.ir-app .recurrence-topic .chart-bar {
+  grid-template-columns: minmax(120px, 1fr) minmax(50px, 2fr) 32px;
+}
+.ir-app .recurrence-topic small {
+  display: block;
+  color: var(--muted);
+}
+.ir-app .recurrence-topic {
+  overflow-wrap: anywhere;
+}
+.ir-app .recurrence-topic > p {
+  font-size: 12px;
+}
+
+@media (max-width: 1100px) {
+  .ir-app .ir-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 740px) {
+  .ir-app {
+    font-size: 14px;
+  }
+  .ir-app .shell {
+    overflow-x: clip;
+  }
+  .ir-app .topbar {
+    min-height: 60px;
+    height: auto;
+    padding: 8px 12px 8px 62px;
+    gap: 8px;
+  }
+  .ir-app .top-actions {
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+  .ir-app .role-select {
+    display: none;
+  }
+  .ir-app .crumbs {
+    white-space: normal;
+    min-width: 0;
+    font-size: 12px;
+  }
+  .ir-app .ir-mobile-toggle {
+    width: 44px;
+    height: 44px;
+    top: 8px;
+    left: 10px;
+    background: var(--surface);
+    color: var(--ink);
+  }
+  .ir-app .ir-mobile-toggle[aria-expanded='true'] {
+    left: 170px;
+  }
+  .ir-app .icon-button {
+    width: 44px;
+    height: 44px;
+  }
+  .ir-app .mobile-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    padding: 8px 12px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+  }
+  .ir-app .mobile-tabs a {
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 5px;
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: 12px;
+    text-align: center;
+  }
+  .ir-app .mobile-tabs a[aria-current='page'] {
+    background: var(--brand-soft);
+    color: var(--brand);
+    font-weight: 700;
+  }
+  .ir-app .content {
+    padding: 20px 12px;
+  }
+  .ir-app .page-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ir-app .page-heading .btn {
+    min-height: 44px;
+    white-space: normal;
+  }
+  .ir-app .page-heading p {
+    max-width: none;
+    font-size: 13px;
+  }
+  .ir-app .card-head h2 {
+    font-size: 15px;
+  }
+  .ir-app .card-head p {
+    font-size: 12px;
+  }
+  .ir-app .metric-label {
+    font-size: 12px;
+  }
+  .ir-app .metric-note {
+    font-size: 11px;
+  }
+  .ir-app .metric .ir-flex {
+    align-items: start;
+  }
+  .ir-app .metric-icon {
+    flex-shrink: 0;
+  }
+  .ir-app .route-stages {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: visible;
+    padding: 12px;
+    gap: 10px;
+  }
+  .ir-app .route-stage {
+    padding: 14px;
+  }
+  .ir-app .route-stage:last-child {
+    grid-column: 1/-1;
+  }
+  .ir-app .stage-name {
+    font-size: 12px;
+  }
+  .ir-app .stage-meta {
+    font-size: 11px;
+  }
+  .ir-app .loop-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ir-app .loop-card h2 {
+    font-size: 16px;
+  }
+  .ir-app .loop-card .loop-check {
+    display: flex;
+  }
+  .ir-app .card-head > .ir-flex {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .ir-app :is(.btn, .button, .filter-select, .tab) {
+    min-height: 44px;
+    font-size: 12px;
+  }
+  .ir-app .filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .ir-app .filters .search-input {
+    grid-column: 1/-1;
+    min-width: 0;
+  }
+  .ir-app .filters .filter-select {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+  }
+  .ir-app .registry-modes {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .ir-app .registry-modes .btn {
+    padding: 8px;
+    gap: 5px;
+  }
+  .ir-app .registry-group summary {
+    padding: 16px;
+    gap: 10px;
+  }
+  .ir-app .group-outcomes {
+    width: 100%;
+    padding-left: 18px;
+  }
+  .ir-app .table-foot {
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 11px;
+  }
+  /* Keep table semantics while presenting each request as a readable mobile card. */
+  .ir-app .case-table {
+    min-width: 0;
+    table-layout: fixed;
+  }
+  .ir-app .case-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .ir-app .case-table tbody {
+    display: block;
+  }
+  .ir-app .case-table tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 16px;
+    gap: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .ir-app .case-table td {
+    display: block;
+    padding: 0;
+    border: 0;
+    font-size: 12px;
+    min-width: 0;
+  }
+  .ir-app .case-table td:first-child {
+    grid-column: 1/-1;
+  }
+  .ir-app .case-table td[data-label='Подразделение'],
+  .ir-app .case-table td[data-label='Приоритет'] {
+    grid-column: 1/-1;
+  }
+  .ir-app .case-table td[data-label='Подразделение']::before,
+  .ir-app .case-table td[data-label='Приоритет']::before {
+    content: attr(data-label) ': ';
+    color: var(--muted);
+  }
+  .ir-app .case-table .case-open {
+    grid-column: 2;
+    grid-row: 2/5;
+    align-self: end;
+  }
+  .ir-app .case-title {
+    max-width: none;
+    font-size: 14px;
+  }
+  .ir-app .case-caption {
+    font-size: 11px;
+  }
+  .ir-app .case-table .badge {
+    white-space: normal;
+  }
+  .ir-app .case-table .due {
+    font-size: 12px;
+  }
+  .ir-app .case-table .ir-case-cell {
+    gap: 10px;
+  }
+  .ir-app .request-fields :is(input, select, textarea),
+  .ir-app .form-field,
+  .ir-app .crm-chat-compose textarea {
+    font-size: 16px;
+    min-height: 44px;
+  }
+  .ir-app .ir-form-footer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ir-app .choice-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ir-app .ir-request-form label.choice {
+    font-size: 13px;
+    min-height: 48px;
+  }
+  .ir-app .detail-route {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .ir-app .ir-detail .detail-step {
+    font-size: 12px;
+    min-height: 52px;
+  }
+  .ir-app .detail-route .detail-step:last-child {
+    grid-column: 1/-1;
+  }
+  .ir-app .tabs {
+    gap: 12px;
+    flex-wrap: wrap;
+    overflow: visible;
+    padding-top: 12px;
+  }
+  .ir-app .tab {
+    white-space: normal;
+  }
+  .ir-app .chart-bar,
+  .ir-app .recurrence-topic .chart-bar {
+    grid-template-columns: minmax(0, 1fr) 32px;
+    gap: 8px;
+  }
+  .ir-app .chart-bar > :first-child {
+    grid-column: 1/-1;
+    overflow-wrap: anywhere;
+    font-size: 13px;
+  }
+  .ir-app .chart-track {
+    min-width: 0;
+  }
+  .ir-app .chart-bar > strong {
+    text-align: right;
+  }
+  .ir-app .recurrence-share {
+    justify-content: center;
+  }
+  .ir-app .recurrence-share .chart-legend {
+    flex-basis: 100%;
+  }
+  .ir-app .stat-definition {
+    font-size: 12px;
+  }
+  .ir-app .notification {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .ir-app .notification > .ir-flex {
+    flex-wrap: wrap;
+  }
+  .ir-app .notification .btn {
+    white-space: normal;
+  }
+}
+@media (max-width: 359px) {
+  .ir-app .ir-metric-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ir-app .filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ir-app .ir-metric-grid .metric {
+    min-height: auto;
+  }
+}
+/* The detail route and history markers also follow the selected theme. */
+.ir-app .detail-route {
+  background: var(--surface);
+  border-color: var(--line);
+}
+.ir-app .detail-step {
+  color: var(--control-text);
+  border-color: var(--line);
+}
+.ir-app .detail-step.done {
+  background: var(--green-bg);
+  color: var(--green);
+}
+.ir-app .detail-step.current {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+.ir-app .request-history li::before {
+  background: var(--surface);
+  border-color: var(--brand);
+}

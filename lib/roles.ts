@@ -21,3 +21,6 @@ export type Role = keyof typeof roles
 export function isRole(value: unknown): value is Role {
   return typeof value === 'string' && Object.hasOwn(roles, value)
 }
+
+export const canViewInsights = (role: Role) =>
+  role === 'manager' || role === 'handler' || role === 'admin'

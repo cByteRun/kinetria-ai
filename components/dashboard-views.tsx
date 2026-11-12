@@ -1,6 +1,7 @@
 'use client'
 import Link from 'next/link'
-import { recurringProblems } from '../lib/insights'
+import { Heading } from './workspace-heading'
+import { RecurringAnalytics } from './recurring-analytics'
 import { useState, useTransition } from 'react'
 import {
   Bell,
@@ -38,11 +39,14 @@ export function DashboardViews({
     (r) =>
       period === 'all' ||
       (r.created_at &&
-        Date.parse(r.created_at) >= Date.now() - Number(period) * 86400000),
+        Date.parse(r.created_at) >=
+          Date.now() - Number(period) * 86400000),
   )
   const done = data.filter(hasResult)
-  const repeats = recurringProblems(data)
-  const registryLink = (params: Record<string, string>) => path + '?' + new URLSearchParams({ view: 'registry', period, ...params }).toString()
+  const registryLink = (params: Record<string, string>) =>
+    path +
+    '?' +
+    new URLSearchParams({ view: 'registry', period, ...params }).toString()
   const avg = (field: 'first_response_at' | 'resolved_at') => {
     const values = data
       .filter((r) => r.created_at && r[field])
@@ -59,6 +63,16 @@ export function DashboardViews({
         ) + ' д.'
       : '—'
   }
+  if (view === 'insights')
+    return (
+      <RecurringAnalytics
+        rows={data}
+        categories={categories}
+        path={path}
+        period={period}
+        setPeriod={setPeriod}
+      />
+    )
   if (view === 'help')
     return (
       <>
@@ -70,38 +84,39 @@ export function DashboardViews({
           <h2>У каждого обращения есть следующий шаг</h2>
           <ol>
             <li>
-              Сотрудник регистрирует обращение вручную или с помощью ИИ. Перед
-              отправкой проверяет карточку.
+              Сотрудник регистрирует обращение вручную или с помощью ИИ.
+              Перед отправкой проверяет карточку.
             </li>
             <li>
-              Категория определяет ответственного и срок. Если маршрут выключен
-              или отсутствует, обращение попадает в резервную очередь
-              администратора.
+              Категория определяет ответственного и срок. Если маршрут
+              выключен или отсутствует, обращение попадает в резервную
+              очередь администратора.
             </li>
             <li>
-              Руководитель или ответственный начинает рассмотрение, запрашивает
-              уточнения и фиксирует действия.
+              Руководитель или ответственный начинает рассмотрение,
+              запрашивает уточнения и фиксирует действия.
             </li>
             <li>
-              Ответ сотрудника возвращает обращение на рассмотрение. Передача в
-              работу сохраняет цикл открытым.
+              Ответ сотрудника возвращает обращение на рассмотрение.
+              Передача в работу сохраняет цикл открытым.
             </li>
             <li>
-              Итоговое решение доступно автору в результатах и уведомлениях.
-              Автор может отметить ознакомление.
+              Итоговое решение доступно автору в результатах и
+              уведомлениях. Автор может отметить ознакомление.
             </li>
           </ol>
         </section>
         <section className="card help-section ir-section-gap">
           <h2>Данные и доступ</h2>
           <p>
-            Авторизация, права доступа, обращения, история, комментарии, сроки и
-            ознакомление хранятся в Supabase. Сотрудник видит свои обращения,
-            руководитель — категории своего направления, ответственный —
-            назначенные ему, администратор — общий реестр. Карточки из
-            синтетического датасета отмечены «Демо». Метрики рассчитываются по
-            доступным карточкам. Уведомления доступны внутри приложения; внешняя
-            доставка писем не подключена. Повторяющиеся категории помогают найти
+            Авторизация, права доступа, обращения, история, комментарии,
+            сроки и ознакомление хранятся в Supabase. Сотрудник видит свои
+            обращения, руководитель — категории своего направления,
+            ответственный — назначенные ему, администратор — общий реестр.
+            Карточки из синтетического датасета отмечены «Демо». Метрики
+            рассчитываются по доступным карточкам. Уведомления доступны
+            внутри приложения; внешняя доставка писем не подключена.
+            Совпадающие тематические теги внутри категории помогают найти
             тему для проверки и не являются автоматическим определением
             дубликатов.
           </p>
@@ -127,7 +142,10 @@ export function DashboardViews({
               onClick={() =>
                 start(async () => {
                   const result = await markSeen(
-                    rows.map((r) => ({ id: r.id, version: r.version || 1 })),
+                    rows.map((r) => ({
+                      id: r.id,
+                      version: r.version || 1,
+                    })),
                   )
                   setError(result.error || '')
                 })
@@ -250,8 +268,8 @@ export function DashboardViews({
               <CircleCheck />
               <h3>Результаты ещё впереди</h3>
               <p>
-                Здесь появятся обращения с итоговым статусом и содержательным
-                решением.
+                Здесь появятся обращения с итоговым статусом и
+                содержательным решением.
               </p>
             </div>
           )}
@@ -280,7 +298,7 @@ export function DashboardViews({
       <div className="ir-metric-grid">
         {[
           [
-            'Первый ответ',
+            'До рассмотрения',
             avg('first_response_at'),
             'Среднее время от регистрации до начала рассмотрения',
             Clock3,
@@ -319,23 +337,16 @@ export function DashboardViews({
           )
         })}
       </div>
-      <section className="card ir-section-gap" aria-label="Повторяющиеся проблемы">
-        <div className="card-head"><div><h2>Повторяющиеся проблемы</h2>
-          <p>Два и более обращения типа «Проблема» с общей категорией и тематическим тегом.</p></div></div>
-        <div className="detail-block">
-          {repeats.map(group => <div className="result-item" key={group.category + ':' + group.tag}>
-            <Link href={registryLink({ category: group.category, tag: group.tag, kind: 'problem' })}>
-              <h3>{group.tag} · {categories[group.category]}</h3>
-              <p>{group.rows.length} обращений · с решением: {group.results} · просрочено: {group.overdue}</p>
-            </Link>
-            {group.rows.filter(hasResult).map(r => <p key={r.id}>
-              <Link href={path + '?view=registry&id=' + r.id}>{requestNumber(r)}: {r.decision}</Link>
-            </p>)}
-          </div>)}
-          {!repeats.length && <p>Повторяющихся тем пока нет. Добавьте одинаковый тематический тег похожим проблемам при регистрации.</p>}
+      <Link
+        className="card recurrence-entry"
+        href={path + '?view=insights'}
+      >
+        <div>
+          <h2>Повторяющиеся темы</h2>
+          <p>Частота, доля проблем и результаты по темам</p>
         </div>
-        <p className="stat-definition">Одна проблема может входить в несколько тем. Совпадение тега — сигнал для проверки руководителем; система не объединяет обращения и не подтверждает общую причину автоматически.</p>
-      </section>
+        <ArrowUpRight />
+      </Link>
       <div className="settings-grid">
         <section className="card">
           <div className="card-head">
@@ -361,7 +372,8 @@ export function DashboardViews({
                   <div className="chart-track">
                     <span
                       style={{
-                        width: (c.count / Math.max(1, data.length)) * 100 + '%',
+                        width:
+                          (c.count / Math.max(1, data.length)) * 100 + '%',
                       }}
                     />
                   </div>
@@ -392,13 +404,12 @@ export function DashboardViews({
               ).length
               return (
                 <div className="chart-bar" key={id}>
-                  <Link href={registryLink({ filter: id })}>
-                    {label}
-                  </Link>
+                  <Link href={registryLink({ filter: id })}>{label}</Link>
                   <div className="chart-track green-track">
                     <span
                       style={{
-                        width: (count / Math.max(1, data.length)) * 100 + '%',
+                        width:
+                          (count / Math.max(1, data.length)) * 100 + '%',
                       }}
                     />
                   </div>
@@ -416,23 +427,4 @@ export function DashboardViews({
     </>
   )
 }
-export function Heading({
-  title,
-  description,
-  action,
-}: {
-  title: string
-  description: string
-  action?: React.ReactNode
-}) {
-  return (
-    <div className="page-heading">
-      <div>
-        <div className="eyebrow">Рабочее пространство</div>
-        <h1>{title}</h1>
-        <p>{description}</p>
-      </div>
-      {action}
-    </div>
-  )
-}
+export { Heading } from './workspace-heading'

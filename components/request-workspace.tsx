@@ -21,7 +21,7 @@ import {
   type Category,
   type RequestStatus,
 } from '../lib/requests'
-import { isRole } from '../lib/roles'
+import { canViewInsights, isRole } from '../lib/roles'
 import { createClient } from '../lib/supabase/server'
 import { IdeaOverview } from './idea-overview'
 import { RequestForm } from './request-form'
@@ -63,6 +63,7 @@ export async function RequestWorkspace({
   const t = await getTranslations('requestsMvp')
   const locale = await getLocale()
   const path = '/workspace/' + role
+  if ((view === 'analytics' || view === 'insights') && !canViewInsights(role)) notFound()
   if (id && (typeof id !== 'string' || !uuidPattern.test(id))) notFound()
   const supabase = await createClient()
   const [list, categoryList] = await Promise.all([
@@ -133,7 +134,7 @@ export async function RequestWorkspace({
         path={path}
       />
     )
-  if (['results', 'analytics', 'notifications', 'help'].includes(view))
+  if (['results', 'analytics', 'insights', 'notifications', 'help'].includes(view))
     return (
       <DashboardViews
         rows={list.data}
@@ -182,6 +183,7 @@ export async function RequestWorkspace({
               </div>
             </div>
             <RequestRegistry
+              showRecurrence={canViewInsights(role)}
               rows={list.data.filter((r) => !r.assignee_id && !isDone(r))}
               categories={categoryNames}
               path={path}
@@ -272,6 +274,7 @@ export async function RequestWorkspace({
         description="Вся история, ответственные, сроки и результаты в одном месте."
       />
       <RequestRegistry
+        showRecurrence={canViewInsights(role)}
         key={view}
         rows={list.data}
         categories={categoryNames}

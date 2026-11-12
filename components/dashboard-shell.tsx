@@ -16,19 +16,21 @@ import {
   ChevronsUpDown,
 } from 'lucide-react'
 import { logout } from '../app/login/actions'
-import type { Role } from '../lib/roles'
+import { canViewInsights, type Role } from '../lib/roles'
 import type { Theme } from '../i18n/settings'
 import { getTranslations } from 'next-intl/server'
 import { WorkspaceLive } from './workspace-live'
 import { createClient } from '../lib/supabase/server'
 import { hasSupabase } from '../lib/supabase/config'
 import { terminalStatuses } from '../lib/requests'
+import { ThemeToggle } from './theme-toggle'
 import { MobileNavigation } from './mobile-navigation'
 
 export async function DashboardShell({
   role,
   view,
   name,
+  theme,
   children,
 }: {
   role: Role
@@ -64,7 +66,8 @@ export async function DashboardShell({
       if (terminalStatuses.includes(r.status) && r.decision?.trim())
         resultCount++
       if ((seen.get(r.id) || 0) < r.version) unreadCount++
-      if (!r.assignee_id && !terminalStatuses.includes(r.status)) reserveCount++
+      if (!r.assignee_id && !terminalStatuses.includes(r.status))
+        reserveCount++
     }
   }
   const counts: Record<string, number> = {
@@ -84,8 +87,15 @@ export async function DashboardShell({
       ? [{ id: 'new', label: 'Новое обращение', icon: PlusCircle }]
       : []),
     { id: 'results', label: 'Результаты', icon: CheckCheck },
-    ...(role !== 'employee'
-      ? [{ id: 'analytics', label: 'Аналитика', icon: ChartNoAxesCombined }]
+    ...(canViewInsights(role)
+      ? [
+          {
+            id: 'analytics',
+            label: 'Аналитика',
+            icon: ChartNoAxesCombined,
+          },
+          { id: 'insights', label: 'Повторяющиеся темы', icon: Tags },
+        ]
       : []),
   ]
   const nav = (item: (typeof items)[number]) => (
@@ -117,7 +127,11 @@ export async function DashboardShell({
       </a>
       <MobileNavigation />
       <WorkspaceLive path={base} />
-      <aside className="sidebar" aria-label="Основная навигация">
+      <aside
+        id="workspace-navigation"
+        className="sidebar"
+        aria-label="Основная навигация"
+      >
         <Link className="brand-lockup" href={base}>
           <span className="brand-mark">
             <Route />
@@ -143,12 +157,20 @@ export async function DashboardShell({
             <div className="nav-group">
               <div className="eyebrow">Управление системой</div>
               {nav({ id: 'categories', label: 'Категории', icon: Tags })}
-              {nav({ id: 'routing', label: 'Маршрутизация', icon: GitBranch })}
+              {nav({
+                id: 'routing',
+                label: 'Маршрутизация',
+                icon: GitBranch,
+              })}
             </div>
           )}
           <div className="nav-group">
             <div className="eyebrow">Личное</div>
-            {nav({ id: 'notifications', label: 'Уведомления', icon: Bell })}
+            {nav({
+              id: 'notifications',
+              label: 'Уведомления',
+              icon: Bell,
+            })}
           </div>
         </nav>
         <div className="side-bottom">
@@ -194,6 +216,7 @@ export async function DashboardShell({
               <span>Найти обращение</span>
               <kbd>/</kbd>
             </Link>
+            <ThemeToggle theme={theme} />
             <span className="role-select">{t(role)}</span>
             <Link
               className="icon-button"
@@ -205,6 +228,24 @@ export async function DashboardShell({
             </Link>
           </div>
         </header>
+        <nav className="mobile-tabs" aria-label="Разделы кабинета">
+          {items.map((item) => (
+            <Link
+              key={item.id}
+              href={base + '?view=' + item.id}
+              aria-current={view === item.id ? 'page' : undefined}
+            >
+              <item.icon size={20} />
+              <span>
+                {item.id === 'new'
+                  ? 'Создать'
+                  : item.id === 'insights'
+                    ? 'Повторы'
+                    : item.label}
+              </span>
+            </Link>
+          ))}
+        </nav>
         <main id="main" className="content">
           {children}
           <footer className="footer-note">

@@ -115,7 +115,7 @@ try {
     await employee.screenshot({path:output+'/closed-loop.png',fullPage:true})
   })
   await check('Operational Insights groups three problems and shows one decision',async()=>{
-    await manager.goto(base+'/workspace/manager?view=analytics')
+    await manager.goto(base+'/workspace/manager?view=insights')
     await manager.getByLabel('Период аналитики').selectOption('7')
     const group=manager.getByRole('region',{name:'Повторяющиеся проблемы'}).locator('.result-item').filter({hasText:tag})
     assert((await group.innerText()).includes('3 обращений · с решением: 1'))
@@ -149,7 +149,7 @@ try {
     assert.equal(response.status(),404)
   })
   await check('Mobile creation and analytics have no horizontal page overflow',async()=>{
-    for(const [page,path] of [[employee,'/workspace/employee?view=new'],[manager,'/workspace/manager?view=analytics']]) {
+    for(const [page,path] of [[employee,'/workspace/employee?view=new'],[manager,'/workspace/manager?view=insights']]) {
       await page.setViewportSize({width:390,height:844}); await page.goto(base+path)
       assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth))
       await page.screenshot({path:output+(page===employee?'/mobile-create.png':'/mobile-insights.png'),fullPage:true})

@@ -5,7 +5,7 @@ import { RequestDrawer } from './request-drawer'
 import { RequestForm } from './request-form'
 import { RequestRegistry } from './request-registry'
 import { requestKindLabels, type RequestStatus } from '../lib/requests'
-import type { Role } from '../lib/roles'
+import { canViewInsights, type Role } from '../lib/roles'
 
 const names: Record<string, string> = {
   collaboration: 'Межотдельное взаимодействие',
@@ -37,7 +37,10 @@ export function PreviewWorkspace({
   view: string
   id?: string
 }) {
-  const categories = Object.entries(names).map(([id, name]) => ({ id, name }))
+  const categories = Object.entries(names).map(([id, name]) => ({
+    id,
+    name,
+  }))
   const rows = samples.map((sample, index) => ({
     id: sample.id,
     number: index + 1,
@@ -75,8 +78,8 @@ export function PreviewWorkspace({
         </h1>
       )}
       <p className="muted">
-        Предпросмотр на синтетическом датасете. Для регистрации и рассмотрения
-        подключите Supabase.
+        Предпросмотр на синтетическом датасете. Для регистрации и
+        рассмотрения подключите Supabase.
       </p>
       {view === 'overview' ? (
         <IdeaOverview
@@ -85,7 +88,13 @@ export function PreviewWorkspace({
           role={role}
           path={'/workspace/' + role}
         />
-      ) : ['results', 'analytics', 'notifications', 'help'].includes(view) ? (
+      ) : [
+          'results',
+          'analytics',
+          'insights',
+          'notifications',
+          'help',
+        ].includes(view) ? (
         <DashboardViews
           rows={rows}
           categories={names}
@@ -115,6 +124,7 @@ export function PreviewWorkspace({
         </section>
       ) : (
         <RequestRegistry
+          showRecurrence={canViewInsights(role)}
           path={'/workspace/' + role}
           categories={names}
           rows={samples.map((sample, index) => ({
