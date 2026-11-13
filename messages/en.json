@@ -1138,6 +1138,9 @@
     "monitoring": "Saved topic monitoring",
     "monitoringHint": "Requests, decisions and overdue items across shared web and Telegram topics. Counts respect the selected period and topic.",
     "monitoringCounts": "Requests: {count} · With a decision: {results} · Overdue: {overdue}",
-    "monitoringEmpty": "No saved topics in this scope yet. Find similar requests, generate and save a topic."
+    "monitoringEmpty": "No saved topics in this scope yet. Find similar requests, generate and save a topic.",
+    "prompt": "What should AI look for?",
+    "sampleSize": "AI sample size",
+    "latest": "Latest {count}"
   }
 }

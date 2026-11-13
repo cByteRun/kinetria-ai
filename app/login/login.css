@@ -154,3 +154,5 @@ html[data-theme='dark'] .login-lifecycle li:last-child .login-stage-icon { color
   .login-account-row { padding-left: 5px; padding-right: 5px; gap: 9px; }
 }
 @media (prefers-reduced-motion:reduce) { .entry-page * { transition: none !important; } }
+.entry-brand { font-size:clamp(14px,2.6vw,20px); line-height:1.35; letter-spacing:0; max-width:100%; }
+.entry-brand > span:first-child { flex-shrink:0; }

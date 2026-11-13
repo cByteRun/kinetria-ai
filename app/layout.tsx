@@ -8,7 +8,7 @@ import './themes.css'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('common')
-  return { title: t('title'), description: t('description'), icons: { icon: "/favicon.svg", apple: "/brand/logo.png" }, openGraph: { images: ["/brand/logo.png"] } }
+  return { title: t('title'), description: t('description'), icons: { icon: "/favicon.svg", apple: "/brand/logo.svg" }, openGraph: { images: ["/brand/logo.svg"] } }
 }
 
 export default async function RootLayout({

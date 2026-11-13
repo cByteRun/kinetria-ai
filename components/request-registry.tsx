@@ -4,7 +4,7 @@ import { QvinPanel } from './qvin-panel'
 import { SemanticTopics } from './semantic-topics'
 import { useLocale, useTranslations } from 'next-intl'
 import Link from 'next/link'
-import { memo, useDeferredValue, useMemo, useState } from 'react'
+import { memo, useDeferredValue, useMemo, useState, useEffect, useRef } from 'react'
 import {
   normalizeTopic,
   recurringProblems,
@@ -399,11 +399,12 @@ function RegistryFilters({
     setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
   return (
-    <section className="card registry-card">
+    <section className={"registry-card registry-" + mode}>
+      <SemanticTopics enabled={showRecurrence} rows={filtered} onSelect={setTopicIds}>
       {canAskQvin && <QvinPanel key={sorted.map(r => r.id).join()} ids={sorted.map(r => r.id)} />}
-      <div className="card-head">
+      <div className="card-head registry-header">
         <div>
-          <h2>{ui('unifiedRequestRegistry')}</h2>
+          <h1>{mode === 'board' ? ui('board') : ui('unifiedRequestRegistry')}</h1>
           <p aria-live="polite">
             {ui('foundCount', { shown: topicFiltered.length, total: rows.length })}
           </p>
@@ -545,7 +546,6 @@ function RegistryFilters({
           </button>
         )}
       </div>
-      <SemanticTopics enabled={showRecurrence} rows={filtered} onSelect={setTopicIds}>
       {mode === 'groups' && showRecurrence ? (
         <div className="registry-groups">
           <p className="stat-definition">
@@ -594,7 +594,7 @@ function RegistryFilters({
           )}
         </div>
       ) : mode === 'board' ? (
-        <div className="board">
+        <BoardViewport>
           {boardColumns.map(({ status: s, rows: columnRows }) => (
             <section className="board-col" key={s}>
               <strong>
@@ -605,7 +605,7 @@ function RegistryFilters({
                   <Link
                     className="board-card"
                     key={r.id}
-                    href={path + '?view=registry&id=' + r.id}
+                    href={path + '?view=registry&mode=board&id=' + r.id}
                   >
                     <small className="case-id">{requestNumber(r)}</small>
                     <h3>{r.title}</h3>
@@ -617,7 +617,7 @@ function RegistryFilters({
                 ))}
             </section>
           ))}
-        </div>
+        </BoardViewport>
       ) : (
         <CaseTable rows={sorted} categories={categories} path={path} />
       )}
@@ -628,6 +628,21 @@ function RegistryFilters({
       </SemanticTopics>
     </section>
   )
+}
+
+function BoardViewport({children}: {children: React.ReactNode}) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const element = ref.current
+    if (!element) return
+    const resize = () => { element.style.height = Math.max(280, window.innerHeight - element.getBoundingClientRect().top - 24) + 'px' }
+    const observer = new ResizeObserver(resize)
+    if (element.parentElement) observer.observe(element.parentElement)
+    window.addEventListener('resize', resize)
+    resize()
+    return () => { observer.disconnect(); window.removeEventListener('resize', resize) }
+  }, [])
+  return <div ref={ref} className="board">{children}</div>
 }
 
 export function RequestRegistry(props: Parameters<typeof RegistryFilters>[0]) {

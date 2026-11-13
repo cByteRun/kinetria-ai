@@ -20,7 +20,7 @@ export function roleDestination(role: Role, intent?: FormDataEntryValue | null) 
   }
   if (role === 'client') return '/feedback'
   const view = typeof intent === 'string' && allowed[role].includes(intent)
-    ? intent : allowed[role][0]
+    ? intent : 'overview'
   return `/workspace/${role}?view=${view}`
 }
 

@@ -35,7 +35,7 @@ export default async function Login({ searchParams }: {
       <header className="entry-header">
         <Link className="entry-brand" href="/" aria-label="IdeaRoute">
           <span className="entry-brand-mark"><LogoMark size={28} /></span>
-          <span>Idea<span>Route</span></span>
+          <span>IdeaRoute</span>
         </Link>
         <span className="entry-company">{ui('modusTrade')}</span>
         <div className="entry-preferences">

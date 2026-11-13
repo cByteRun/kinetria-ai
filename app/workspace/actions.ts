@@ -1,5 +1,7 @@
 'use server'
 
+import { canGenerateTopics } from '../../lib/roles'
+
 import { enrichRequest } from '../../lib/enrich-request'
 import { redirect } from 'next/navigation'
 import { after } from 'next/server'
@@ -366,13 +368,14 @@ export async function saveCategory(form: FormData) {
   )
 }
 
-export async function analyzeRecurringTopics(days: number, ids?: string[]) {
+export async function analyzeRecurringTopics(days: number, ids?: string[], prompt = '') {
   const ui = await getTranslations('ui')
-  if (!hasSupabase || !['admin', 'handler', 'manager'].includes((await getRole()) || '') || ![7, 30, 90].includes(days) || !aiConfig()) return { error: ui('aiSummaryUnavailable') }
+  if (typeof prompt !== 'string' || prompt.length > 2000) return {error: ui('requestUnavailable')}
+  if (!hasSupabase || !canGenerateTopics(await getRole()) || ![7, 30, 90].includes(days) || !aiConfig()) return { error: ui('aiSummaryUnavailable') }
   const supabase = await createClient()
   // UTC hour fixes window boundaries and cache keys across repeated page opens.
   const anchor = Math.floor(Date.now() / 3600000) * 3600000
-  if (ids && (ids.length < 2 || ids.length > 200 || new Set(ids).size !== ids.length)) return { error: ui('requestUnavailable') }
+  if (ids && (ids.length < 2 || ids.length > 200 || !ids.every(id => typeof id === 'string' && uuidPattern.test(id)) || new Set(ids).size !== ids.length)) return { error: ui('requestUnavailable') }
   let query = supabase.from('requests').select('id,title,description,created_at')
   if (ids) query = query.in('id', ids)
   else query = query
@@ -381,9 +384,11 @@ export async function analyzeRecurringTopics(days: number, ids?: string[]) {
   const { data, error } = await query.order('created_at', { ascending: false }).limit(201)
   if (error || !data || (ids && data.length !== ids.length)) return { error: ui('requestUnavailable') }
   if (data.length > 200) return { error: ui('topicLimit') }
-  if (JSON.stringify(data).length > 120000) return { error: ui('topicVolume') }
   try {
     const { semanticTopics } = await import('../../lib/semantic-topics')
-    return { topics: await semanticTopics(data, days, await getLocale(), ids ? Math.min(...data.map(row => Date.parse(row.created_at))) : anchor), anchor }
-  } catch { return { error: ui('aiConnectionError') } }
+    return { topics: await semanticTopics(data, days, await getLocale(), ids ? Math.min(...data.map(row => Date.parse(row.created_at))) : anchor, '', prompt), anchor }
+  } catch (error) {
+    console.warn('Topic generation failed', error instanceof Error ? error.name + ': ' + error.message : 'Unknown error')
+    return { error: ui('aiConnectionError') }
+  }
 }

@@ -35,7 +35,7 @@ export function RecurringAnalytics({
     ? Math.round((summary.recurring / summary.problems) * 100)
     : 0
   return (
-    <SemanticTopics rows={rows} onSelect={setSelectedIds} onTopicsChange={setTopics}>
+    <div className="recurring-screen"><SemanticTopics rows={rows} onSelect={setSelectedIds} onTopicsChange={setTopics}>
       <Heading
         title={ui('recurringTopics')}
         description={ui('whichProblemsRecurAndWhereASolutionAlready')}
@@ -182,63 +182,26 @@ export function RecurringAnalytics({
             {ui('openGroupsInRegistry')}
           </Link>
         </div>
-        <div className="detail-block">
-          {summary.groups.map((group) => (
-            <div
-              className="recurrence-topic result-item"
-              key={JSON.stringify([group.category, group.tag])}
-            >
-              <Link
-                className="chart-bar"
-                href={link({
-                  category: group.category,
-                  tag: group.tag,
-                  kind: 'problem',
-                  mode: 'groups',
-                })}
-              >
-                <span>
-                  <strong>{group.tag}</strong>
-                  <small>{categories[group.category]}</small>
-                </span>
-                <span className="chart-track">
-                  <span
-                    style={{
-                      width:
-                        (group.rows.length /
-                          Math.max(1, summary.groups[0].rows.length)) *
-                          100 +
-                        '%',
-                    }}
-                  />
-                </span>
-                <strong>{group.rows.length}</strong>
-              </Link>
-              <p>
-                {group.rows.length} {ui('requestsWithADecision')}
-                {group.results} {ui('overdue3')}
-                {group.overdue}
-              </p>
-              {group.rows.filter(hasResult).map((r) => (
-                <p key={r.id}>
-                  <Link href={path + '?view=registry&id=' + r.id}>
-                    {requestNumber(r)}: {r.decision}
-                  </Link>
-                </p>
-              ))}
-            </div>
-          ))}
-          {!summary.groups.length && (
-            <div className="empty">
-              <h3>{ui('noRecurringTopicsYet2')}</h3>
-              <p>{ui('aGroupNeedsTwoProblemsWithTheSame')}</p>
-            </div>
-          )}
+        <div className="table-scroll topic-frequency-table">
+          <table className="case-table">
+            <thead><tr><th>{ui('topics')}</th><th>{ui('requests')}</th><th>{ui('shareOfRecurringProblems')}</th><th>{ui('withADecision')}</th><th>{ui('overdue')}</th><th><span className="sr-only">{ui('openGroupsInRegistry')}</span></th></tr></thead>
+            <tbody>{summary.groups.map(group => {
+              const share = Math.round(group.rows.length / Math.max(1, summary.problems) * 100)
+              return <tr key={JSON.stringify([group.category, group.tag])}>
+                <td><strong>{group.tag}</strong><small>{categories[group.category]}</small></td>
+                <td className="numeric">{group.rows.length}</td>
+                <td><div className="topic-share-cell"><progress max={100} value={share} aria-label={group.tag}/><span className="numeric">{share}%</span></div></td>
+                <td className="numeric">{group.results}</td><td className="numeric">{group.overdue}</td>
+                <td><Link className="btn sm" href={link({category:group.category,tag:group.tag,kind:'problem',mode:'groups'})}>{ui('openGroupsInRegistry')}</Link></td>
+              </tr>
+            })}</tbody>
+          </table>
+          {!summary.groups.length && <div className="empty"><h3>{ui('noRecurringTopicsYet2')}</h3><p>{ui('aGroupNeedsTwoProblemsWithTheSame')}</p></div>}
         </div>
         <p className="stat-definition">
           {ui('oneProblemCanBelongToMultipleTopicsBars')}
         </p>
       </section>
-    </SemanticTopics>
+    </SemanticTopics></div>
   )
 }

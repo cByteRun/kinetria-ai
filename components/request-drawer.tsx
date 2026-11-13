@@ -2,7 +2,7 @@
 import { useTranslations } from 'next-intl'
 
 import { useCallback, type ReactNode } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { X } from 'lucide-react'
 
 export function RequestDrawer({
@@ -15,12 +15,16 @@ export function RequestDrawer({
   const ui = useTranslations('ui')
 
   const router = useRouter()
+  const params = useSearchParams()
   const attachDialog = useCallback((panel: HTMLDialogElement | null) => {
     if (panel && !panel.open) panel.showModal()
   }, [])
 
   function close() {
-    router.replace(closeHref, { scroll: false })
+    const next = new URLSearchParams(params.toString())
+    next.delete('id')
+    next.delete('error')
+    router.replace(closeHref.split('?')[0] + '?' + next.toString(), { scroll: false })
   }
 
   return (

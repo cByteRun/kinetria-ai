@@ -5,6 +5,7 @@ import './adaptive.css'
 import './feedback.css'
 import './floating-shell.css'
 import './workspace-updates.css'
+import './ui-refactor.css'
 
 export default function WorkspaceRootLayout({ children }: { children: React.ReactNode }) {
   return children

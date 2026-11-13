@@ -1111,3 +1111,10 @@ form[aria-busy='true'] button { pointer-events: none; opacity: .6; }
   color: var(--ink);
   box-shadow: 0 4px 20px var(--color-0003);
 }
+
+/* Original variant-3 IR mark, with matching light/dark assets. */
+.ir-logo-mark { display:inline-flex; flex-shrink:0; vertical-align:middle; }
+.ir-logo-mark img { width:100%; height:100%; object-fit:contain; }
+.ir-logo-mark .ir-logo-dark { display:none; }
+html[data-theme="dark"] .ir-logo-mark .ir-logo-light { display:none; }
+html[data-theme="dark"] .ir-logo-mark .ir-logo-dark { display:block; }

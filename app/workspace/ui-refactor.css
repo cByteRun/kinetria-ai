@@ -1,0 +1,53 @@
+/* Shared composition and readable type scale. */
+.ir-app { font-size:14px; line-height:1.5; }
+.ir-app .content { border:0; box-shadow:none; background:transparent; padding:24px 12px; }
+.ir-app :is(p,li,td,input,textarea,select,.btn,.nav-link,.body-copy,.case-row-title,.notification p,.notification h3) { font-size:14px; }
+.ir-app :is(small,.eyebrow,.badge,.tiny-pill,.case-id,.stat-definition,.metric-note,.property dt,.event-meta,.table-foot,.nav-count) { font-size:12px; line-height:1.5; }
+.ir-app :is(.card-head h2,.detail-block h2,.board-card h3,.recurrence-topic h3,.help-section h2) { font-size:18px; line-height:1.4; font-weight:600; }
+.ir-app :is(.brand-lockup,.brand-lockup a:last-child) { font-size:14px; line-height:1.3; letter-spacing:0; }
+.ir-app .brand-mark { flex-shrink:0; }
+.ir-app .registry-card { border:0; border-radius:0; box-shadow:none; background:transparent; }
+.topic-layout { display:flex; flex-direction:column; min-width:0; gap:16px; }
+.topic-layout > .registry-header { order:-5; padding:0; }
+.topic-layout > .qvin-panel { order:-4; padding:12px 0; border:0; border-bottom:1px solid var(--line); }
+.topic-layout > .filters { order:-3; padding:0; border:0; background:transparent; }
+.topic-layout > .topic-action-bar { order:-2; }
+.topic-layout > .topic-workbench { order:-1; }
+.topic-layout > .page-heading { order:-5; }
+.topic-action-bar { padding:12px 0; border:0; border-radius:0; background:transparent; gap:8px; }
+.topic-workbench { padding:0 0 12px; border:0; border-bottom:1px solid var(--line); background:transparent; }
+.topic-heading { display:none; }
+.topic-prompt { flex:1 1 240px; width:auto; max-width:480px; min-width:0; }
+.ir-app .registry-card .table-scroll,.ir-app .registry-card .registry-groups { max-height:none; overflow:visible; }
+.ir-app .registry-card .table-scroll { overflow-x:auto; }
+.ir-app .registry-board .board { display:grid; grid-template-columns:repeat(7,minmax(200px,1fr)); gap:12px; padding:0 0 12px; height:calc(100dvh - 360px); min-height:360px; max-height:none; overflow-x:auto; overflow-y:hidden; align-items:stretch; }
+.ir-app .board-col { min-width:0; max-height:none; overflow-y:auto; padding:12px; border:0; background:var(--surface); border-radius:10px; }
+.ir-app .board-col > strong { display:block; position:sticky; top:-12px; background:var(--surface); padding:10px 0; z-index:1; font-size:14px; }
+.ir-app .board-card { padding:14px; margin-top:12px; background:var(--panel); box-shadow:none; }
+.ir-app .board-card h3 { font-size:14px; }
+.ir-app .crm-request-drawer { position:fixed; inset:0 0 0 auto; margin:0; width:min(880px,100vw); max-width:100vw; height:100dvh; max-height:100dvh; border:0; border-radius:16px 0 0 16px; background:var(--panel); color:var(--text); padding:0; overflow-y:auto; }
+.ir-app .crm-request-drawer::backdrop { background:rgb(10 12 24 / .45); }
+.ir-app .crm-drawer-inner { padding:24px; }
+.ir-app .crm-drawer-inner > header { position:sticky; top:-24px; background:var(--panel); z-index:3; padding:16px 0; }
+.ir-app .crm-drawer-inner :is(.request-panel,.case-section,.crm-detail-actions,.crm-outcome) { box-shadow:none; border-radius:0; border-inline:0; background:transparent; }
+.recurring-screen .settings-grid { gap:24px; }
+.recurring-screen .chart-bar { grid-template-columns:minmax(140px,1fr) minmax(80px,1fr) 48px; gap:20px; font-size:14px; }
+.recurring-screen .chart-bar strong,.numeric { font-variant-numeric:tabular-nums; text-align:right; }
+.topic-frequency-table .case-table { min-width:760px; width:100%; }
+.topic-frequency-table td { padding:18px 20px; vertical-align:middle; }
+.topic-frequency-table td:first-child { width:30%; }
+.topic-frequency-table td small { display:block; margin-top:4px; color:var(--muted); }
+.topic-share-cell { display:grid; grid-template-columns:minmax(70px,1fr) 48px; align-items:center; gap:16px; min-width:150px; }
+.topic-share-cell progress { width:100%; height:8px; accent-color:var(--brand); }
+.ir-app .recurrence-topic { padding:20px 0; border:0; border-bottom:1px solid var(--line); border-radius:0; }
+.ir-app .recurrence-topic p { margin-top:8px; }
+@media(max-width:740px) { .ir-app .content { padding:16px 0; } .ir-app .registry-board .board { height:calc(100dvh - 320px); } .ir-app .crm-drawer-inner { padding:16px; } .recurring-screen .chart-bar { grid-template-columns:1fr 48px; } .recurring-screen .chart-bar .chart-track { grid-row:2; grid-column:1 / -1; } }
+.ir-app .registry-header h1 { font-size:24px; line-height:1.3; font-weight:600; margin:0 0 6px; }
+.ir-app .registry-header p { margin:0; }
+.ir-app .topic-layout { gap:10px; }
+.ir-app .topic-layout > .qvin-panel { padding:6px 0; }
+.ir-app .registry-board .board { min-height:280px; }
+.ir-app .footer-note { font-size:12px; }
+.ir-app :is(th,.metric-label,.case-meta,.due-label,.chart-legend,.notification time,.attachment,.property dd,.detail-step,.stage-name,.route-foot,.context-line,.footer-note span) { font-size:12px; }
+.ir-app :is(.metric-label,.chart-legend,.property dd,.stage-name) { color:var(--text); }
+.ir-app .topic-actions input:disabled { opacity:.6; }

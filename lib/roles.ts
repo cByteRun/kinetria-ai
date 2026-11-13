@@ -24,3 +24,7 @@ export function isRole(value: unknown): value is Role {
 
 export const canViewInsights = (role: Role) =>
   role === 'manager' || role === 'handler' || role === 'admin'
+
+// Shared authorization for semantic clustering in API and UI.
+export const canGenerateTopics = (role: Role | null) =>
+  role === 'admin' || role === 'manager' || role === 'handler'

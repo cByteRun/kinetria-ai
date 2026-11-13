@@ -1,3 +1,7 @@
+// Original Monogram IR — Dynamic Path assets, variant 3 in brand-assets.
 export function LogoMark({size = 32}: {size?: number}) {
-  return <svg viewBox="0 0 32 32" width={size} height={size} fill="none" aria-hidden="true"><path d="M7 6H16A5 5 0 0 1 16 16H12L24 26H7Z" stroke="currentColor" strokeWidth="2.5" strokeLinejoin="round"/><circle cx="7" cy="6" r="2.5" fill="currentColor"/><circle cx="24" cy="26" r="2.5" fill="currentColor"/></svg>
+  return <span className="ir-logo-mark" style={{width:size,height:size}} aria-hidden="true">
+    <img className="ir-logo-light" src="/brand/icon-light.svg" width={size} height={size} alt=""/>
+    <img className="ir-logo-dark" src="/brand/icon-dark.svg" width={size} height={size} alt=""/>
+  </span>
 }

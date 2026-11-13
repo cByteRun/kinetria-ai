@@ -1,3 +1,4 @@
+import { RequestDrawer } from './request-drawer'
 import { readRegistry } from '../lib/registry-data'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
@@ -133,14 +134,12 @@ export async function RequestWorkspace({
     (receiptRows || []).map((r) => [r.request_id, r.seen_version]),
   )
   if (id)
-    return (
-      <RequestDetail
-        id={id}
-        role={role}
-        error={error}
-        categoryNames={categoryNames}
-      />
-    )
+    return <>
+      <RequestRegistry canAskQvin={role === 'admin' || role === 'manager'} showRecurrence={canViewInsights(role)} rows={list.data} categories={categoryNames} path={path}/>
+      <RequestDrawer closeHref={path + '?view=registry'}>
+        <RequestDetail id={id} role={role} error={error} categoryNames={categoryNames}/>
+      </RequestDrawer>
+    </>
   if (view === 'overview')
     return (
       <IdeaOverview
@@ -288,10 +287,6 @@ export async function RequestWorkspace({
     )
   return (
     <>
-      <Heading
-        title={role === 'employee' ? ui('myRequests') : ui('requestRegistry')}
-        description={ui('historyOwnersDeadlinesAndResultsInOnePlace')}
-      />
       <RequestRegistry canAskQvin={role === 'admin' || role === 'manager'}
         showRecurrence={canViewInsights(role)}
         key={view}
