@@ -17,8 +17,8 @@ export default async function RootLayout({
   const [locale, theme, messages, colorTheme] = await Promise.all([
     getLocale(), getTheme(), getMessages(), getColorTheme(),
   ])
-  const { common, ui, requestsMvp, chat, telegram, command, dashboardShell, voice } = messages
-  const clientMessages = { common, ui, requestsMvp, chat, telegram, command, dashboardShell, voice }
+  const { common, ui, requestsMvp, chat, telegram, command, dashboardShell, voice, productExpansion } = messages
+  const clientMessages = { common, ui, requestsMvp, chat, telegram, command, dashboardShell, voice, productExpansion }
   return (
     <html className={`${inter.variable} ${onest.variable} ${jetbrainsMono.variable}`} lang={locale} data-theme={theme} data-color-theme={colorTheme}>
       <body>

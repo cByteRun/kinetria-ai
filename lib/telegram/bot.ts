@@ -1,3 +1,5 @@
+import { askQvin } from '../qvin'
+import { enrichRequest } from '../enrich-request'
 import { generateRequestSummary } from '../request-summary'
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { demoChoices, demoAllowed, switchDemoAccount } from './demo'
@@ -11,7 +13,7 @@ const navigation = new AsyncLocalStorage<{ messageId?: number }>()
 const say = (tg: number, text: string, buttons: Button[][] = []) => sendMessage(tg, text, buttons, navigation.getStore()?.messageId)
 
 type FileData = { name: string; size: number; content: string }
-type State = { source?: 'voice' | 'text'; mode?: string; key?: string; draft?: Draft; files?: FileData[]; id?: string; number?: number; version?: number; assignee?: string; assigneeName?: string; due?: string; field?: string; status?: string }
+type State = { qvinHistory?: {question:string;answer:string}[]; hint?: string; feedbackTitle?: string; feedbackText?: string; feedbackCategory?: string; feedbackKind?: 'problem'|'idea'|'praise'; source?: 'voice' | 'text'; mode?: string; key?: string; draft?: Draft; files?: FileData[]; id?: string; number?: number; version?: number; assignee?: string; assigneeName?: string; due?: string; field?: string; status?: string }
 export type Context = { role: string; name: string; state: State; categories: { id: string; name: string }[] }
 type Message = { message_id?: number; chat: { id: number; type: string }; from?: { id: number }; text?: string; voice?: { file_id: string; duration: number; file_size?: number }; document?: { file_id: string; file_name?: string; file_size?: number }; photo?: { file_id: string; file_size?: number }[] }
 export type Update = { update_id: number; message?: Message; callback_query?: { id: string; from: { id: number }; message?: Message; data?: string } }
@@ -52,12 +54,13 @@ ${d.description}
 Категория: ${c.categories.find(x => x.id === d.category)?.name || 'не определена — выберите'}
 Теги: ${d.tags.join(', ') || 'не указаны'}
 Предлагаемое решение: ${d.proposal || 'не указано'}
-Вложения: ${s.files?.length || 0}/3${s.files?.length ? '\n' + s.files.map(f => '— ' + f.name).join('\n') : ''}
+Оценка времени со слов автора: ${s.hint || 'не указана'}\nВложения: ${s.files?.length || 0}/3${s.files?.length ? '\n' + s.files.map(f => '— ' + f.name).join('\n') : ''}
 
 Проверьте текст, тип и категорию. Если данные неверны или неполны, измените их кнопками ниже или запишите сообщение заново. Можно прикрепить до 3 файлов по 1 МиБ. Только «Подтвердить и отправить» зарегистрирует запись.`, [
     [button('📌 Изменить тип', 'kind'), button('📂 Изменить категорию', 'category')],
     [button('✏️ Изменить тему', 'edit:title'), button('📝 Изменить текст', 'edit:description')],
     [button('💡 Изменить предложение', 'edit:proposal'), button('🏷 Изменить теги', 'edit:tags')],
+    [button('⏱ Потери времени (необязательно)', 'edit:hint')],
     [button('📎 Добавить вложение', 'attach')],
     [button('✅ Подтвердить и отправить', 'submit:' + s.key)],
     [button('🎙 Записать заново', 'rewrite'), button('❌ Отменить', 'cancel')],
@@ -106,8 +109,8 @@ async function detail(tg: number, c: Context, id: string) {
     : null
   await say(tg, `${ref(r.number)} · ${statusNames[r.status]}\n${r.title}\n\n${r.description}\n\nТип: ${r.kind === 'idea' ? 'Предложение' : r.kind === 'praise' ? 'Отзыв' : 'Проблема'}\nКатегория: ${c.categories.find(x => x.id === r.category_id)?.name || r.category_id || '—'}\nТеги: ${(r.tags || []).join(', ') || 'не указаны'}\nПредложение: ${r.proposal || '—'}\nНазначение: ${r.assignee_name || (r.assignee_id ? 'ответственный назначен' : 'резервная очередь, требуется назначение')}\nСрок: ${r.due_at || '—'}${question ? '\n\nВопрос автору: ' + question : ''}\nРешение: ${r.decision || '—'}\nСледующий шаг: ${r.next_step || '—'}`, controls)
 }
-const demoRoleNames: Record<string, string> = { employee: '👤 Сотрудник', handler: '🛠 Ответственный', manager: '👔 Руководитель', admin: '⚙️ Администратор' }
-const roleInstructions: Record<string, string> = {
+const demoRoleNames: Record<string, string> = { client:'💬 Клиент', employee: '👤 Сотрудник', handler: '🛠 Ответственный', manager: '👔 Руководитель', admin: '⚙️ Администратор' }
+const roleInstructions: Record<string, string> = { client:'💬 /feedback — ваши отзывы и одобренные публикации. Новый отзыв проходит через проверку черновика и отдельное подтверждение. Статус и адресный ответ доступны в портале. Внутренние обращения и оценки эффекта закрыты.',
   employee: '👤 Инструкция сотрудника\n\n1. Нажмите «Новое обращение» или /new. Опишите проблему или предложение текстом либо голосом до 120 секунд / 3 МиБ.\n2. Проверьте черновик: тему, описание, категорию и предложение. Можно добавить до 3 файлов по 1 МиБ. Только кнопка «Подтвердить и отправить» регистрирует обращение и выдаёт R-номер.\n3. Откройте «Мои обращения» или /list: здесь только ваши записи. В карточке доступны история, комментарии и вложения.\n4. Если нужно уточнение — нажмите «Ответить». После решения прочитайте итог и нажмите «Ознакомлен с решением».\n\n/new создаёт обращение, /draft возвращает черновик, /cancel отменяет текущий шаг.',
   handler: '🛠 Инструкция ответственного\n\n1. Откройте «Моя очередь» или /list. Вы видите только обращения, назначенные вам.\n2. Откройте карточку, изучите описание, историю и вложения. Примите обращение на рассмотрение.\n3. При необходимости запросите уточнение у автора. Для работы укажите содержательный следующий шаг.\n4. Зафиксируйте результат: реализацию, мотивированный отказ или закрытие. Решение и история доступны автору.\n\n/stats показывает сводку последних 30 доступных записей. Срок, приоритет и полная аналитика ваших назначений доступны в дашборде. /cancel отменяет текущий шаг.',
   manager: '👔 Инструкция руководителя\n\n1. Откройте «Моя очередь» или /list. Доступны обращения категорий вашего направления.\n2. В карточке нажмите «Назначить ответственного», выберите допустимого участника, укажите срок или «-» и подтвердите назначение.\n3. Рассматривайте обращения, запрашивайте уточнения и фиксируйте следующий шаг или содержательное решение. История сохраняется для автора.\n4. Контролируйте сроки, аналитику и повторяющиеся темы своего направления в дашборде.\n\n/stats показывает сводку последних 30 доступных записей. /cancel отменяет текущий шаг.',
@@ -139,19 +142,23 @@ const channelHint = '📣 Приватный Telegram-канал проекта\
 
 const overview = '💡 IdeaRoute — проблемы и предложения сотрудников с понятным результатом.\n\n📝 Автор подтверждает обращение → 👔 команда назначает ответственного и срок → 🛠 фиксирует решение → ✅ автор получает итог.\n\n🌐 Бот и дашборд работают с одними обращениями и историей. В боте — быстрые действия и уведомления; на сайте — полный реестр, аналитика и настройки. На сайте войдите в тот же аккаунт.'
 function homeButtons(tg: number, role: string): Button[][] {
+  if (role === 'client') return [[button('💬 Портал фидбэков / Отзывы','menu:feedback')],...websiteButtons()]
   const rows = role === 'employee'
     ? [[button('📝 Новое обращение', 'menu:new'), button('Мои обращения', 'menu:list')], [button('Продолжить черновик', 'menu:draft')]]
     : [[button(role === 'admin' ? 'Общий реестр' : 'Моя очередь', 'menu:list'), button('📊 Сводка', 'menu:stats')]]
   if (role === 'admin') rows.push([button('Резервная очередь', 'menu:reserve')])
+  rows.push([button('💬 Портал фидбэков / Отзывы', 'menu:feedback')])
+  if (['admin','manager'].includes(role)) rows.push([button('✨ Спросить Qvin по реестру', 'menu:qvin')])
   rows.push([button('📖 Помощь по моей роли', 'help')])
   if (demoAllowed(tg)) rows.push([button('🔄 Сменить демоаккаунт', 'demoMenu')])
   rows.push(...websiteButtons())
   return rows
 }
 function commands(tg: number, role: string) {
-  return ['/start — главная и описание программы', '/home — главное меню', '/help — сценарии и помощь', '/list — обращения, доступные вашей роли', '/cancel — отменить текущий шаг', '/unlink — отключить аккаунт', ...(role === 'employee' ? ['/new — новое обращение', '/draft — продолжить черновик'] : ['/stats — сводка доступных обращений']), ...(role === 'admin' ? ['/reserve — обращения без владельца'] : []), ...(demoAllowed(tg) ? ['/login — выбрать демоаккаунт'] : [])].join('\n')
+  return ['/feedback — отзывы и предложения', ...(['admin','manager'].includes(role)?['/qvin — аналитический диалог по реестру']:[]), '/start — главная и описание программы', '/home — главное меню', '/help — сценарии и помощь', '/list — обращения, доступные вашей роли', '/cancel — отменить текущий шаг', '/unlink — отключить аккаунт', ...(role === 'employee' ? ['/new — новое обращение', '/draft — продолжить черновик'] : ['/stats — сводка доступных обращений']), ...(role === 'admin' ? ['/reserve — обращения без владельца'] : []), ...(demoAllowed(tg) ? ['/login — выбрать демоаккаунт'] : [])].join('\n')
 }
 async function showHome(tg: number, c: Pick<Context, 'role' | 'name'>) {
+  if(c.role==='client'){await say(tg,`💬 IdeaRoute · клиентский портал\n${c.name}\n\nОтправьте отзыв → проверьте черновик → подтвердите отправку → отслеживайте статус и ответ команды. /feedback — открыть портал. /help — помощь.`,homeButtons(tg,c.role));return}
   await say(tg, `${overview}\n\n${channelHint}\n\n${demoRoleNames[c.role] || c.role} · ${c.name}\n\n${commands(tg, c.role)}\n\nГлавная и помощь сохраняют текущий шаг.`, homeButtons(tg, c.role))
 }
 async function showInstructions(tg: number, c: Pick<Context, 'role'>) {
@@ -161,7 +168,7 @@ async function demoMenu(tg: number, intro = false) {
   await say(tg, `${intro ? overview + '\n\n' : ''}🧪 Выберите демоаккаунт\nДля совместного показа каждому нужен отдельный аккаунт. Занятые аккаунты недоступны. Черновики разделены по аккаунтам.\n/login — выбор аккаунта\n/home — главная`, demoChoices.map(account => [button(`${demoRoleNames[account.role]} · ${account.name}`, 'demo:' + account.id)]).concat(websiteButtons()))
 }
 async function showRole(tg: number, c: Pick<Context, 'role' | 'name'>) {
-  const descriptions: Record<string, string> = { employee: 'Подаёт обращения, отвечает на уточнения и знакомится с решением.', handler: 'Рассматривает назначенные обращения, уточняет детали и фиксирует результат.', manager: 'Работает с обращениями своего направления, назначает владельца и срок.', admin: 'Контролирует общий реестр и назначает владельцев обращений из резерва.' }
+  const descriptions: Record<string, string> = { client:'Оставляет отзывы, поддерживает опубликованные идеи и получает ответ команды в портале.', employee: 'Подаёт обращения, отвечает на уточнения и знакомится с решением.', handler: 'Рассматривает назначенные обращения, уточняет детали и фиксирует результат.', manager: 'Работает с обращениями своего направления, назначает владельца и срок.', admin: 'Контролирует общий реестр и назначает владельцев обращений из резерва.' }
   const specific = c.role === 'employee' ? '/new — новое обращение\n/draft — продолжить черновик' : c.role === 'admin' ? '/reserve — резервная очередь' : ''
   await say(tg, `Выбрана роль: ${demoRoleNames[c.role]?.replace(/^\S+\s/, '') || c.role}\n${c.name}\n\n${descriptions[c.role] || ''}${specific ? '\n\n' + specific : ''}`, [[button('Главная', 'menu:home')]])
 }
@@ -178,7 +185,7 @@ async function processUpdate(update: Update) {
   try {
     if (update.callback_query) await telegram('answerCallbackQuery', { callback_query_id: update.callback_query.id }).catch(() => undefined)
     const callback = update.callback_query?.data || ''
-    const menuCommands: Record<string, string> = { 'menu:home': '/home', 'menu:new': '/new', 'menu:list': '/list', 'menu:stats': '/stats', 'menu:reserve': '/reserve', 'menu:draft': '/draft' }
+    const menuCommands: Record<string, string> = { 'menu:feedback':'/feedback', 'menu:qvin':'/qvin', 'menu:home': '/home', 'menu:new': '/new', 'menu:list': '/list', 'menu:stats': '/stats', 'menu:reserve': '/reserve', 'menu:draft': '/draft' }
     const text = menuCommands[callback] || update.message?.text?.trim() || ''
     if (demoAllowed(tg) && text === '/start') {
       try { await showHome(tg, await bridge(tg, 'context')) }
@@ -199,6 +206,30 @@ async function processUpdate(update: Update) {
       else if (text === '/start' || text === '/home') await showHome(tg, c)
       else if (text === '/help' || cb === 'help') await showInstructions(tg, c)
       else if (['/demo', '/login', '/switch'].includes(text)) await say(tg, 'Демовход доступен только участникам закрытого показа. /home — меню вашего аккаунта.', websiteButtons())
+      else if (text === '/feedback') await showFeedback(tg,c)
+      else if (cb === 'fb:new' && ['client','employee'].includes(c.role)) {
+        await state(tg,{mode:'feedback-compose',feedbackKind:'problem',key:randomUUID()});await say(tg,'Опишите отзыв или предложение до 4000 символов. Затем проверьте карточку и подтвердите отправку. /cancel — отмена.')
+      }
+      else if (s.mode==='feedback-compose' && text && !text.startsWith('/')) {
+        if(text.length>4000) await say(tg,'До 4000 символов.')
+        else {const next={...s,mode:'feedback-draft',feedbackTitle:text.split(/[.!?\n]/)[0].slice(0,120),feedbackText:text};await state(tg,next);await feedbackDraft(tg,c,next)}
+      }
+      else if(cb.startsWith('fbkind:') && s.mode==='feedback-draft' && ['problem','idea','praise'].includes(cb.slice(7))) {const next={...s,feedbackKind:cb.slice(7) as 'problem'|'idea'|'praise'};await state(tg,next);await feedbackDraft(tg,c,next)}
+      else if(cb.startsWith('fbcat:') && s.mode==='feedback-draft' && c.categories.some(x=>x.id===cb.slice(6))) {const next={...s,feedbackCategory:cb.slice(6)};await state(tg,next);await feedbackDraft(tg,c,next)}
+      else if(cb==='fb:hint' && s.mode==='feedback-draft') {await state(tg,{...s,mode:'feedback-hint'});await say(tg,'Если знаете: сколько времени теряется или можно сэкономить в неделю? Для одного человека или команды? До 500 символов. «-» — пропустить.')}
+      else if(s.mode==='feedback-hint' && text && !text.startsWith('/')) {if(text.length>500)await say(tg,'До 500 символов.');else {const next={...s,mode:'feedback-draft',hint:text==='-'?'':text};await state(tg,next);await feedbackDraft(tg,c,next)}}
+      else if(cb.startsWith('fbsend:') && s.key===cb.slice(7) && ['client','employee'].includes(c.role) && ['feedback-draft','feedback-submitted'].includes(s.mode||'')) {
+        if(s.mode==='feedback-submitted')await showFeedback(tg,c,s.id)
+        else if(!s.feedbackCategory)await say(tg,'Выберите категорию.')
+        else {const result=await bridge(tg,'portal',{op:'submit',data:{key:s.key,title:s.feedbackTitle,description:s.feedbackText,category:s.feedbackCategory,kind:s.feedbackKind||'problem',hint:s.hint||''}});await state(tg,{mode:'feedback-submitted',key:s.key,id:result.id});try{await enrichRequest(result.request_id)}catch{/* Optional AI never blocks registration. */}await say(tg,'✅ Отзыв зарегистрирован. Пока виден вам и команде.');await showFeedback(tg,c,result.id)}
+      }
+      else if(cb.startsWith('fbopen:')) await showFeedback(tg,c,cb.slice(7))
+      else if(cb.startsWith('fbvote:')) {const [,id,support]=cb.split(':');await bridge(tg,'portal',{op:'vote',data:{id,support:support==='1'}});await showFeedback(tg,c,id)}
+      else if((text==='/qvin' || text.startsWith('/qvin ')) && ['admin','manager'].includes(c.role)) {
+        if(text==='/qvin'){await state(tg,{mode:'qvin'});await say(tg,'Задайте вопрос по последним 100 доступным обращениям. Qvin не меняет записи. /cancel — выход.')}
+        else await answerRegistry(tg,text.slice(6),c)
+      }
+      else if(s.mode==='qvin' && text && !text.startsWith('/') && ['admin','manager'].includes(c.role)) await answerRegistry(tg,text,c)
       else if (text === '/draft') {
         if (c.role === 'employee' && s.draft) {
           const next = { ...s, mode: 'draft', field: undefined }
@@ -298,8 +329,8 @@ async function processUpdate(update: Update) {
         await say(tg, 'Выберите тип обращения:', [[button('Проблема', 'kind:problem'), button('Предложение', 'kind:idea')], [button('⬅️ Назад', 'menu:draft')]])
       } else if (['kind:problem', 'kind:idea'].includes(cb) && s.draft) {
         const next: State = { ...s, mode: 'draft', field: undefined, draft: { ...s.draft, kind: cb === 'kind:problem' ? 'problem' : 'idea' } }; await state(tg, next); await showDraft(tg, c, next)
-      } else if (cb.startsWith('edit:') && s.draft && ['title','description','proposal','tags'].includes(cb.slice(5))) {
-        await state(tg, { ...s, mode: 'edit', field: cb.slice(5) }); await say(tg, 'Отправьте исправленный текст (можно голосом). Для очистки предложения или тегов — «-». Назад отменяет изменение.', backToDraft())
+      } else if (cb.startsWith('edit:') && s.draft && ['title','description','proposal','tags','hint'].includes(cb.slice(5))) {
+        await state(tg, { ...s, mode: 'edit', field: cb.slice(5) }); await say(tg, 'Если редактируете оценку времени: сколько часов в неделю и для кого? Можно пропустить через «-». Отправьте исправленный текст (можно голосом). Для очистки предложения или тегов — «-». Назад отменяет изменение.', backToDraft())
       } else if (cb.startsWith('submit:') && s.mode === 'submitted' && s.key === cb.slice(7)) {
         // A failed Telegram reply must not hide an already registered request
         // when Telegram retries the original update after a cold start.
@@ -309,8 +340,9 @@ async function processUpdate(update: Update) {
         if (!s.draft.title.trim() || !s.draft.description.trim()) await say(tg, 'Заполните тему и описание перед отправкой.')
         else if (!c.categories.some(x => x.id === s.draft!.category)) await say(tg, 'Выберите категорию перед отправкой.')
         else {
-          const result = await bridge(tg, 'submit', { ...s.draft, key: s.key, files: s.files || [] })
+          const result = await bridge(tg, 'submit', { ...s.draft, key: s.key, files: s.files || [], hint: s.hint || '' })
           await state(tg, { mode: 'submitted', key: s.key, id: result.id, number: result.number })
+          try { await enrichRequest(result.id) } catch { /* Optional estimate can be retried on the web. */ }
           await say(tg, `✅ Зарегистрировано ${ref(result.number)}. /list — статус и результат.`, [[button('Открыть обращение', 'open:' + result.id)]])
         }
       } else if (c.role === 'employee' && update.message && (text || update.message.voice) && (s.mode === 'compose' || s.mode === 'edit')) {
@@ -326,11 +358,11 @@ async function processUpdate(update: Update) {
           if (content.length > 4000) await say(tg, 'Описание должно быть до 4000 символов.')
           else if (s.mode === 'compose') await draftMessage(tg, c, content, update.message.voice ? 'voice' : 'text')
           else if (s.draft && s.field) {
-            const limit = s.field === 'title' ? 120 : s.field === 'proposal' ? 2000 : 4000
-            const value = content === '-' && ['proposal','tags'].includes(s.field) ? '' : content
+            const limit = s.field === 'hint' ? 500 : s.field === 'title' ? 120 : s.field === 'proposal' ? 2000 : 4000
+            const value = content === '-' && ['proposal','tags','hint'].includes(s.field) ? '' : content
             const tags = value.split(',').map(x => x.trim()).filter(Boolean)
             if (value.length > limit || (s.field === 'tags' && (tags.length > 8 || tags.some(x => x.length > 48)))) await say(tg, 'Проверьте длину: тема 120, описание 4000, предложение 2000; до 8 тегов по 48 символов.')
-            else { const next = { ...s, mode: 'draft', draft: { ...s.draft, [s.field]: s.field === 'tags' ? tags : value } }; await state(tg, next); await showDraft(tg, c, next) }
+            else { const next = s.field==='hint' ? {...s,mode:'draft',hint:value} : { ...s, mode: 'draft', draft: { ...s.draft, [s.field]: s.field === 'tags' ? tags : value } }; await state(tg, next); await showDraft(tg, c, next) }
           }
         }
       } else if (c.role === 'employee' && s.draft && ['draft', 'attach'].includes(s.mode || '') && update.message && (update.message.document || update.message.photo)) {
@@ -360,4 +392,23 @@ async function processUpdate(update: Update) {
       throw error
     }
   }
+}
+
+async function feedbackDraft(tg:number,c:Context,s:State){
+ await say(tg,`Черновик отзыва — ещё не отправлен\n${s.feedbackTitle}\n\n${s.feedbackText}\n\nТип: ${s.feedbackKind||'problem'}\nКатегория: ${c.categories.find(x=>x.id===s.feedbackCategory)?.name||'выберите ниже'}\nОценка времени: ${s.hint||'можно пропустить'}\n\nПроверьте текст. Для изменения — отмените и создайте заново.`,[
+ [button('Проблема','fbkind:problem'),button('Идея','fbkind:idea'),button('Отзыв','fbkind:praise')],
+ ...c.categories.map(x=>[button((x.id===s.feedbackCategory?'✓ ':'')+x.name,'fbcat:'+x.id)]),
+ [button('⏱ Оценка времени / пропустить','fb:hint')], [button('✅ Подтвердить и отправить','fbsend:'+s.key)], [button('Отменить','cancel')]])
+}
+async function showFeedback(tg:number,c:Context,id?:string){
+ const rows=await bridge(tg,'portal',{op:'list'})
+ if(id){const f=rows.find(r=>r.id===id);if(!f)throw new Error('unavailable');await say(tg,`${statusNames[f.status]||f.status} · ${f.published?'опубликовано':'не опубликовано'}\n${f.title}\n\n${f.description}\n\nОтвет команды: ${f.response||'ожидается'}\nПоддержали: ${f.votes}`,[[...(f.published?[button(f.supported?'✓ Убрать поддержку':'Поддержать','fbvote:'+f.id+':'+(f.supported?'0':'1'))]:[])],[button('💬 Все отзывы','menu:feedback')],...websiteButtons()]);return}
+ await say(tg,'💬 Портал фидбэков · последние 200 доступных записей. Ваши неопубликованные отзывы видны только вам и команде обработки.',[
+ ...(['client','employee'].includes(c.role)?[[button('📝 Оставить отзыв','fb:new')]]:[]),
+ ...rows.slice(0,30).map(f=>[button((f.own?'Мой · ':'')+(statusNames[f.status]||f.status)+' · '+f.title.slice(0,35),'fbopen:'+f.id)]),...websiteButtons()])
+}
+async function answerRegistry(tg:number,question:string,c:Context){
+ const rows=await bridge(tg,'qvin')
+ try{const history=c.state.qvinHistory||[];const answer=await askQvin(question,rows,'ru',true,history.slice(-6));await state(tg,{mode:'qvin',qvinHistory:[...history,{question,answer}].slice(-6)});await say(tg,answer+'\n\nВыборка: последние '+rows.length+' доступных записей. Гипотезы требуют проверки.',[[button('✨ Ещё вопрос','menu:qvin')],...websiteButtons()])}
+ catch{await say(tg,'Qvin сейчас недоступен. Повторите вопрос позже.',[[button('✨ Повторить','menu:qvin')],...websiteButtons()])}
 }

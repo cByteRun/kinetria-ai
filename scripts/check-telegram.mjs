@@ -28,7 +28,7 @@ const demo = url(`export const demoChoices=${JSON.stringify(accounts)}; export c
 const ai = url(`export const aiConfig=()=>globalThis.telegramHarness.aiEnabled ? {provider:"groq"} : null; export const generateText=()=>{throw new Error('Unexpected model call')};`)
 let source = await readFile(new URL('../lib/telegram/bot.ts', import.meta.url), 'utf8')
 const summary = url(`export const generateRequestSummary=(...args)=>globalThis.telegramHarness.summary(...args);`)
-source = source.replace("'../request-summary'", `'${summary}'`).replace("'./demo'", `'${demo}'`).replace("'../ai'", `'${ai}'`).replace("'./api'", `'${api}'`).replace("'../requests'", `'${requests}'`)
+source = source.replace("'../qvin'", `'${url('export const askQvin=()=>{throw new Error("Unexpected Qvin call")}')}'`).replace("'../enrich-request'", `'${url('export const enrichRequest=async()=>{}')}'`).replace("'../request-summary'", `'${summary}'`).replace("'./demo'", `'${demo}'`).replace("'../ai'", `'${ai}'`).replace("'./api'", `'${api}'`).replace("'../requests'", `'${requests}'`)
 const {handleUpdate} = await import(url(transpile(source)))
 let n=0
 const send = async(text, extra={}) => handleUpdate({update_id:++n,message:{chat:{id:42,type:'private'},from:{id:42},text,...extra}})

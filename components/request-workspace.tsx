@@ -1,3 +1,4 @@
+import { readRegistry } from '../lib/registry-data'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { TelegramLink } from './telegram-link'
@@ -37,6 +38,8 @@ import {
   StatusBadge,
   type RegistryRow,
 } from './request-registry'
+import { ImpactCard } from './impact-card'
+import type { ImpactReport } from '../lib/impact-estimator'
 import { RequestSummary } from './request-summary'
 import {
   CaseAssignment,
@@ -78,14 +81,7 @@ export async function RequestWorkspace({
   const [list, categoryList, { data: routing }, managers, { data: receiptRows }] = await Promise.all([
     id || view === 'new' || view === 'help'
       ? { data: [] as RequestRow[], error: null }
-      : supabase
-          .from('requests')
-          .select(
-            'id,number,source_ref,category_id,title,status,assignee_id,kind,sentiment,description,next_step,decision,updated_at,created_at,due_at,department,priority,first_response_at,resolved_at,acknowledged_at,is_demo,version,tags',
-          )
-          .order('created_at', { ascending: false })
-          .order('id')
-          .returns<RequestRow[]>(),
+      : readRegistry(supabase),
     supabase
       .from('request_categories')
       .select('id,name_ru,name_en,name_kk,active,department,sla_days')
@@ -207,7 +203,7 @@ export async function RequestWorkspace({
                 <p>{ui('assignAnOwnerInTheRequestCard')}</p>
               </div>
             </div>
-            <RequestRegistry
+            <RequestRegistry canAskQvin={role === 'admin' || role === 'manager'}
               showRecurrence={canViewInsights(role)}
               rows={list.data.filter((r) => !r.assignee_id && !isDone(r))}
               categories={categoryNames}
@@ -297,7 +293,7 @@ export async function RequestWorkspace({
         title={role === 'employee' ? ui('myRequests') : ui('requestRegistry')}
         description={ui('historyOwnersDeadlinesAndResultsInOnePlace')}
       />
-      <RequestRegistry
+      <RequestRegistry canAskQvin={role === 'admin' || role === 'manager'}
         showRecurrence={canViewInsights(role)}
         key={view}
         rows={list.data}
@@ -660,6 +656,8 @@ async function RequestDetail({
                 )}
               </section>
             )}
+          {role !== 'employee' && <ImpactDetail id={id} />}
+          <PortalLink />
           {role !== 'employee' && aiConfig() && <RequestSummary id={id} />}
           <section className="crm-detail-history">
             <h3>
@@ -935,3 +933,10 @@ async function RequestDetail({
     </>
   )
 }
+
+async function ImpactDetail({id}:{id:string}) {
+ const db=await createClient()
+ const {data}=await db.from('request_enrichments').select('report').eq('request_id',id).maybeSingle()
+ return <ImpactCard id={id} report={data?.report as ImpactReport|null ?? null}/>
+}
+async function PortalLink(){const t=await getTranslations('productExpansion');return <Link className="btn sm" href="/feedback">{t('portal')}</Link>}

@@ -43,6 +43,7 @@ export function RequestForm({
   routes?: Record<string, string>
   preview?: boolean
 }) {
+  const expansion = useTranslations('productExpansion')
   const voice = useTranslations('voice')
   const ui = useTranslations('ui')
 
@@ -363,6 +364,7 @@ export function RequestForm({
                 placeholder={ui('suggestANextStepOrImprovement')}
               />
             </label>
+            <label>{expansion('hint')}<input name="impactHint" maxLength={500}/><span className="form-hint">{expansion('hintHelp')}</span></label>
             <FileUpload files={files} onChange={setFiles} error={fileError} onError={setFileError} />
             <section className="idea-metadata">
               <h3 className="form-label">{ui('moreTagsAndSentiment')}</h3>

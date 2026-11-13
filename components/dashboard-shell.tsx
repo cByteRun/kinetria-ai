@@ -86,6 +86,7 @@ export async function DashboardShell({
     routing: reserveCount,
   }
   const items = [
+    { id: 'portal', label: ui('clientPortal'), icon: Inbox },
     { id: 'overview', label: ui('overview'), icon: LayoutDashboard },
     {
       id: 'registry',

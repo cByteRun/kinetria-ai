@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import accounts from '../demo-accounts.json' with { type: 'json' }
 import { telegramDb } from './api'
 
-export const demoChoices = accounts.filter(account => account.role !== 'client')
+export const demoChoices = accounts
 export function demoAllowed(telegramId: number) {
   return process.env.TELEGRAM_DEMO_ENABLED === 'true' &&
     (process.env.TELEGRAM_DEMO_ALLOWED_IDS || '').split(',').map(value => value.trim()).includes(String(telegramId))

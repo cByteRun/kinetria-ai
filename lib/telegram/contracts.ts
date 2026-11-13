@@ -1,3 +1,5 @@
+import type { FeedbackRow } from '../feedback'
+import type { QvinRow } from '../qvin'
 import type { RequestKind, RequestStatus } from '../requests'
 import type { Context } from './bot'
 export type TelegramEvent = { event_type: string; actor_role: string; created_at: string; message?: string; next_step?: string }
@@ -9,6 +11,7 @@ export type TelegramDetail = {
   files: { id: string; name: string }[]; events: TelegramEvent[]
 }
 export type BridgeResults = {
+  portal: unknown; qvin:QvinRow[];
   context: Context; detail: TelegramDetail;
   history: { id: string; number: number; events: TelegramEvent[]; more: boolean };
   list: TelegramSummary[]; stats: TelegramSummary[]; reserve: TelegramSummary[];
@@ -20,3 +23,5 @@ export type BridgeResults = {
 }
 
 export type TelegramSummary = Pick<TelegramDetail, 'id' | 'number' | 'title' | 'status' | 'assignee_id' | 'due_at'> & { created_at: string }
+
+export type PortalRead = FeedbackRow[]

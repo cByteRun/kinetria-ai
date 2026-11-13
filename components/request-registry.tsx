@@ -1,4 +1,6 @@
 'use client'
+
+import { QvinPanel } from './qvin-panel'
 import { SemanticTopics } from './semantic-topics'
 import { useLocale, useTranslations } from 'next-intl'
 import Link from 'next/link'
@@ -36,6 +38,7 @@ import {
 } from '../lib/dashboard'
 
 export type RegistryRow = {
+  origin?: 'employee' | 'client'
   id: string
   number: number
   source_ref: string | null
@@ -242,7 +245,9 @@ function RegistryFilters({
   categories,
   path,
   showRecurrence = false,
+  canAskQvin = false,
 }: {
+  canAskQvin?: boolean
   showRecurrence?: boolean
   rows: RegistryRow[]
   categories: Record<string, string>
@@ -261,6 +266,8 @@ function RegistryFilters({
       params.get('mode') === 'board' ? 'board' : showRecurrence ? params.get('mode') || 'table' : 'table',
     ),
     [sort, setSort] = useState('newest')
+  const expansion = useTranslations('productExpansion')
+  const [origin, setOrigin] = useState('')
   const [topicIds, setTopicIds] = useState<string[] | null>(null)
   const topicSet = useMemo(() => topicIds ? new Set(topicIds) : null, [topicIds])
   const tag = params.get('tag') || ''
@@ -272,6 +279,7 @@ function RegistryFilters({
   const normalizedTag = normalizeTopic(tag)
   const filtered = useMemo(() => rows.filter(
     (r) =>
+      (!origin || (r.origin || 'employee') === origin) &&
       (!topicSet || topicSet.has(r.id)) &&
       (!tag ||
         (r.tags || []).some(
@@ -311,7 +319,7 @@ function RegistryFilters({
         .join(' ')
         .toLocaleLowerCase()
         .includes(normalizedQuery),
-  ), [rows, topicSet, categories, tag, normalizedTag, kind, period, status, category, department, deadline, normalizedQuery, day])
+  ), [rows, origin, topicSet, categories, tag, normalizedTag, kind, period, status, category, department, deadline, normalizedQuery, day])
   const sorted = useMemo(() =>
     sort === 'newest'
       ? [...filtered].sort((a, b) =>
@@ -392,6 +400,7 @@ function RegistryFilters({
   }
   return (
     <section className="card">
+      {canAskQvin && <QvinPanel key={sorted.map(r => r.id).join()} ids={sorted.map(r => r.id)} />}
       {showRecurrence && <SemanticTopics onSelect={setTopicIds} />}
       <div className="card-head">
         <div>
@@ -444,6 +453,7 @@ function RegistryFilters({
         </div>
       )}
       <div className="filters">
+        <select className="filter-select" aria-label={expansion('origin')} value={origin} onChange={e=>setOrigin(e.target.value)}><option value="">{expansion('allOrigins')}</option><option value="employee">{expansion('employee')}</option><option value="client">{expansion('client')}</option></select>
         <label className="search-input">
           <Search />
           <input
@@ -520,10 +530,11 @@ function RegistryFilters({
           <option value="priority">{ui('byPriority')}</option>
           <option value="recent">{ui('recentlyUpdatedFirst')}</option>
         </select>
-        {(query || status || category || department || deadline) && (
+        {(query || status || category || department || deadline || origin) && (
           <button
             className="btn sm"
             onClick={() => {
+              setOrigin('')
               setQuery('')
               setStatus('')
               setCategory('')

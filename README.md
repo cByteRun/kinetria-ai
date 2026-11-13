@@ -1,4 +1,6 @@
 <p align="center">
+
+> Расширение продукта: [клиентский портал Web/Telegram, потенциальный эффект и Qvin](docs/PRODUCT-EXPANSION.md). Реализовано и проверено локально; production-миграция и deployment этой итерации ещё не выполнены.
   <img src="docs/assets/idearoute-mark.svg" alt="Логотип IdeaRoute — маршрут от обращения к результату" width="88" height="88" />
 </p>
 

@@ -6,7 +6,7 @@ export function channelText(r: { number: number; category_id: string; category_n
   return `📬 IdeaRoute · R-${String(r.number).padStart(3, '0')}\nКатегория: ${r.category_name || r.category_id}\nТема: внутреннее обращение сотрудника\nСтатус: ${labels[r.status] || r.status}\nНазначение: ${r.assignee_id ? 'ответственный назначен' : 'ожидает назначения'}\nСрок: ${r.due_at || 'не указан'}`
 }
 export async function deliverOutbox() {
-  if (!process.env.TELEGRAM_BOT_TOKEN || !process.env.TELEGRAM_CHANNEL_ID) return { sent: 0 }
+  if (!process.env.TELEGRAM_BOT_TOKEN) return { sent: 0 }
   const db = telegramDb()
   // Short-lived secrets and private drafts need no indefinite retention.
   await Promise.all([
@@ -32,6 +32,8 @@ export async function deliverOutbox() {
       const { data: r, error: readError } = await db.from('requests').select('id,number,category_id,status,assignee_id,author_id,due_at').eq('id', job.request_id).single()
       if (readError || !r) throw new Error('Request unavailable')
       const { data: category } = await db.from('request_categories').select('name_ru').eq('id', r.category_id).maybeSingle()
+      const {data:feedback,error:feedbackError}=await db.from('feedback').select('id,author_id,status,published').eq('request_id',r.id).maybeSingle()
+      if(feedbackError) throw new Error('Feedback unavailable')
       const safeCard = { ...r, category_name: category?.name_ru }
       const username = process.env.TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, '')
       const buttons = username ? [[{ text: 'Открыть бота', url: `https://t.me/${username}` }]] : []
@@ -41,6 +43,7 @@ export async function deliverOutbox() {
         if (error) throw new Error('Delivery receipt failed')
       }
       let failed = false
+      if (!process.env.TELEGRAM_CHANNEL_ID) delivered.channel=true
       if (!delivered.channel) try {
         const channel = process.env.TELEGRAM_CHANNEL_ID!
         const { data: existing, error: existingError } = await db.from('telegram_channel_messages').select('message_id').eq('request_id', r.id).maybeSingle()
@@ -60,7 +63,9 @@ export async function deliverOutbox() {
         await saveProgress('channel')
       } catch { failed = true }
       // Only author and CURRENT assignee. No broadcast to uninvolved handlers.
-      const recipients = [...new Set([r.author_id, r.assignee_id].filter(Boolean))]
+      const {data:supporters,error:supporterError}=feedback?.published ? await db.from('feedback_votes').select('user_id').eq('feedback_id',feedback.id) : {data:[],error:null}
+      if(supporterError) throw new Error('Subscribers unavailable')
+      const recipients = [...new Set([r.author_id, r.assignee_id,...(supporters||[]).map(s=>s.user_id)].filter(Boolean))]
       const { data: links, error: linkError } = await db.from('telegram_links').select('telegram_id,user_id').in('user_id', recipients)
       if (linkError) throw new Error('Recipients unavailable')
       const { data: profiles, error: profileError } = await db.from('profiles').select('id').in('id', recipients).eq('active', true)
@@ -68,7 +73,8 @@ export async function deliverOutbox() {
       for (const link of links || []) {
         if (delivered[link.user_id] || !profiles?.some(p => p.id === link.user_id)) continue
         try {
-          await say(link.telegram_id, `🔔 R-${String(r.number).padStart(3, '0')} · ${job.event}\nТекущий статус: ${r.status}\n${link.user_id === r.assignee_id ? 'Вы назначены ответственным. ' : ''}Откройте /list, чтобы посмотреть обращение и результат.`, [[{ text: 'Открыть обращение', callback_data: 'open:' + r.id }]])
+          if(feedback && link.user_id!==r.assignee_id) await say(link.telegram_id,`🔔 Ваш отзыв / поддержанная идея: ${feedback.status}. Откройте портал, чтобы прочитать ответ команды.`,[[{text:'💬 Открыть отзыв',callback_data:'fbopen:'+feedback.id}]])
+          else await say(link.telegram_id, `🔔 R-${String(r.number).padStart(3, '0')} · ${job.event}\nТекущий статус: ${r.status}\n${link.user_id === r.assignee_id ? 'Вы назначены ответственным. ' : ''}Откройте /list, чтобы посмотреть обращение и результат.`, [[{ text: 'Открыть обращение', callback_data: 'open:' + r.id }]])
           await saveProgress(link.user_id)
         } catch { failed = true }
       }

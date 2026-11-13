@@ -1,5 +1,6 @@
 'use server'
 
+import { enrichRequest } from '../../lib/enrich-request'
 import { redirect } from 'next/navigation'
 import { after } from 'next/server'
 import { deliverOutbox } from '../../lib/telegram/delivery'
@@ -51,6 +52,7 @@ export async function saveRouting(form: FormData) {
 
 export async function submitRequest(form: FormData) {
   if (!hasSupabase || (await getRole()) !== 'employee') redirect('/workspace')
+  const hint = field(form, 'impactHint')
   const key = field(form, 'key')
   const title = field(form, 'title')
   const description = field(form, 'description')
@@ -59,6 +61,7 @@ export async function submitRequest(form: FormData) {
   const score = field(form, 'sentiment')
   const tags = topicTags(field(form, 'tags').split(','))
   if (
+    hint.length > 500 ||
     !uuidPattern.test(key) ||
     !title ||
     title.length > 120 ||
@@ -89,7 +92,8 @@ export async function submitRequest(form: FormData) {
       content: Buffer.from(await f.arrayBuffer()).toString('base64'),
     })),
   )
-  const { data, error } = await supabase.rpc('submit_with_files', {
+  const { data, error } = await supabase.rpc('submit_with_impact', {
+    p_hint: hint,
     p_files: materials,
     p_key: key,
     p_category: field(form, 'category'),
@@ -108,7 +112,10 @@ export async function submitRequest(form: FormData) {
           : ('saveError' as const),
     }
   }
-  after(async () => { await deliverOutbox() })
+  after(async () => {
+    try { await enrichRequest(data) } catch { /* Optional enrichment is retryable from the staff card. */ }
+    await deliverOutbox()
+  })
   redirect('/workspace/employee?id=' + data)
 }
 
@@ -366,7 +373,7 @@ export async function analyzeRecurringTopics(days: number) {
   // UTC hour fixes window boundaries and cache keys across repeated page opens.
   const anchor = Math.floor(Date.now() / 3600000) * 3600000
   const { data, error } = await supabase.from('requests')
-    .select('id,title,description,created_at').eq('kind', 'problem')
+    .select('id,title,description,created_at')
     .gte('created_at', new Date(anchor - days * 2 * 86400000).toISOString())
     .lt('created_at', new Date(anchor).toISOString())
     .order('created_at', { ascending: false }).limit(201)

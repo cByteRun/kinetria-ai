@@ -1,0 +1,29 @@
+import assert from 'node:assert/strict'
+import {pathToFileURL} from 'node:url'
+const {chromium}=await import(process.env.PLAYWRIGHT_MODULE?pathToFileURL(process.env.PLAYWRIGHT_MODULE).href:'playwright')
+import {writeFile,mkdir} from 'node:fs/promises'
+const base=process.env.PRODUCT_TEST_BASE_URL||'http://localhost:3012',checks=[],errors=[]
+if(!['localhost','127.0.0.1'].includes(new URL(base).hostname))throw new Error('Run this mutating test only against an isolated local database')
+const browser=await chromium.launch({headless:true,executablePath:process.env.PLAYWRIGHT_EXECUTABLE_PATH||undefined,args:['--no-sandbox']})
+const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage();page.on('pageerror',e=>errors.push(e.message))
+const pass=s=>{checks.push(s);console.log('PASS',s)}
+const login=async role=>{await page.goto(base+'/login');await page.locator('[data-account="'+role+'"]').click();await page.waitForURL(role==='client'?'**/feedback':'**/workspace/'+role+'**',{timeout:30000})}
+const stamp=Date.now(),title='QA клиентский портал '+stamp,publicTitle='QA опубликованная идея '+stamp
+try{
+ const anon=await context.request.get(base+'/feedback',{maxRedirects:0});assert.equal(anon.status(),307);pass('anonymous portal redirects to login')
+ await login('client');await page.getByRole('heading',{name:'Портал фидбэков',exact:true}).waitFor();pass('client sign-in opens working standalone portal')
+ await page.locator('input[name="title"]').fill(title);await page.locator('textarea[name="description"]').fill('PRIVATE_QA_ACCOUNT_123. Согласование затягивается. Можно сэкономить 2 часа в неделю на сотрудника.');await page.locator('select[name="category"]').selectOption('catalog');await page.locator('input[name="hint"]').fill('Можно сэкономить 2 часа в неделю на одного сотрудника.');await page.getByRole('button',{name:'Отправить',exact:true}).click();await page.locator('.portal-entry').filter({hasText:title}).waitFor({timeout:30000});pass('client submit → server action → local PostgreSQL → own private feedback')
+ await login('admin');await page.goto(base+'/feedback');const entry=page.locator('.portal-entry').filter({has:page.getByRole('heading',{name:title,exact:true})});await entry.locator('summary').click();await entry.locator('input[name="public_title"]').fill(publicTitle);await entry.locator('textarea[name="public_description"]').fill('Упростить согласование заявок.');await entry.locator('textarea[name="response"]').fill('Проверяем маршрут и сроки.');await entry.locator('input[name="published"]').check();await entry.getByRole('button',{name:'Сохранить',exact:true}).click();await page.waitForTimeout(1000);assert.deepEqual((await page.getByRole('alert').allTextContents()).filter(x=>x.trim()),[]);pass('administrator explicitly moderates separate public copy and response')
+ const link=await entry.getByRole('link',{name:'Открыть внутреннюю карточку'}).getAttribute('href');await page.goto(base+link);await page.getByRole('heading',{name:'Потенциальный эффект',exact:true}).waitFor();await page.getByRole('button',{name:'Рассчитать / повторить оценку',exact:true}).click();await page.getByText('8.67',{exact:false}).waitFor({timeout:30000});assert((await page.locator('main').innerText()).includes('Нет подтверждённых ставок'));pass('staff impact card → mocked structured AI → persisted report, no fabricated monetary ROI')
+ await page.goto(base+'/workspace/admin?view=registry');await page.locator('input[data-request-search]').fill(title);await page.locator('.case-title').filter({hasText:title}).waitFor();await page.locator('.qvin-panel summary').click();await page.locator('.qvin-panel textarea').fill('Какие потери времени у этого клиента?');await page.locator('.qvin-panel button').click();await page.locator('.qvin-panel .ai-markdown').waitFor({timeout:30000});const answer=await page.locator('.qvin-panel .ai-markdown').innerText();assert(answer.includes(title));assert(!answer.includes('A-001'));pass('filtered registry → Qvin server action → only selected record → Markdown response')
+ await page.locator('input[data-request-search]').fill('no-matches-at-all');await page.waitForTimeout(600);assert.equal(await page.locator('.qvin-panel .ai-markdown').count(),0);pass('filter changes clear the prior conversation')
+ await login('employee');await page.goto(base+'/feedback');const shared=page.locator('.portal-entry').filter({has:page.getByRole('heading',{name:publicTitle,exact:true})});await shared.waitFor();assert(!(await shared.innerText()).includes('PRIVATE_QA_ACCOUNT_123'));await shared.getByRole('button',{name:/Поддержать/}).click();await page.waitForTimeout(700);await shared.getByRole('button',{name:/Поддержать/}).getAttribute('aria-pressed').then(x=>assert.equal(x,'true'));pass('employee sees sanitized public copy and persists support')
+ for(const locale of ['ru','en','kk']){
+  await page.locator('.preferences button[lang="'+locale+'"]').click();await page.waitForFunction(l=>document.documentElement.lang===l,locale);await page.waitForFunction(()=>document.querySelector('.preferences').getAttribute('aria-busy')==='false')
+  for(const theme of ['light','dark']){
+   await page.evaluate(value=>document.documentElement.dataset.theme=value,theme)
+   for(const width of [320,768,1440]){await page.setViewportSize({width,height:1000});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1));if(locale==='ru'&&theme==='dark')await page.screenshot({path:`docs/evidence/product-expansion/portal-${width}.png`,fullPage:true})}
+  }
+ }pass('portal fits 18 combinations: 320/768/1440 × RU/EN/KK × light/dark')
+ assert.deepEqual(errors,[])
+}finally{await mkdir('docs/evidence/product-expansion',{recursive:true});await writeFile('docs/evidence/product-expansion/browser.json',JSON.stringify({checks,errors,ai:'mock provider',database:'local Supabase'},null,2));await browser.close()}
