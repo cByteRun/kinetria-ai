@@ -4,6 +4,7 @@ import ts from 'typescript'
 const url = source => 'data:text/javascript;base64,' + Buffer.from(source).toString('base64')
 const transpile = source => ts.transpileModule(source, { compilerOptions: { module:ts.ModuleKind.ESNext, target:ts.ScriptTarget.ES2022 } }).outputText
 const requests = url(transpile(await readFile(new URL('../lib/requests.ts', import.meta.url), 'utf8')))
+delete process.env.APP_URL // Navigation fixtures below provide their own synthetic origins.
 const messages = [], calls = [], states = new Map(), updates = new Set()
 let currentRole = 'employee'
 let listRows = []
@@ -23,12 +24,12 @@ globalThis.telegramHarness = {
     throw new Error('Unexpected bridge operation: ' + op)
   },
   async say(tg,text,buttons,messageId) { messages.push({tg,text,buttons,messageId}); return {message_id:messages.length} },
-  async telegram() {return true}, async transcribe() {throw new Error('Speech unavailable')}, async downloadTelegramFile() {return Buffer.from('test')},
+  async telegram() {return true}, async transcribe() {if(globalThis.telegramHarness.transcript)return globalThis.telegramHarness.transcript;throw new Error('Speech unavailable')}, async downloadTelegramFile() {return Buffer.from('test')},
 }
 const api = url(`export const {bridge,say,telegram,transcribe,downloadTelegramFile} = globalThis.telegramHarness;`)
 const accounts = JSON.parse(await readFile(new URL('../lib/demo-accounts.json', import.meta.url), 'utf8'))
 const demo = url(`export const demoChoices=${JSON.stringify(accounts)}; export const demoAllowed=tg=>Boolean(globalThis.telegramHarness.demoEnabled)&&tg===42; export const switchDemoAccount=(tg,id)=>globalThis.telegramHarness.switchDemo(tg,id);`)
-const ai = url(`export const aiConfig=()=>globalThis.telegramHarness.aiEnabled ? {provider:"groq"} : null; export const generateText=()=>{throw new Error('Unexpected model call')};`)
+const ai = url(`export const aiConfig=()=>globalThis.telegramHarness.aiEnabled ? {provider:"groq"} : null; export const generateText=(...args)=>{if(globalThis.telegramHarness.generateText)return globalThis.telegramHarness.generateText(...args);throw new Error('Unexpected model call')};`)
 let source = await readFile(new URL('../lib/telegram/bot.ts', import.meta.url), 'utf8')
 const summary = url(`export const generateRequestSummary=(...args)=>globalThis.telegramHarness.summary(...args);`)
 source = source.replace("'../semantic-topics'", `'${url('export const semanticTopics=(...args)=>globalThis.telegramHarness.generateTopics(...args)')}'`).replace("'../insights'", `'${url('export const recurringProblems=rows=>globalThis.telegramHarness.similarTopics(rows)')}'`).replace("'../qvin'", `'${url('export const askQvin=(...args)=>globalThis.telegramHarness.askQvin(...args)')}'`).replace("'../enrich-request'", `'${url('export const enrichRequest=async()=>{}')}'`).replace("'../request-summary'", `'${summary}'`).replace("'./demo'", `'${demo}'`).replace("'../ai'", `'${ai}'`).replace("'./api'", `'${api}'`).replace("'../requests'", `'${requests}'`)
@@ -78,7 +79,7 @@ assert.equal(calls.length,beforeCalls,'No employee data in group chats')
 globalThis.telegramHarness.demoEnabled=true
 globalThis.telegramHarness.switchDemo=async(tg,id)=>{assert.equal(tg,42);const account=accounts.find(a=>a.id===id);assert(account);currentRole=account.role;return {name:account.name,role:account.role}}
 await send('/demo');assert.equal(messages.at(-1).buttons.length,accounts.length+1)
-await callback('demo:manager-it');assert.equal(currentRole,'manager');assert(messages.at(-1).text.includes('Максим Ли'));assert(messages.at(-1).text.includes('Выбрана роль: Руководитель'));assert.equal(messages.at(-1).messageId,77)
+await callback('demo:manager-it');assert.equal(currentRole,'manager');assert(messages.at(-1).text.includes('Максим Ли'));assert(messages.at(-1).buttons.flat().some(b=>b.callback_data==='menu:list'));assert.equal(messages.at(-1).messageId,77)
 await callback('demoMenu');assert.equal(messages.at(-1).buttons.length,accounts.length+1)
 await callback('demo:admin');assert.equal(currentRole,'admin');assert(messages.at(-1).text.includes('/reserve —'))
 await callback('demo:employee');assert.equal(currentRole,'employee');assert(messages.at(-1).text.includes('/draft —'))
@@ -89,9 +90,9 @@ process.env.APP_URL='https://idearoute.example/path'
 listRows=[{id:'new',number:12,status:'new',title:'Newest'}, {id:'old',number:11,status:'review',title:'Older'}]
 await send('/list')
 assert.deepEqual(messages.at(-1).buttons.slice(0,2).map(row=>row[0].callback_data),['open:old','open:new'])
-assert.equal(messages.at(-1).buttons.flat().find(b=>b.url)?.url,'https://idearoute.example/login')
+assert.equal(messages.at(-1).buttons.flat().find(b=>b.url)?.url,'https://idearoute.example/workspace')
 await send('/demo')
-assert.equal(messages.at(-1).buttons.flat().find(b=>b.url)?.url,'https://idearoute.example/login')
+assert.equal(messages.at(-1).buttons.flat().find(b=>b.url)?.url,'https://idearoute.example/workspace')
 process.env.APP_URL='javascript:alert(1)'
 await send('/list')
 assert(!messages.at(-1).buttons.some(row=>row.some(b=>b.url)))
@@ -102,17 +103,17 @@ process.env.APP_URL='https://idearoute.example'
 for (const [account, role, scope] of [['employee','employee','только ваши записи'],['handler','handler','назначенные вам'],['manager-it','manager','вашего направления'],['admin','admin','общего внутреннего реестра']]) {
  await callback('demo:'+account)
  assert.equal(currentRole,role)
- assert(!messages.at(-1).text.includes('IdeaRoute'))
+ assert(messages.at(-1).text.includes('IdeaRoute'))
  await callback('menu:home')
  assert(messages.at(-1).buttons.flat().some(b=>b.callback_data==='help'))
- assert(messages.at(-1).buttons.flat().some(b=>b.url==='https://idearoute.example/login'))
+ assert(messages.at(-1).buttons.flat().some(b=>b.url==='https://idearoute.example/workspace'))
  const saved=JSON.stringify(states.get(42))
  await callback('help')
  assert(messages.at(-1).text.includes(scope))
  assert.equal(JSON.stringify(states.get(42)),saved,'Help must preserve the current draft/action')
- assert(messages.at(-1).buttons.flat().some(b=>b.url==='https://idearoute.example/login'))
+ assert(messages.at(-1).buttons.flat().some(b=>b.url==='https://idearoute.example/workspace'))
  await send('/help');assert(messages.at(-1).text.includes(scope))
- await send('/stats');assert(messages.at(-1).buttons.flat().some(b=>b.url==='https://idearoute.example/login'))
+ await send('/stats');assert(messages.at(-1).buttons.flat().some(b=>b.url==='https://idearoute.example/workspace'))
 }
 globalThis.telegramHarness.demoEnabled=false
 currentRole='handler';await send('/start');assert(messages.at(-1).text.includes('Ответственный'))
@@ -292,3 +293,27 @@ globalThis.telegramHarness.demoEnabled=true
 await send('/start');assert(messages.at(-1).text.includes('Выберите демоаккаунт'));assert(messages.at(-1).text.includes(TELEGRAM_CHANNEL_INVITE_URL));assert(messages.at(-1).buttons.flat().some(b=>b.url===TELEGRAM_CHANNEL_INVITE_URL))
 globalThis.telegramHarness.unlinked=false;globalThis.telegramHarness.demoEnabled=false
 console.log('PASS Telegram onboarding: linked /start needs no relinking; closed-demo login and unlinked fallback remain distinct; company channel invite in every initial /start')
+
+// Both text and voice must run the actual draft AI path, with retry preserving files.
+currentRole='employee';globalThis.telegramHarness.aiEnabled=true
+if(process.env.TELEGRAM_TEST_LIVE_AI==='true'){
+ const live=await import(url(transpile(await readFile(new URL('../lib/ai.ts',import.meta.url),'utf8'))))
+ globalThis.telegramHarness.generateText=live.generateText
+}else globalThis.telegramHarness.generateText=async()=>JSON.stringify({title:'Дубли артикула',category:'catalog',kind:'problem',proposal:'Единый артикул',sentiment:4,tags:['каталог']})
+await send('/new');await send('Синтетическая проверка. SYN-001 и SYN001 обозначают один товар. Приходится сверять вручную. Предлагаю единый артикул.')
+assert.equal(states.get(42).draft.category,'catalog','AI must classify the actual Telegram draft')
+assert(states.get(42).draft.tags.length>0)
+await send('',{document:{file_id:'synthetic',file_name:'retry.txt',file_size:4}})
+await callback('draft:analyze');assert.equal(states.get(42).files.length,1,'AI retry preserves attachments')
+globalThis.telegramHarness.transcript='Синтетическая проверка. SYN-001 и SYN001 обозначают один товар. Приходится сверять вручную. Предлагаю единый артикул.'
+await send('/new');await send('',{voice:{file_id:'synthetic',duration:5,file_size:100}})
+assert.equal(states.get(42).source,'voice');assert.equal(states.get(42).draft.category,'catalog')
+console.log('PASS Telegram AI draft: text, transcribed voice, classification and retry with attachment preserved')
+
+const retryPreserved=structuredClone(states.get(42))
+globalThis.telegramHarness.generateText=async()=>{throw new Error('Synthetic provider outage')}
+const retryOriginalLog=console.error;console.error=()=>{}
+try{await callback('draft:analyze')}finally{console.error=retryOriginalLog}
+assert.deepEqual(states.get(42).draft,retryPreserved.draft,'Failed AI retry must preserve edited metadata')
+assert.equal(states.get(42).key,retryPreserved.key)
+console.log('PASS failed AI retry preserves draft fields and submission key')

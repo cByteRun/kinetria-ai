@@ -4,8 +4,9 @@ import { telegramDb } from './api'
 
 export const demoChoices = accounts
 export function demoAllowed(telegramId: number) {
-  return process.env.TELEGRAM_DEMO_ENABLED === 'true' &&
-    (process.env.TELEGRAM_DEMO_ALLOWED_IDS || '').split(',').map(value => value.trim()).includes(String(telegramId))
+  const restricted = process.env.TELEGRAM_DEMO_RESTRICTED !== 'false'
+  return Number.isSafeInteger(telegramId) && telegramId > 0 && process.env.TELEGRAM_DEMO_ENABLED === 'true' &&
+    (!restricted || (process.env.TELEGRAM_DEMO_ALLOWED_IDS || '').split(',').map(value => value.trim()).includes(String(telegramId)))
 }
 export async function switchDemoAccount(telegramId: number, accountId: string): Promise<{ name: string; role: string }> {
   if (!demoAllowed(telegramId) || !demoChoices.some(account => account.id === accountId) || !process.env.KINETRIA_DEMO_PASSWORD) throw new Error('unavailable')

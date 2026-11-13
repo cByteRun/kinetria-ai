@@ -73,16 +73,17 @@ export async function deliverOutbox() {
       const {data:supporters,error:supporterError}=feedback?.published ? await db.from('feedback_votes').select('user_id').eq('feedback_id',feedback.id) : {data:[],error:null}
       if(supporterError) throw new Error('Subscribers unavailable')
       const recipients = [...new Set([r.author_id, r.assignee_id,...(supporters||[]).map(s=>s.user_id)].filter(Boolean))]
-      const { data: links, error: linkError } = await db.from('telegram_links').select('telegram_id,user_id').in('user_id', recipients)
+      const { data: links, error: linkError } = await db.from('telegram_links').select('telegram_id,user_id,is_demo').in('user_id', recipients)
       if (linkError) throw new Error('Recipients unavailable')
       const { data: profiles, error: profileError } = await db.from('profiles').select('id').in('id', recipients).eq('active', true)
       if (profileError) throw new Error('Recipients unavailable')
       for (const link of links || []) {
-        if (delivered[link.user_id] || !profiles?.some(p => p.id === link.user_id)) continue
+        const receipt = link.is_demo ? 'chat:' + link.telegram_id : link.user_id
+        if (delivered[receipt] || !profiles?.some(p => p.id === link.user_id)) continue
         try {
           if(feedback && link.user_id!==r.assignee_id) await say(link.telegram_id,`🔔 Ваш отзыв / поддержанная идея: ${feedback.status}. Откройте портал, чтобы прочитать ответ команды.`,[[{text:'💬 Открыть отзыв',callback_data:'fbopen:'+feedback.id}]])
           else await say(link.telegram_id, `🔔 R-${String(r.number).padStart(3, '0')} · ${job.event}\nТекущий статус: ${r.status}\n${link.user_id === r.assignee_id ? 'Вы назначены ответственным. ' : ''}Откройте /list, чтобы посмотреть обращение и результат.`, [[{ text: 'Открыть обращение', callback_data: 'open:' + r.id }]])
-          await saveProgress(link.user_id)
+          await saveProgress(receipt)
         } catch { failed = true }
       }
       if (failed) throw new Error('Partial delivery')

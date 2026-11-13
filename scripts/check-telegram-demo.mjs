@@ -16,6 +16,11 @@ delete process.env.TELEGRAM_DEMO_ENABLED;process.env.TELEGRAM_DEMO_ALLOWED_IDS='
 assert.equal(demoAllowed(42),false,'Must be explicitly enabled')
 process.env.TELEGRAM_DEMO_ENABLED='true'
 assert.equal(demoAllowed(42),true);assert.equal(demoAllowed(43),false)
+process.env.TELEGRAM_DEMO_RESTRICTED='false'
+assert.equal(demoAllowed(43),true,'Public demo admits new Telegram users')
+assert.equal(demoAllowed(-1),false);assert.equal(demoAllowed(NaN),false)
+process.env.TELEGRAM_DEMO_RESTRICTED='true'
+assert.equal(demoAllowed(43),false)
 assert(demoChoices.some(a=>a.role==='client'));assert.equal(demoChoices.length,accounts.length)
 await assert.rejects(()=>switchDemoAccount(43,'admin'))
 await assert.rejects(()=>switchDemoAccount(42,'employee'))

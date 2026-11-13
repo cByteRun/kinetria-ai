@@ -31,6 +31,7 @@ try {
     exception when others then return jsonb_build_object('error',jsonb_build_object('code',SQLSTATE)); end; $$;
   `)
   db.stdin.write((await source('supabase/migrations/20261112181447_telegram_async_inbox.sql'))+'\n');
+  db.stdin.write((await source('supabase/migrations/20261113052320_telegram_public_demo.sql'))+'\n');
   const people = await sql(`select jsonb_object_agg(role,id) from (
     select distinct on(p.role) p.role,p.id from public.profiles p where p.active and p.role in('employee','manager','handler','admin','client')
     and (p.role<>'manager' or exists(select 1 from kinetria_private.manager_categories m where m.manager_id=p.id and m.category_id='catalog')) order by p.role,p.id) x`)

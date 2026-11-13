@@ -99,3 +99,12 @@ rows.telegram_outbox.push(interactive)
 assert.deepEqual(await deliverOutbox(),{sent:1})
 assert(interactive.delivered.author && interactive.delivered.handler)
 console.log('PASS import creation suppression; demo workflow and interactive submissions still deliver')
+
+rows.telegram_links.push({telegram_id:14,user_id:'author',is_demo:true},{telegram_id:15,user_id:'author',is_demo:true})
+const shared={...interactive,id:rows.telegram_outbox.length+1,done:false,delivered:{},attempts:0,next_attempt_at:'2020-01-01'}
+rows.telegram_outbox.push(shared)
+const beforeShared=calls.length
+assert.deepEqual(await deliverOutbox(),{sent:1})
+assert.deepEqual(calls.slice(beforeShared).filter(c=>[14,15].includes(c.chat)).map(c=>c.chat),[14,15])
+assert(shared.delivered['chat:14'] && shared.delivered['chat:15'])
+console.log('PASS concurrent demo viewers each receive their own delivery receipt')

@@ -278,3 +278,19 @@ Runner сверяет проект API с PostgreSQL URL, проверяет TLS
 В рабочей базе подтверждены 15 ожидающих `created` для импортированных `SYN-*` и два события обычных обращений. Все импортные события имели одно время вставки 13.11.2026 02:39:21 UTC; даты самих карточек исторические. Лимит outbox в три задания объясняет пачки при любом webhook. Выполнен `scripts/repair-telegram-import-outbox.mjs --apply`: 15 завершены без Telegram API, импортный остаток 0. Реальные события сохранены.
 
 Локально прошли `check-telegram.mjs`, `check-telegram-delivery.mjs`, `check-telegram-webhook.mjs`, `check-telegram-api.mjs`, `check-feedback-delivery.mjs` и `npx tsc --noEmit`. Регрессии: главная/новая запись/черновик не вызывают submit; импортные создания не отправляются; изменения импортированных карточек и интерактивные отправки доставляются. Telegram в этих тестах подменён. Новый deployment не выполнялся.
+
+
+## Открытый демопоказ Telegram · 13.11.2026
+
+- PASS: тесты `check-telegram.mjs`, `check-telegram-demo.mjs`, `check-telegram-delivery.mjs`: вход/роль/главная, текст и расшифрованный голос, классификация, повтор с вложением, несколько получателей одной демороли.
+- PASS: новая миграция и `check-telegram-demo.sql` внутри BEGIN/ROLLBACK локальной PostgreSQL: параллельные зрители, изоляция и восстановление черновиков, клиент, service-only RPC и очистка при выходе.
+- PASS: живой Groq через настоящий обработчик черновика на синтетическом тексте и подставленной расшифровке; Whisper HTTP-контракт на синтетической тишине. Это не проверка качества человеческой речи.
+- Сравнение HEAD/current на одном коротком запросе: оба успешны; первоначальный сбой ИИ не воспроизведён.
+- PASS: миграция применена в БД из production-окружения Vercel; hosted BEGIN/ROLLBACK проверил совместный демовход, раздельные черновики и ограничения реальных аккаунтов.
+- PASS: Groq text и Whisper HTTP-контракт проверены с production-переменными в отдельной сборке. Обычная production-сборка использует штатный `pnpm run build`, миграции не добавлены в постоянную команду сборки.
+- При работе через MCP обнаружен прежний одноимённый Supabase-проект: ошибочное изменение отменено отдельной миграцией; рабочая база выбрана по NEXT_PUBLIC_SUPABASE_URL и защищена MIGRATION_PROJECT_REF.
+
+- PASS: `check-telegram-public-demo-live.mjs` на рабочей БД: два новых синтетических Telegram ID → `/start` → одна демороль → кабинет; реальная Auth/RPC/Groq-классификация и раздельный state. Сообщения Telegram перехвачены, обращения не создавались, тестовые связи/сессии/updates удалены.
+- PASS: TypeScript, production build и webhook route/setup tests. Финальный deployment `dpl_71dCnZ29SsZtqQm4BcXTiYyTP7GQ` — READY, promoted в production; `TELEGRAM_DEMO_RESTRICTED=false` установлен локально и в Vercel production. Изменения исходников остаются в рабочем дереве без коммита.
+
+- PASS: production alias разрешается в финальный deployment; `telegram:check` подтвердил webhook, pending updates=0, bot/Supabase ready, приватность канала, post/edit и доступность Groq text/Whisper. Последняя ошибка Telegram в getWebhookInfo историческая (до этого выпуска), новых ожидающих updates нет.
