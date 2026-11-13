@@ -1,5 +1,8 @@
 export const TOUR_COMPLETED_KEY = 'idearoute_tour_completed'
 
+/** Public orientation: role guides and shared Telegram entry points. */
+export const publicTourSteps = ['welcome', 'employee', 'manager', 'handler', 'admin', 'channel', 'bot', 'finish'] as const
+
 /** Routes document the corresponding live screens; tour actions use an isolated fixture. */
 export const tourStepsConfig = [
   { id: 'welcome', role: 'text090', route: '/workspace', selectors: ['[data-tour="start"]', '.header-primary', '#workspace-navigation', '.mobile-tabs'], action: 'start', title: 'text091', text: 'text092' },

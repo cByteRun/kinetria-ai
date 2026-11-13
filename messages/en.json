@@ -1354,6 +1354,34 @@
         "finishTitle": "Close the feedback loop",
         "finishText": "A written decision is available to the author, who can acknowledge it in the request card. You can explore the remaining features later. Select Done to start testing real requests."
       }
+    },
+    "public": {
+      "welcomeTitle": "Try IdeaRoute in 3 minutes",
+      "welcomeText": "Choose how to explore IdeaRoute: try the full workflow here or discover the four workspaces, shared channel and Telegram bot. Each workspace also has its own personal guide.",
+      "employeeTitle": "Employee: from idea to result",
+      "employeeText": "Choose Employee on the sign-in page. Start the personal guide in the workspace header: create a request, track its status, answer clarification and read the result. Use the regular forms after the guide to submit and reply.",
+      "managerTitle": "Manager: move requests forward",
+      "managerText": "Sign out and choose Manager on the sign-in page. The role guide introduces the department queue: review a request, assign an owner and deadline, then follow progress and the outcome.",
+      "handlerTitle": "Assignee: deliver a decision",
+      "handlerText": "Sign in as Assignee and open the role guide. Work with assigned requests: ask the author for details when needed, start work and save a written outcome.",
+      "adminTitle": "Administrator: keep the process in view",
+      "adminText": "Sign in as Administrator and follow the role guide. Explore the full registry and unassigned reserve, assign an owner and check that the request moves toward a result. Categories and routes are managed here too.",
+      "channelTitle": "Shared channel: what changed?",
+      "channelText": "The link below opens the company channel for all four roles. Service cards report new requests, status changes such as In progress, and owner assignments or reassignments. Descriptions and files remain in the workspace and bot, with access based on your role.",
+      "botTitle": "An idea on a walk? Send it!",
+      "botText": "Open the bot on your phone: send text or voice, review the draft and confirm submission. Requests and history are shared with the website. Depending on your role, clarify, assign, process and read outcomes in Telegram; full settings and analytics stay on the web. Start with /start; use /login for available demo access and role changes.",
+      "finishTitle": "Now try it yourself",
+      "finishText": "Enter the Employee workspace and follow its guide. Then try the other roles to see the process from each side. Join the shared channel and open the bot if you prefer your phone. Take an idea all the way to an answer, wherever you are.",
+      "next": "Next",
+      "back": "Back",
+      "login": "Choose a role →",
+      "channelLink": "Join the channel ↗",
+      "botLink": "Open Telegram bot ↗",
+      "note": "This overview explains navigation. Create and process requests in a workspace or the bot.",
+      "guideHint": "In each workspace, look for the colored guide button with the role name and the Personal badge.",
+      "tryNow": "Try the full workflow right now",
+      "tryHint": "No sign-in: create a practice request, assign an owner and reach a result in one window.",
+      "explore": "Explore the workspaces"
     }
   }
 }
