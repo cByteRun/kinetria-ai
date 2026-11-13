@@ -4,7 +4,10 @@ import Link from 'next/link'
 import { recurrenceSummary } from '../lib/insights'
 import { Heading } from './workspace-heading'
 import { type RegistryRow, requestNumber } from './request-registry'
-import { hasResult } from '../lib/dashboard'
+import { useState } from 'react'
+import { SemanticTopics } from './semantic-topics'
+import type { SavedTopic } from '../lib/topics'
+import { hasResult, isOverdue } from '../lib/dashboard'
 
 export function RecurringAnalytics({
   rows,
@@ -20,15 +23,19 @@ export function RecurringAnalytics({
   setPeriod: (value: string) => void
 }) {
   const ui = useTranslations('ui')
+  const t = useTranslations('topicWorkbench')
+  const [topics, setTopics] = useState<SavedTopic[]>([])
+  const [selectedIds, setSelectedIds] = useState<string[] | null>(null)
+  const selectedRows = selectedIds ? rows.filter(row => selectedIds.includes(row.id)) : rows
 
-  const summary = recurrenceSummary(rows)
+  const summary = recurrenceSummary(selectedRows)
   const link = (params: Record<string, string>) =>
     path + '?' + new URLSearchParams({ view: 'registry', period, ...params })
   const percent = summary.problems
     ? Math.round((summary.recurring / summary.problems) * 100)
     : 0
   return (
-    <>
+    <SemanticTopics rows={rows} onSelect={setSelectedIds} onTopicsChange={setTopics}>
       <Heading
         title={ui('recurringTopics')}
         description={ui('whichProblemsRecurAndWhereASolutionAlready')}
@@ -46,6 +53,20 @@ export function RecurringAnalytics({
           </select>
         }
       />
+      <section className="card ir-section-gap" aria-label={t('monitoring')}>
+        <div className="card-head"><div><h2>{t('monitoring')}</h2><p>{t('monitoringHint')}</p></div></div>
+        <div className="detail-block">
+          {topics.filter(topic => topic.ticketIds.some(id => selectedRows.some(row => row.id === id))).map(topic => {
+            const members = selectedRows.filter(row => topic.ticketIds.includes(row.id))
+            return <article className="recurrence-topic result-item" key={topic.id}>
+              <h3>{topic.isAiGenerated && <span className="topic-ai">✨ AI</span>} {topic.title}</h3>
+              <p>{t('monitoringCounts', {count: members.length, results: members.filter(hasResult).length, overdue: members.filter(isOverdue).length})}</p>
+              {members.map(row => <p key={row.id}><Link href={path + '?view=registry&id=' + row.id}>{requestNumber(row)} · {row.title}</Link></p>)}
+            </article>
+          })}
+          {!topics.some(topic => topic.ticketIds.some(id => selectedRows.some(row => row.id === id))) && <p>{t('monitoringEmpty')}</p>}
+        </div>
+      </section>
       <div className="ir-metric-grid">
         {[
           [
@@ -218,6 +239,6 @@ export function RecurringAnalytics({
           {ui('oneProblemCanBelongToMultipleTopicsBars')}
         </p>
       </section>
-    </>
+    </SemanticTopics>
   )
 }

@@ -1134,6 +1134,10 @@
     "working": "Qvin is working…",
     "saved": "Topic saved to the shared registry.",
     "actionError": "Action failed. Check your access and try again.",
-    "storageError": "Topic storage unavailable. Check the database migration and connection."
+    "storageError": "Topic storage unavailable. Check the database migration and connection.",
+    "monitoring": "Saved topic monitoring",
+    "monitoringHint": "Requests, decisions and overdue items across shared web and Telegram topics. Counts respect the selected period and topic.",
+    "monitoringCounts": "Requests: {count} · With a decision: {results} · Overdue: {overdue}",
+    "monitoringEmpty": "No saved topics in this scope yet. Find similar requests, generate and save a topic."
   }
 }

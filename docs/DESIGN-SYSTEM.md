@@ -83,3 +83,7 @@ document.documentElement.dataset.colorTheme = 'purple'
 ```sh
 uv run --python 3.12 --with fonttools==4.68.0 --with brotli==1.2.1 python scripts/generate-brand-assets.py
 ```
+
+## Purple: единая композиция (13.11.2026)
+
+Accent и положительные состояния в purple используют фиолетовую гамму. Зелёные наследуемые badge/stage/chart состояния кабинета заменены palette-aware значениями; тёмные page/panel согласованы с purple. Проверены light/dark и 320/768/1440 на hosted мониторинге тем. [Проверка](WORKSPACE-UPDATE.md#hosted-темы-и-мониторинг--13112026).

@@ -8,8 +8,8 @@ import type { SavedTopic, TopicDraft } from '../lib/topics'
 import { createClient } from '../lib/supabase/client'
 import type { SemanticTopic } from '../lib/semantic-topics'
 
-export function SemanticTopics({ rows, onSelect, children, enabled=true }: {
- rows:RegistryRow[]; onSelect:(ids:string[]|null)=>void; children:ReactNode; enabled?:boolean
+export function SemanticTopics({ rows, onSelect, children, enabled=true, onTopicsChange }: {
+ rows:RegistryRow[]; onSelect:(ids:string[]|null)=>void; children:ReactNode; enabled?:boolean; onTopicsChange?:(topics:SavedTopic[])=>void
 }) {
  const t=useTranslations('topicWorkbench')
  const [saved,setSaved]=useState<SavedTopic[]>([]),[drafts,setDrafts]=useState<TopicDraft[]>([])
@@ -35,6 +35,7 @@ export function SemanticTopics({ rows, onSelect, children, enabled=true }: {
   window.addEventListener('focus',load)
   return ()=>{controller.abort();clearInterval(timer);window.removeEventListener('focus',load);if(db&&channel)void db.removeChannel(channel)}
  },[refresh,t,enabled])
+ useEffect(()=>{onTopicsChange?.(saved)},[saved,onTopicsChange])
  // Re-evaluate membership on refresh: a deleted topic must not leave a stale filter.
  useEffect(()=>{
   if(!active) return
