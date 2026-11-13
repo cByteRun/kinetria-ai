@@ -1,9 +1,10 @@
+import { generateRequestSummary } from '../request-summary'
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { demoChoices, demoAllowed, switchDemoAccount } from './demo'
 import { randomUUID } from 'node:crypto'
 import { generateText, aiConfig } from '../ai'
 import { bridge, say as sendMessage, telegram, transcribe, downloadTelegramFile, type Button } from './api'
-import { terminalStatuses, transitions, type Draft, type RequestStatus } from '../requests'
+import { uuidPattern, terminalStatuses, transitions, type Draft, type RequestStatus } from '../requests'
 
 // Each update owns its edit target, including overlapping webhook requests.
 const navigation = new AsyncLocalStorage<{ messageId?: number }>()
@@ -95,6 +96,7 @@ async function detail(tg: number, c: Context, id: string) {
   }
   if (c.role === 'employee' && r.status === 'clarification') controls.push([button('Ответить', 'reply:' + r.id)])
   if (c.role === 'employee' && terminalStatuses.includes(r.status) && !r.acknowledged_at) controls.push([button('Ознакомлен с решением', 'ack:' + r.id)])
+  if (['admin', 'handler', 'manager'].includes(c.role) && aiConfig()) controls.push([button('✨ AI-сводка', 'summary:' + r.id)])
   controls.push(...websiteButtons())
   controls.push([button('История', 'history:' + r.id), button('Комментарий', 'comment:' + r.id)])
   for (const f of r.files || []) controls.push([button('📎 ' + f.name, 'file:' + f.id)])
@@ -212,6 +214,19 @@ async function processUpdate(update: Update) {
         if (text === '/stats') await say(tg, `📊 Последние ${rows.length} доступных обращений\nОткрыто: ${rows.filter(r => !terminalStatuses.includes(r.status as RequestStatus)).length}\nБез владельца: ${rows.filter(r => !r.assignee_id).length}\nПолная аналитика и настройки — в дашборде.`, websiteButtons())
         else await say(tg, rows.length ? 'Ваша очередь · последние 10 по дате создания. Самые новые внизу. Полный реестр — на сайте.' : 'Доступных обращений пока нет.', [...rows].reverse().map(r => [button(`${ref(r.number)} · ${statusNames[r.status]} · ${r.title.slice(0, 35)}`, 'open:' + r.id)]).concat(websiteButtons()))
       } else if (cb.startsWith('open:')) await detail(tg, c, cb.slice(5))
+      else if (cb.startsWith('summary:')) {
+        const id = cb.slice(8)
+        if (!['admin', 'handler', 'manager'].includes(c.role) || !uuidPattern.test(id)) throw new Error('unavailable')
+        // Bridge rechecks request visibility on every callback, including forged/stale buttons.
+        const request = await bridge(tg, 'detail', { id })
+        let summary: string | undefined
+        try { summary = await generateRequestSummary(request, 'ru', true) }
+        catch { /* A provider outage keeps the card and retry action usable. */ }
+        // No parse_mode: model/user markup remains inert text. The common
+        // transport splits long messages; delivery failures reach inbox retry.
+        if (summary) await say(tg, '✨ AI-сводка · ' + ref(request.number) + '\n\n' + summary + '\n\nАвтоматическая сводка. Проверьте факты по карточке.', backToDetail(id))
+        else await say(tg, 'Не удалось подготовить AI-сводку. Попробуйте ещё раз.', [[button('✨ Повторить', 'summary:' + id)], ...backToDetail(id)])
+      }
       else if (cb.startsWith('history:')) {
         const [, id, page] = cb.split(':'), offset = Number(page || 0)
         const r = await bridge(tg, 'history', { id, offset })

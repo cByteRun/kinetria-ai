@@ -31,7 +31,7 @@ export function WorkspaceCrumbs({ base, employee }: { base: string; employee: bo
   const params = useSearchParams()
   const view = params.get('view') || (params.has('id') ? 'registry' : 'overview')
   const labels: Record<string, string> = {
-    overview: ui('overview'), registry: ui(employee ? 'myRequests' : 'requests'), new: ui('newRequest'),
+    profile: shell('profile'), overview: ui('overview'), registry: ui(employee ? 'myRequests' : 'requests'), new: ui('newRequest'),
     results: ui('results'), analytics: ui('analytics'), insights: ui('recurringTopics'),
     routing: ui('routing'), categories: ui('categories'), notifications: ui('notifications'), help: ui('howRoutingWorks'),
   }

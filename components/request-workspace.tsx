@@ -19,6 +19,7 @@ import {
 } from '../app/workspace/actions'
 import { locales, isLocale } from '../i18n/settings'
 import {
+  requestProgressIndex,
   feedbackStage,
   terminalStatuses,
   topicTags,
@@ -271,10 +272,9 @@ export async function RequestWorkspace({
                           <button className="btn sm">{ui('saveRoute')}</button>
                         </form>
                       ) : (
-                        <details>
-                          <summary>{ui('editCategory')}</summary>
+                        <div className="category-controls">
                           <CategoryForm category={c} />
-                        </details>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -506,13 +506,11 @@ async function RequestDetail({
             ['clarification', ui('clarification')],
             ['in_progress', ui('actions2')],
             ['result', ui('result')],
-          ].map(([status, label]) => {
+          ].map(([status, label], index) => {
             const current =
               status === 'result' ? isDone(request) : request.status === status
-            const completed =
-              !current &&
-              (status === 'new' ||
-                history.data.some((event) => event.status === status))
+            const currentIndex = requestProgressIndex(request.status)
+            const completed = index < currentIndex
             const Icon = completed ? CheckCheck : current ? Clock3 : Circle
             return (
               <div

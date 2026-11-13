@@ -727,7 +727,17 @@
     "languageKk": "Kazakh",
     "metadataEvent": "Priority: {priority}. Due: {date}",
     "reserveAssignedEvent": "Owner assigned from the fallback queue",
-    "feedbackOperations": "Feedback Operations"
+    "feedbackOperations": "Feedback Operations",
+    "semanticTopics": "Recurring topic analytics",
+    "topicPeriod": "Analysis period",
+    "topicDays": "{days} days",
+    "analyzeTopics": "Find topics with AI",
+    "clearTopic": "Clear topic",
+    "topicExplanation": "AI compares the meaning of problems visible to you. Compared with the preceding equal period, ending at the current UTC hour. Cached for one hour. Topics are hypotheses, not confirmed duplicates.",
+    "topicComparison": "{current} current / {previous} previous",
+    "noSemanticTopics": "No recurring semantic topics found.",
+    "topicLimit": "More than 200 problems across both periods. Choose a shorter period.",
+    "topicVolume": "Too much text for one analysis. Choose a shorter period."
   },
   "categories": {
     "collaboration": "Cross-team collaboration",

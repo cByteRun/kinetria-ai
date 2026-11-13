@@ -1,3 +1,5 @@
+import { Preferences } from '../../../components/preferences'
+import { getTheme, getColorTheme } from '../../../i18n/theme'
 import { Suspense } from 'react'
 import WorkspaceLoading from '../loading'
 import { getTranslations } from 'next-intl/server'
@@ -22,6 +24,13 @@ export default async function RoleWorkspace({
   if (!isRole(role) || role !== profile.role) notFound()
   const { error, id, view: selection } = await searchParams
   const view = selection || (id ? 'registry' : 'overview')
+  if (view === 'profile') {
+    const [theme, colorTheme, roles, shell] = await Promise.all([getTheme(), getColorTheme(), getTranslations('roles'), getTranslations('dashboardShell')])
+    return <section className="card profile-settings"><h1>{shell('profile')}</h1>
+      <p>{profile.displayName || roles(role)} · {roles(role)}</p>
+      <Preferences theme={theme} colorTheme={colorTheme} />
+    </section>
+  }
   if ((view === 'analytics' || view === 'insights') && !canViewInsights(role))
     notFound()
   return (

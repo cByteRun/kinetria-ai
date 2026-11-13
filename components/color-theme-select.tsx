@@ -18,6 +18,7 @@ export function ColorThemeSelect({ initialTheme }: { initialTheme: ColorTheme })
 
   return (
     <select
+      className="color-theme-select"
       aria-label={t('colorTheme')}
       value={theme}
       onChange={event => selectTheme(event.target.value)}

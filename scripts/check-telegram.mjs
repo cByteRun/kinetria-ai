@@ -12,6 +12,7 @@ globalThis.telegramHarness = {
     calls.push({tg,op,data})
     if (op === 'claim') { if (updates.has(data.update)) return false; updates.add(data.update); return true }
     if (op === 'context') return {role: currentRole,name:'Synthetic account',state:states.get(tg) || {},categories:[{id:'catalog',name:'Каталог'}]}
+    if (op === 'detail' && globalThis.telegramHarness.detailOverride) return globalThis.telegramHarness.detailOverride()
     if (op === 'state') { states.set(tg,data); return true }
     if (op === 'submit') return {id:'f0000000-0000-4000-8000-000000000000',number:123}
     if (op === 'finish') return true
@@ -24,9 +25,10 @@ globalThis.telegramHarness = {
 const api = url(`export const {bridge,say,telegram,transcribe,downloadTelegramFile} = globalThis.telegramHarness;`)
 const accounts = JSON.parse(await readFile(new URL('../lib/demo-accounts.json', import.meta.url), 'utf8')).filter(a=>a.role!=='client')
 const demo = url(`export const demoChoices=${JSON.stringify(accounts)}; export const demoAllowed=tg=>Boolean(globalThis.telegramHarness.demoEnabled)&&tg===42; export const switchDemoAccount=(tg,id)=>globalThis.telegramHarness.switchDemo(tg,id);`)
-const ai = url(`export const aiConfig=()=>null; export const generateText=()=>{throw new Error('Unexpected model call')};`)
+const ai = url(`export const aiConfig=()=>globalThis.telegramHarness.aiEnabled ? {provider:"groq"} : null; export const generateText=()=>{throw new Error('Unexpected model call')};`)
 let source = await readFile(new URL('../lib/telegram/bot.ts', import.meta.url), 'utf8')
-source = source.replace("'./demo'", `'${demo}'`).replace("'../ai'", `'${ai}'`).replace("'./api'", `'${api}'`).replace("'../requests'", `'${requests}'`)
+const summary = url(`export const generateRequestSummary=(...args)=>globalThis.telegramHarness.summary(...args);`)
+source = source.replace("'../request-summary'", `'${summary}'`).replace("'./demo'", `'${demo}'`).replace("'../ai'", `'${ai}'`).replace("'./api'", `'${api}'`).replace("'../requests'", `'${requests}'`)
 const {handleUpdate} = await import(url(transpile(source)))
 let n=0
 const send = async(text, extra={}) => handleUpdate({update_id:++n,message:{chat:{id:42,type:'private'},from:{id:42},text,...extra}})
@@ -167,3 +169,31 @@ assert.equal(states.get(42).files.length,3)
 await callback('submit:'+states.get(42).key)
 assert.equal(calls.filter(c=>c.op==='submit').at(-1).data.files.length,3)
 console.log('PASS editor back/reset, attachment names, PDF/DOCX/photo, size/count limits and submission payload')
+
+// AI summaries: callback RBAC, bridge visibility, retry and inert plain text.
+const summaryId='f0000000-0000-4000-8000-000000000000'
+let summaryCalls=0, denyDetail=false, failSummary=false
+globalThis.telegramHarness.summary=async(request,locale,plain)=>{
+ summaryCalls++; assert.equal(request.title,'VPN'); assert.equal(locale,'ru'); assert.equal(plain,true)
+ if(failSummary) throw new Error('quota')
+ return '<b>untrusted</b> VPN *not markup*'
+}
+currentRole='employee'
+await callback('summary:'+summaryId)
+assert.equal(summaryCalls,0,'Employee cannot request AI summaries')
+assert(messages.at(-1).text.includes('недоступно'))
+currentRole='admin'
+globalThis.telegramHarness.detailOverride=()=>{if(denyDetail)throw new Error('unavailable');return {id:summaryId,number:123,title:'VPN',description:'VPN drops',status:'review'}}
+globalThis.telegramHarness.aiEnabled=true
+await callback('open:'+summaryId)
+assert(messages.at(-1).buttons.flat().some(b=>b.callback_data==='summary:'+summaryId))
+await callback('summary:'+summaryId)
+assert.equal(summaryCalls,1)
+assert(messages.at(-1).text.includes('<b>untrusted</b>'),'AI content stays plain text')
+assert(messages.at(-1).buttons.flat().some(b=>b.callback_data==='open:'+summaryId))
+failSummary=true;currentRole='handler';await callback('summary:'+summaryId)
+assert(messages.at(-1).buttons.flat().some(b=>b.callback_data==='summary:'+summaryId),'AI outage offers retry')
+denyDetail=true;const beforeSummary=summaryCalls;await callback('summary:'+summaryId)
+assert.equal(summaryCalls,beforeSummary,'Visibility checked before sending data to AI')
+await callback('summary:invalid');assert.equal(summaryCalls,beforeSummary)
+console.log('PASS AI summary: admin/handler, employee/forged/denied access, plain text and retry')

@@ -49,7 +49,6 @@ export async function DashboardShell({
   const t = await getTranslations('roles')
   const entry = await getTranslations('entryFlow')
   const shell = await getTranslations('dashboardShell')
-  const telegramConfigured = Boolean(process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_BOT_USERNAME)
   const canSwitchRole = localPreview || (hasSupabase && Boolean(process.env.KINETRIA_DEMO_PASSWORD))
   const initials =
     name
@@ -206,28 +205,25 @@ export async function DashboardShell({
       <div className="shell">
         <header className="topbar">
           <WorkspaceCrumbs base={base} employee={role === 'employee'} />
-          <div className="top-actions">
+          <div className="header-primary">
             <form className="shell-search" action={base} role="search">
               <input type="hidden" name="view" value="registry" />
               <Search size={16} aria-hidden="true" />
               <input name="q" aria-label={ui('findARequest')} placeholder={ui('findARequest')} />
               <button type="submit" aria-label={ui('findARequest')}><ArrowUpRight size={16} /></button>
             </form>
-            <Link className="telegram-status" href={base + '?view=help'} title={shell(telegramConfigured ? 'telegramConfigured' : 'telegramNotConfigured')}>
-              <Send size={15} /><span>{shell(telegramConfigured ? 'telegramConfigured' : 'telegramNotConfigured')}</span>
-              <i className={telegramConfigured ? 'configured' : ''} aria-hidden="true" />
-            </Link>
             <CommandPalette role={role} />
+          </div>
+          <div className="top-actions">
             <Preferences theme={theme} colorTheme={colorTheme} compact />
             <details className="shell-profile">
-              <summary aria-label={shell('profile')} title={name || t(role)}><span className="avatar">{initials}</span></summary>
+              <summary aria-label={shell('profile')} title={name || t(role)}><span className="avatar">{initials}</span><span className="profile-context"><strong>{name || t(role)}</strong><small>{t(role)}</small></span></summary>
               <div className="shell-profile-menu"><strong>{name || t(role)}</strong><small>{t(role)}</small>
+                {canSwitchRole && <Link className="btn" href="/login">{entry('switchRole')}</Link>}
+                <Link className="btn" href={base + '?view=profile'}>{shell('profile')}</Link>
                 <AuthForm action="/auth/logout" pendingLabel={ui('signingOut')}><button className="btn"><LogOut size={15} />{ui('signOut')}</button></AuthForm>
               </div>
             </details>
-            {canSwitchRole ? <Link className="role-select" href="/login" aria-label={entry('switchRole')}>
-              {entry('switchRole')} <ChevronsUpDown size={13} />
-            </Link> : <span className="role-select">{t(role)}</span>}
             <Link
               className="icon-button"
               href={base + '?view=notifications'}

@@ -352,46 +352,6 @@ export function RequestForm({
                 {ui('doNotIncludeCommercialTermsPersonalDataOr')}
               </span>
             </label>
-            {aiEnabled && mode === 'manual' && (
-              <div>
-                <button
-                  type="button"
-                  className="button button-outline"
-                  disabled={!draft.description.trim()}
-                  onClick={() =>
-                    startDraft(async () => {
-                      setAiError(undefined)
-                      try {
-                        const response = await prepareDraft(draft.description)
-                        if ('draft' in response)
-                          setDraft((previous) => ({
-                            ...response.draft,
-                            title: previous.title || response.draft.title,
-                            description: previous.description,
-                            category:
-                              previous.category || response.draft.category,
-                            proposal:
-                              previous.proposal || response.draft.proposal,
-                          }))
-                        else setAiError(response.error)
-                      } catch {
-                        setAiError('aiUnavailable')
-                      }
-                    })
-                  }
-                >
-                  <Sparkles size={15} />
-                  {isDrafting
-                    ? ui('preparingTheCard')
-                    : ui('helpMeDraftWithAi')}
-                </button>
-                {aiError && (
-                  <p className="error" role="alert">
-                    {t(aiError)}
-                  </p>
-                )}
-              </div>
-            )}
             <label>
               {ui('howThisCouldBeSolvedOptional')}
               <textarea

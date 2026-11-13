@@ -61,3 +61,44 @@
 .ir-app .crm-bubble { white-space: pre-wrap; }
 .ir-app .crumbs { min-height: 40px; }
 .ir-app .ir-navigation:has(.nav-pending) .nav-link.active:not(:has(.nav-pending)) { background: transparent; color: var(--text-muted); box-shadow: none; }
+/* Three independent header zones. Keep the actions centered without wrapping. */
+.ir-app .header-primary { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ir-app .profile-context { display: grid; gap: 2px; min-width: 0; text-align: left; }
+.ir-app .profile-context strong { overflow: hidden; text-overflow: ellipsis; font-size: 11px; }
+.ir-app .profile-context small { font-size: 10px; color: var(--text-muted); }
+.ir-app .top-actions .shell-profile summary { display: flex; gap: 7px; width: 150px; padding: 0 7px; }
+.ir-app .shell-profile-menu { z-index: 60; }
+.ir-app .semantic-topics { padding: 18px; border-bottom: 1px solid var(--border); display: grid; gap: 12px; }
+.ir-app .semantic-topics header { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.ir-app .semantic-topic-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.ir-app .semantic-topic-list button { white-space: normal; text-align: left; }
+@media (min-width: 1280px) {
+  .ir-app .topbar { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); gap: 12px; flex-wrap: nowrap; }
+  .ir-app .crumbs { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .ir-app .header-primary { justify-content: center; }
+  .ir-app .header-primary .shell-search { width: 180px; min-width: 0; }
+  .ir-app .header-primary .shell-search input { min-width: 0; width: 100%; }
+  .ir-app .header-primary .command-trigger { white-space: nowrap; }
+  .ir-app .top-actions { flex-wrap: nowrap; justify-content: flex-end; gap: 6px; min-width: 0; margin-left: 0; justify-self: end; }
+  .ir-app .header-primary :is(.shell-search,.command-trigger) { height: 40px; min-height: 40px; border: 1px solid var(--border); border-radius: 11px; background: var(--panel-tint); }
+  .ir-app .top-actions .preferences { flex-wrap: nowrap; }
+}
+@media (max-width: 1279px) {
+  .ir-app .topbar { gap: 10px; }
+  .ir-app .header-primary { flex: 1; }
+}
+@media (max-width: 740px) {
+  .ir-app .header-primary { flex-basis: 100%; }
+  .ir-app .header-primary .shell-search { flex: 1; min-width: 0; }
+  .ir-app .top-actions .shell-profile summary { width: 140px; }
+}
+.ir-app .profile-context small { width: fit-content; padding: 1px 4px; border-radius: 4px; background: var(--brand-soft); }
+.ir-app .profile-settings { padding: 24px; }
+
+@media (min-width: 1280px) and (max-width: 1500px) {
+  .ir-app .header-primary .command-trigger kbd { display: none; }
+}
+@media (min-width: 1280px) and (max-width: 1439px) {
+  /* Palette remains available in Profile; language and light/dark stay here. */
+  .ir-app .topbar .color-theme-select { display: none; }
+}

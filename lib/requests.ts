@@ -88,3 +88,9 @@ export function feedbackStage(request: {
   if (request.status === 'clarification') return 'awaitingAuthor'
   return request.assignee_id ? 'withOwner' : 'routing'
 }
+
+// Visual progress is monotonic by status, independent of skipped event history.
+export function requestProgressIndex(status: RequestStatus) {
+  return terminalStatuses.includes(status) ? 4 :
+    ['new', 'review', 'clarification', 'in_progress'].indexOf(status)
+}

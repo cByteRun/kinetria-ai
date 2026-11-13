@@ -1,4 +1,5 @@
 'use client'
+import { SemanticTopics } from './semantic-topics'
 import { useLocale, useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { memo, useDeferredValue, useMemo, useState } from 'react'
@@ -260,6 +261,8 @@ function RegistryFilters({
       params.get('mode') === 'board' ? 'board' : showRecurrence ? params.get('mode') || 'table' : 'table',
     ),
     [sort, setSort] = useState('newest')
+  const [topicIds, setTopicIds] = useState<string[] | null>(null)
+  const topicSet = useMemo(() => topicIds ? new Set(topicIds) : null, [topicIds])
   const tag = params.get('tag') || ''
   const kind = params.get('kind') || ''
   const period = params.get('period') || 'all'
@@ -269,6 +272,7 @@ function RegistryFilters({
   const normalizedTag = normalizeTopic(tag)
   const filtered = useMemo(() => rows.filter(
     (r) =>
+      (!topicSet || topicSet.has(r.id)) &&
       (!tag ||
         (r.tags || []).some(
           (t) => normalizeTopic(t) === normalizedTag,
@@ -307,7 +311,7 @@ function RegistryFilters({
         .join(' ')
         .toLocaleLowerCase()
         .includes(normalizedQuery),
-  ), [rows, categories, tag, normalizedTag, kind, period, status, category, department, deadline, normalizedQuery, day])
+  ), [rows, topicSet, categories, tag, normalizedTag, kind, period, status, category, department, deadline, normalizedQuery, day])
   const sorted = useMemo(() =>
     sort === 'newest'
       ? [...filtered].sort((a, b) =>
@@ -388,6 +392,7 @@ function RegistryFilters({
   }
   return (
     <section className="card">
+      {showRecurrence && <SemanticTopics onSelect={setTopicIds} />}
       <div className="card-head">
         <div>
           <h2>{ui('unifiedRequestRegistry')}</h2>

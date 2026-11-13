@@ -90,6 +90,7 @@ try {
   const apiUrl = toUrl('export const {bridge,say,telegram,transcribe,downloadTelegramFile,secretMatches,telegramDb}=globalThis.webhookWorkflow')
   const requestsUrl = compile(await source('lib/requests.ts'))
   const botUrl = compile((await source('lib/telegram/bot.ts'))
+    .replace("'../request-summary'", `'${toUrl('export const generateRequestSummary=()=>{throw new Error("Unexpected summary call")}')}'`)
     .replace("'./api'", `'${apiUrl}'`).replace("'../requests'", `'${requestsUrl}'`)
     .replace("'./demo'", `'${toUrl('export const demoAllowed=()=>false;export const demoChoices=[];export const switchDemoAccount=()=>{throw new Error("Unexpected demo switch")}')}'`)
     .replace("'../ai'", `'${toUrl('export const aiConfig=()=>null;export const generateText=()=>{throw new Error("Unexpected AI call")}')}'`))
