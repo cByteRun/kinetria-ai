@@ -105,3 +105,8 @@ Telegram: инструкция перед записью разбита на б�
 ## Mobile-First · 13.11.2026
 
 Для проверок добавлены scripts/check-mobile-first.mjs, check-mobile-composer.mjs и check-mobile-workflow.mjs. Последний переиспользует P0 с TEST_VIEWPORT_WIDTH=390 и отдельным ответственным. Запуск, тестовые провайдеры и границы доказательств — в MOBILE-FIRST.md. [Реализация и проверка](MOBILE-FIRST.md).
+
+
+## Интерактивный тур для жюри · 13.11.2026
+
+Добавлены TourProvider, лениво загружаемый TourDialog, конфигурация шагов и app/tour.css без новых зависимостей. Проверка — scripts/check-guided-tour.mjs с существующими переменными Playwright. Тексты tour синхронны RU/EN/KK. [Сценарий, архитектура и границы проверки](GUIDED-TOUR.md).

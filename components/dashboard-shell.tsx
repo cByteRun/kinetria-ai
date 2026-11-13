@@ -36,6 +36,7 @@ import { localPreview } from '../lib/session'
 import { terminalStatuses } from '../lib/requests'
 import { GlobalHeader } from './global-header'
 import { MobileNavigation } from './mobile-navigation'
+import { TourStartButton } from './tour-provider'
 
 export async function DashboardShell({
   role,
@@ -180,6 +181,7 @@ export async function DashboardShell({
           </div>
         </nav>
         <div className="side-bottom">
+          <TourStartButton reset />
           <Link className="nav-link side-guide" href={base + '?view=help'}>
             <Route size={18} /><span>{ui('fromIdeaToOutcome')}</span>
           </Link>
@@ -198,7 +200,7 @@ export async function DashboardShell({
         </div>
       </aside>
       <div className="shell">
-        <GlobalHeader theme={theme} colorTheme={colorTheme} context={<WorkspaceCrumbs base={base} employee={role === 'employee'} />}>
+        <GlobalHeader theme={theme} colorTheme={colorTheme} context={<WorkspaceCrumbs base={base} employee={role === 'employee'} />} search={
           <div className="header-primary">
             <form className="shell-search" action={base} role="search">
               <input type="hidden" name="view" value="registry" />
@@ -209,6 +211,7 @@ export async function DashboardShell({
             <span className="search-divider" aria-hidden="true" />
             <CommandPalette role={role} requests={searchRequests} />
           </div>
+        }>
           <div className="top-actions">
             <details className="shell-profile">
               <summary aria-label={shell('profile')} title={name || t(role)}><span className="avatar">{initials}</span><span className="profile-context"><strong>{name || t(role)}</strong><small>{t(role)}</small></span></summary>
@@ -236,6 +239,7 @@ export async function DashboardShell({
           ))}
           {role !== 'employee' && <WorkspaceNavLink view="notifications" mobile href={base + '?view=notifications'}><Bell size={20} /><span>{ui('updates')}</span></WorkspaceNavLink>}
           <MobileNavigation>
+            <TourStartButton reset />
             {items.map(nav)}
             {role === 'admin' && <>{nav({ id: 'categories', label: ui('categories'), icon: Tags })}{nav({ id: 'routing', label: ui('routing'), icon: GitBranch })}</>}
             {nav({ id: 'notifications', label: ui('notifications'), icon: Bell })}

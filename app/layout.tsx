@@ -6,6 +6,8 @@ import { getLocale, getMessages, getTranslations } from 'next-intl/server'
 import './globals.css'
 import './themes.css'
 import './mobile-first.css'
+import './tour.css'
+import { TourProvider } from '../components/tour-provider'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('common')
@@ -18,12 +20,12 @@ export default async function RootLayout({
   const [locale, theme, messages, colorTheme] = await Promise.all([
     getLocale(), getTheme(), getMessages(), getColorTheme(),
   ])
-  const { common, ui, requestsMvp, chat, telegram, command, dashboardShell, voice, productExpansion, topicWorkbench } = messages
-  const clientMessages = { common, ui, requestsMvp, chat, telegram, command, dashboardShell, voice, productExpansion, topicWorkbench }
+  const { common, ui, requestsMvp, chat, telegram, command, dashboardShell, voice, productExpansion, topicWorkbench, tour } = messages
+  const clientMessages = { common, ui, requestsMvp, chat, telegram, command, dashboardShell, voice, productExpansion, topicWorkbench, tour }
   return (
     <html className={`${inter.variable} ${onest.variable} ${jetbrainsMono.variable}`} lang={locale} data-theme={theme} data-color-theme={colorTheme}>
       <body>
-        <NextIntlClientProvider messages={clientMessages}>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider messages={clientMessages}><TourProvider>{children}</TourProvider></NextIntlClientProvider>
       </body>
     </html>
   )

@@ -177,3 +177,8 @@ Telegram Qvin (13.11.2026): исправлена совместимость со
 ## Mobile-First · 13.11.2026
 
 GlobalHeader переиспользуется лендингом, /login, DashboardShell и /feedback. Общие правила находятся в app/mobile-first.css, правила кабинетов — в app/workspace/mobile-first.css после прежних стилей. Native dialog обслуживает полноэкранную карточку и нижнее меню. БД, RPC, RLS и разрешения действий не менялись. [Реализация и проверка](MOBILE-FIRST.md).
+
+
+## Интерактивный тур для жюри · 13.11.2026
+
+Корневой TourProvider лениво загружает native dialog; tourStepsConfig описывает селекторы, рабочие маршруты, локализованные тексты и действия. Reducer управляет изолированной учебной карточкой; localStorage и cookie сохраняют флаг idearoute_tour_completed. Сессия, Server Actions, RPC и RLS не меняются. [Сценарий, архитектура и границы проверки](GUIDED-TOUR.md).

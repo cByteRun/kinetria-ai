@@ -115,3 +115,8 @@ GitHub workflow `.github/workflows/ci.yml` запускает TypeScript, i18n/�
 Исторический check на `7aad55c` упал до тестов: `Remote migration versions not found in local migrations directory`. Он связан с прежним проектом, отличным от NEXT_PUBLIC_SUPABASE_URL рабочего приложения. В его истории подтверждены ошибочная миграция `20261113052747` и отмена `20261113052928`. На HEAD `9206601` Vercel успешен; Supabase check отсутствует, GitHub Actions ранее не было.
 
 Владелец должен открыть прежний проект из Details упавшего check → Project Settings → Integrations → GitHub и отключить связь с этим репозиторием. Подключать рабочий проект следует отдельно, после сверки URL приложения. Доступные Supabase MCP-инструменты не меняют GitHub integration; GitHub API управления установками вернул 403. Поэтому отключение и повторный зелёный Supabase check не подтверждены. Не добавлять фиктивные SQL-файлы и не переписывать историю рабочей БД ради старой проверки. [Официальная инструкция](https://supabase.com/docs/guides/deployment/branching/github-integration).
+
+
+## Интерактивный тур для жюри · 13.11.2026
+
+При изменении основного цикла синхронизировать tourStepsConfig, учебный reducer и RU/EN/KK. Проверять полный проход с уточнением и без, закрытие на каждом шаге, cookie/localStorage, возврат фокуса и мобильную шапку. Учебный проход отдельно от настоящего E2E. [Сценарий, архитектура и границы проверки](GUIDED-TOUR.md).
