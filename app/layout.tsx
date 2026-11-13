@@ -1,10 +1,10 @@
+import { inter, onest, jetbrainsMono } from './fonts'
 import type { Metadata } from 'next'
-import { getTheme } from '../i18n/theme'
+import { getColorTheme, getTheme } from '../i18n/theme'
 import { NextIntlClientProvider } from 'next-intl'
-import { getLocale, getTranslations } from 'next-intl/server'
+import { getLocale, getMessages, getTranslations } from 'next-intl/server'
 import './globals.css'
 import './themes.css'
-import { cookies } from 'next/headers'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('common')
@@ -14,13 +14,15 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const locale = await getLocale()
-  const theme = await getTheme()
-  const colorTheme = (await cookies()).get("idearoute_color_theme")?.value === "purple" ? "purple" : "blue"
+  const [locale, theme, messages, colorTheme] = await Promise.all([
+    getLocale(), getTheme(), getMessages(), getColorTheme(),
+  ])
+  const { common, ui, requestsMvp, chat, telegram, command, dashboardShell } = messages
+  const clientMessages = { common, ui, requestsMvp, chat, telegram, command, dashboardShell }
   return (
-    <html lang={locale} data-theme={theme} data-color-theme={colorTheme}>
+    <html className={`${inter.variable} ${onest.variable} ${jetbrainsMono.variable}`} lang={locale} data-theme={theme} data-color-theme={colorTheme}>
       <body>
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider messages={clientMessages}>{children}</NextIntlClientProvider>
       </body>
     </html>
   )

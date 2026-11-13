@@ -1,5 +1,5 @@
 import { LogoMark } from '../../components/logo-mark'
-import { getTheme } from '../../i18n/theme'
+import { getColorTheme, getTheme } from '../../i18n/theme'
 import { Preferences } from '../../components/preferences'
 import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
@@ -26,9 +26,9 @@ export default async function Login({ searchParams }: {
   const showRoles = localPreview || (hasSupabase && Boolean(process.env.KINETRIA_DEMO_PASSWORD))
   const profile = await getProfile()
   if (profile && !showRoles) redirect('/workspace')
-  const [theme, ui, t, text, roleText, { error }] = await Promise.all([
+  const [theme, ui, t, text, roleText, { error }, colorTheme] = await Promise.all([
     getTheme(), getTranslations('ui'), getTranslations('login'),
-    getTranslations('simpleLogin'), getTranslations('roles'), searchParams,
+    getTranslations('simpleLogin'), getTranslations('roles'), searchParams, getColorTheme(),
   ])
   return (
     <main className="entry-page">
@@ -40,7 +40,7 @@ export default async function Login({ searchParams }: {
         <span className="entry-company">{ui('modusTrade')}</span>
         <div className="entry-preferences">
           <Link className="entry-home" href="/"><ArrowLeft size={14} />{ui('backToHome')}</Link>
-          <Preferences theme={theme} compact />
+          <Preferences theme={theme} colorTheme={colorTheme} compact />
         </div>
       </header>
       <div className="login-split">

@@ -262,11 +262,13 @@ function RegistryFilters({
   const tag = params.get('tag') || ''
   const kind = params.get('kind') || ''
   const period = params.get('period') || 'all'
+  const normalizedQuery = query.trim().toLocaleLowerCase()
+  const normalizedTag = normalizeTopic(tag)
   const filtered = rows.filter(
     (r) =>
       (!tag ||
         (r.tags || []).some(
-          (t) => normalizeTopic(t) === normalizeTopic(tag),
+          (t) => normalizeTopic(t) === normalizedTag,
         )) &&
       (!kind || r.kind === kind) &&
       (period === 'all' ||
@@ -301,7 +303,7 @@ function RegistryFilters({
       ]
         .join(' ')
         .toLocaleLowerCase()
-        .includes(query.trim().toLocaleLowerCase()),
+        .includes(normalizedQuery),
   )
   const sorted =
     sort === 'newest'

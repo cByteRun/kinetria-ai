@@ -96,10 +96,11 @@ export function prioritizeRequests<T extends Signal>(
           Math.max(counts.get(row.id) || 0, group.rows.length),
         )
     }
+  const overdue = new Map(rows.map((row) => [row, isOverdue(row)]))
   return [...rows].sort(
     (a, b) =>
       (counts.get(b.id) || 0) - (counts.get(a.id) || 0) ||
       priorityRank(b) - priorityRank(a) ||
-      Number(isOverdue(b)) - Number(isOverdue(a)),
+      Number(overdue.get(b)) - Number(overdue.get(a)),
   )
 }

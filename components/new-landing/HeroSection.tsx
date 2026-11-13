@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { ArrowRight, Mic, FileText, UserCheck, CheckCircle2, BellRing } from 'lucide-react';
@@ -97,11 +98,11 @@ const AUTO_ADVANCE_MS = 3800;
           <h1 className="text-4xl font-semibold leading-[1.15] text-slate-900 sm:text-5xl lg:text-[56px]">{t('copy52')}</h1>
           <p className="mt-6 max-w-xl text-lg leading-[1.6] text-slate-600">{t('copy53')}</p>
           <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <a
+            <Link
               href="/login"
               className="group inline-flex items-center justify-center gap-2 rounded-route bg-brand-600 px-6 py-3.5 text-base font-medium text-white shadow-card transition-all duration-200 hover:bg-brand-700 hover:shadow-lift"
             >{t('copy54')}<ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-            </a>
+            </Link>
             <p className="text-sm text-slate-500">{t('copy55')}</p>
           </div>
         </div>

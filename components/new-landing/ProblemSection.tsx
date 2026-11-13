@@ -1,4 +1,3 @@
-'use client';
 import { useTranslations } from 'next-intl';
 import { MessageSquare, Mail, StickyNote, Mic, ArrowRight } from 'lucide-react';
 import StatusBadge from './StatusBadge';

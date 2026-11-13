@@ -1,4 +1,4 @@
-'use client';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { ArrowRight, Check, CircleDashed, Compass } from 'lucide-react';
 
@@ -77,11 +77,11 @@ const STAGES = [
             <h3 className="mt-3 text-2xl text-white">{t('copy102')}</h3>
             <p className="mt-2 text-sm leading-[1.6] text-slate-300">{t('copy103')}</p>
           </div>
-          <a
+          <Link
             href="/login"
             className="group inline-flex shrink-0 items-center gap-2 rounded-route bg-white px-6 py-3.5 text-sm font-medium text-slate-900 transition-colors duration-200 hover:bg-brand-50"
           >{t('copy54')}<ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-          </a>
+          </Link>
         </div>
       </div>
     </section>

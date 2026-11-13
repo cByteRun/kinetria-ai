@@ -1,3 +1,5 @@
+import { Suspense } from 'react'
+import WorkspaceLoading from '../loading'
 import { getTranslations } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { getTheme } from '../../../i18n/theme'
@@ -22,15 +24,15 @@ export default async function RoleWorkspace({
   params: Promise<{ role: string }>
   searchParams: Promise<{ error?: string; id?: string; view?: string; mode?: string }>
 }) {
-  const ui = await getTranslations('ui')
-  const profile = await requireProfile()
+  const [ui, profile, theme] = await Promise.all([
+    getTranslations('ui'), requireProfile(), getTheme(),
+  ])
   const { role } = await params
   if (!isRole(role) || role !== profile.role) notFound()
   const { error, id, view: selection, mode } = await searchParams
   const view = selection || (id ? 'registry' : 'overview')
   if ((view === 'analytics' || view === 'insights') && !canViewInsights(role))
     notFound()
-  const theme = await getTheme()
   const name =
     profile.displayName ||
     (localPreview
@@ -38,16 +40,18 @@ export default async function RoleWorkspace({
       : undefined)
   return (
     <DashboardShell role={role} view={view} mode={mode} theme={theme} name={name}>
-      {role === 'client' ? (
-        <section className="workspace-panel request-panel">
-          <h1>{ui('clientPortal')}</h1>
-          <p>{ui('clientFuture')}</p>
-        </section>
-      ) : hasSupabase ? (
-        <RequestWorkspace role={role} id={id} error={error} view={view} />
-      ) : (
-        <PreviewWorkspace role={role} view={view} id={id} />
-      )}
+      <Suspense key={`${role}:${view}:${id || ''}`} fallback={<WorkspaceLoading />}>
+        {role === 'client' ? (
+          <section className="workspace-panel request-panel">
+            <h1>{ui('clientPortal')}</h1>
+            <p>{ui('clientFuture')}</p>
+          </section>
+        ) : hasSupabase ? (
+          <RequestWorkspace role={role} id={id} error={error} view={view} />
+        ) : (
+          <PreviewWorkspace role={role} view={view} id={id} />
+        )}
+      </Suspense>
     </DashboardShell>
   )
 }

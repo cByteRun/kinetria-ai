@@ -1,3 +1,4 @@
+import { getColorTheme } from '../i18n/theme'
 import { LogoMark } from './logo-mark'
 import Link from 'next/link'
 import { CommandPalette } from './command-palette'
@@ -46,7 +47,7 @@ export async function DashboardShell({
   name?: string
   children: React.ReactNode
 }) {
-  const ui = await getTranslations('ui')
+  const [ui, colorTheme] = await Promise.all([getTranslations('ui'), getColorTheme()])
 
   const t = await getTranslations('roles')
   const entry = await getTranslations('entryFlow')
@@ -242,7 +243,7 @@ export async function DashboardShell({
               <i className={telegramConfigured ? 'configured' : ''} aria-hidden="true" />
             </Link>
             <CommandPalette role={role} />
-            <Preferences theme={theme} compact />
+            <Preferences theme={theme} colorTheme={colorTheme} compact />
             <details className="shell-profile">
               <summary aria-label={shell('profile')} title={name || t(role)}><span className="avatar">{initials}</span></summary>
               <div className="shell-profile-menu"><strong>{name || t(role)}</strong><small>{t(role)}</small>

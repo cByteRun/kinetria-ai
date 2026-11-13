@@ -1,4 +1,3 @@
-'use client';
 import { useTranslations } from 'next-intl';
 import { Clock, Repeat, Target } from 'lucide-react';
 

@@ -66,16 +66,15 @@ export async function RequestWorkspace({
   error?: string
   view?: string
 }) {
-  const ui = await getTranslations('ui')
-
-  const t = await getTranslations('requestsMvp')
-  const locale = await getLocale()
+  const [ui, t, locale] = await Promise.all([
+    getTranslations('ui'), getTranslations('requestsMvp'), getLocale(),
+  ])
   const path = '/workspace/' + role
   if ((view === 'analytics' || view === 'insights') && !canViewInsights(role))
     notFound()
   if (id && (typeof id !== 'string' || !uuidPattern.test(id))) notFound()
   const supabase = await createClient()
-  const [list, categoryList] = await Promise.all([
+  const [list, categoryList, { data: routing }, managers, { data: receiptRows }] = await Promise.all([
     id || view === 'new' || view === 'help'
       ? { data: [] as RequestRow[], error: null }
       : supabase
@@ -92,6 +91,15 @@ export async function RequestWorkspace({
       .returns<
         (Category & { active: boolean; department: string; sla_days: number })[]
       >(),
+    view === 'new' || view === 'routing'
+      ? supabase.rpc('routing_preview')
+      : { data: [] },
+    role === 'admin' && view === 'routing'
+      ? supabase.rpc('routing_managers')
+      : null,
+    view === 'notifications'
+      ? supabase.from('request_receipts').select('request_id,seen_version')
+      : { data: [] },
   ])
   if (list.error || categoryList.error)
     return <p role="alert">{t('loadError')}</p>
@@ -107,14 +115,6 @@ export async function RequestWorkspace({
       days: category.sla_days,
     }))
     .sort((a, b) => a.name.localeCompare(b.name, locale))
-  const [{ data: routing }, managers] = await Promise.all([
-    view === 'new' || view === 'routing'
-      ? supabase.rpc('routing_preview')
-      : { data: [] },
-    role === 'admin' && view === 'routing'
-      ? supabase.rpc('routing_managers')
-      : null,
-  ])
   const routes = Object.fromEntries(
     (Array.isArray(routing) ? routing : []).map(
       (route: { category_id: string; recipient: string }) => [
@@ -132,12 +132,6 @@ export async function RequestWorkspace({
   const categoryNames = Object.fromEntries(
     categories.map((item) => [item.id, item.name]),
   )
-  const { data: receiptRows } =
-    view === 'notifications'
-      ? await supabase
-          .from('request_receipts')
-          .select('request_id,seen_version')
-      : { data: [] }
   const receipts = Object.fromEntries(
     (receiptRows || []).map((r) => [r.request_id, r.seen_version]),
   )

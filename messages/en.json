@@ -52,6 +52,7 @@
     "replied": "Author replied"
   },
   "common": {
+    "loading": "Loading…",
     "home": "Home",
     "brand": "IdeaRoute — home",
     "language": "Language",

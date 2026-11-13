@@ -239,3 +239,7 @@ Runner сверяет проект API с PostgreSQL URL, проверяет TLS
 - Chromium: 32 сочетания ширины/палитры/режима на лендинге и кабинете сотрудника; дополнительно вход на 320/1440 px для обеих палитр/режимов. Перезагрузка сохраняет палитру; интерактивный выбор роли работает; дополнительно проверены EN/KK и их мобильные заголовки; горизонтального переполнения и pageerror нет. Снимки — `docs/evidence/brand-themes/` (игнорируются Git).
 
 Повторяемый сценарий: `scripts/check-brand-themes-browser.mjs`, параметры `PLAYWRIGHT_MODULE`, `PLAYWRIGHT_EXECUTABLE_PATH`, `P0_BASE_URL` как у остальных браузерных проверок. Проверка не создаёт обращения и не отправляет Telegram. Публикация этой версии и внешний E2E транспорта в эту задачу не входили.
+
+## Производительность Next.js (13.11.2026)
+
+Локальные production build, TypeScript/noUnusedLocals, ICU/переводы, auth-flow и расчёты аналитики — PASS. В Chromium проверены клиентские переходы, две темы/палитры, RU/EN/KK, сохранение состояния и 32 viewport/theme-комбинации; тема не вызывает RSC-refresh и откатывается при ошибке сохранения. Read-only Data API проверка пяти ролей подтверждает совпадение аналитики с RLS-выборкой. Новый скрипт — `scripts/check-performance-browser.mjs`, результаты — `docs/evidence/performance-review/`. Методика, локальный benchmark и ограничения — [CODE-REVIEW](CODE-REVIEW.md#оптимизация-nextjs-и-tsx-13112026). Core Web Vitals и нагрузка целевого deployment этим прогоном не измерены; деплой не выполнялся.

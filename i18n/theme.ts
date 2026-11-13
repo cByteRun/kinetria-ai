@@ -6,3 +6,11 @@ export async function getTheme(): Promise<Theme> {
     ? 'light'
     : 'dark'
 }
+
+export type ColorTheme = 'blue' | 'purple'
+
+export async function getColorTheme(): Promise<ColorTheme> {
+  return (await cookies()).get('idearoute_color_theme')?.value === 'purple'
+    ? 'purple'
+    : 'blue'
+}

@@ -16,6 +16,14 @@ async function moduleUrl(name) {
     new URL('file://' + process.cwd() + '/lib/' + name + '.ts'),
     'utf8',
   )
+  // Transpiled data: modules cannot resolve relative JSON imports.
+  for (const match of [...source.matchAll(/import (\w+) from '([^']+\.json)'/g)]) {
+    const json = await readFile(
+      new URL(match[2], pathToFileURL(process.cwd() + '/lib/' + name + '.ts')),
+      'utf8',
+    )
+    source = source.replace(match[0], `const ${match[1]} = ${json}`)
+  }
   for (const match of [...source.matchAll(/from '(\.\/[^']+)'/g)])
     source = source.replace(
       match[0],
@@ -123,7 +131,8 @@ try {
     }
     await context.close()
   }
-  assert([...sets.handler].every((id) => sets.manager.has(id)))
+  // Assignment and manager category scopes are independent after reassignment.
+  assert([...sets.handler].every((id) => sets.admin.has(id)))
   assert([...sets.manager].every((id) => sets.admin.has(id)))
   assert(
     sets.admin.size > sets.manager.size,

@@ -1,17 +1,16 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 
-export function ColorThemeSelect() {
-  const t = useTranslations('common')
-  const [theme, setTheme] = useState('blue')
+import type { ColorTheme } from '../i18n/theme'
 
-  useEffect(() => {
-    setTheme(document.documentElement.dataset.colorTheme || 'blue')
-  }, [])
+export function ColorThemeSelect({ initialTheme }: { initialTheme: ColorTheme }) {
+  const t = useTranslations('common')
+  const [theme, setTheme] = useState<ColorTheme>(initialTheme)
 
   function selectTheme(value: string) {
+    if (value !== 'blue' && value !== 'purple') return
     setTheme(value)
     document.documentElement.dataset.colorTheme = value
     document.cookie = `idearoute_color_theme=${value}; Path=/; Max-Age=31536000; SameSite=Lax`

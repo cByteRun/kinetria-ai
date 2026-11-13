@@ -10,6 +10,7 @@ export function WorkspaceLive({ path }: { path: string }) {
   }, [screen])
   useEffect(() => {
     let authPending = false
+    let focusTimer: ReturnType<typeof setTimeout> | undefined
     const pauseForAuth = () => {
       authPending = true
     }
@@ -31,7 +32,8 @@ export function WorkspaceLive({ path }: { path: string }) {
       ) {
         e.preventDefault()
         router.push(path + '?view=registry')
-        setTimeout(
+        clearTimeout(focusTimer)
+        focusTimer = setTimeout(
           () =>
             document
               .querySelector<HTMLInputElement>('[data-request-search]')
@@ -45,6 +47,7 @@ export function WorkspaceLive({ path }: { path: string }) {
     document.addEventListener('visibilitychange', refresh)
     return () => {
       clearInterval(timer)
+      clearTimeout(focusTimer)
       window.removeEventListener('idearoute:auth-pending', pauseForAuth)
       document.removeEventListener('keydown', search)
       document.removeEventListener('visibilitychange', refresh)

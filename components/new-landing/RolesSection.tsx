@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { CheckCircle2, UserCheck, Settings, Pencil } from 'lucide-react';
@@ -106,12 +107,12 @@ const ROLE_ICON: Record<Role, typeof UserCheck> = {
               <p className="mt-3 text-base font-medium leading-snug text-slate-900">{content.preview.title}</p>
               <p className="mt-2 text-sm text-slate-600">{content.preview.note}</p>
             </div>
-            <a
+            <Link
               href="/login"
               className="mt-6 w-full rounded-route bg-brand-600 px-4 py-3 text-sm font-medium text-white transition-colors duration-200 hover:bg-brand-700"
             >
               {content.primary}
-            </a>
+            </Link>
           </div>
         </div>
       </div>

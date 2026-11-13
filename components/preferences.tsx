@@ -1,24 +1,47 @@
 'use client'
 
+import type { ColorTheme } from '../i18n/theme'
 import { ColorThemeSelect } from './color-theme-select'
 import { Moon, Sun } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useState, useTransition } from 'react'
-import { setLocale, setTheme } from '../i18n/actions'
+import { setLocale } from '../i18n/actions'
 import { locales, type Theme } from '../i18n/settings'
 
 export function Preferences({
   theme,
   compact = false,
+  colorTheme = 'blue',
 }: {
   theme: Theme
   compact?: boolean
+  colorTheme?: ColorTheme
 }) {
   const t = useTranslations('common')
   const ui = useTranslations('ui')
   const locale = useLocale()
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState(false)
+  const [currentTheme, updateTheme] = useState(theme)
+  function changeTheme(value: Theme) {
+    const previous = currentTheme
+    updateTheme(value)
+    document.documentElement.dataset.theme = value
+    save(async () => {
+      try {
+        const response = await fetch('/api/preferences/theme', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ theme: value }),
+        })
+        if (!response.ok) throw new Error('Theme persistence failed')
+      } catch (error) {
+        updateTheme(previous)
+        document.documentElement.dataset.theme = previous
+        throw error
+      }
+    })
+  }
   function save(action: () => Promise<void>) {
     setError(false)
     startTransition(async () => {
@@ -76,13 +99,13 @@ export function Preferences({
           className="icon-button theme-toggle"
           disabled={pending}
           aria-label={ui(
-            theme === 'light' ? 'switchToDarkTheme' : 'switchToLightTheme',
+            currentTheme === 'light' ? 'switchToDarkTheme' : 'switchToLightTheme',
           )}
           onClick={() =>
-            save(() => setTheme(theme === 'light' ? 'dark' : 'light'))
+            changeTheme(currentTheme === 'light' ? 'dark' : 'light')
           }
         >
-          {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+          {currentTheme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
         </button>
       ) : (
         <div role="group" aria-label={t('theme')} className="preferences-group">
@@ -91,16 +114,16 @@ export function Preferences({
               key={value}
               type="button"
               aria-label={t(value)}
-              aria-pressed={theme === value}
+              aria-pressed={currentTheme === value}
               disabled={pending}
-              onClick={() => save(() => setTheme(value))}
+              onClick={() => changeTheme(value)}
             >
               {value === 'light' ? <Sun size={16} /> : <Moon size={16} />}
             </button>
           ))}
         </div>
       )}
-      <ColorThemeSelect />
+      <ColorThemeSelect initialTheme={colorTheme} />
       {error && (
         <span className="preferences-error" role="alert">
           {ui('preferenceError')}
