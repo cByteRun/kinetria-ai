@@ -1,21 +1,21 @@
 /* Layout and production forms share the exact prototype tokens and dimensions. */
 .ir-app {
-  --brand: #6951d5;
-  --brand-soft: #f0ecfc;
-  --ink: #282633;
-  --muted: #777580;
-  --line: #e9e8ef;
-  --surface: #fff;
-  --bg: #f7f8fa;
-  --green: #278369;
-  --green-bg: #eaf6f0;
-  --red: #ba5057;
-  --red-bg: #fdf0f0;
-  --amber: #a47725;
-  --amber-bg: #fff6e6;
+  --brand: var(--color-6951d5);
+  --brand-soft: var(--color-f0ecfc);
+  --ink: var(--color-282633);
+  --muted: var(--color-777580);
+  --line: var(--color-e9e8ef);
+  --surface: var(--color-fff);
+  --bg: var(--color-f7f8fa);
+  --green: var(--color-278369);
+  --green-bg: var(--color-eaf6f0);
+  --red: var(--color-ba5057);
+  --red-bg: var(--color-fdf0f0);
+  --amber: var(--color-a47725);
+  --amber-bg: var(--color-fff6e6);
   background: var(--bg);
   color: var(--ink);
-  font-family: Manrope, 'Segoe UI', sans-serif;
+  font-family: var(--font-body);
   font-size: 13px;
   line-height: 1.55;
   min-height: 100vh;
@@ -25,7 +25,7 @@
 .ir-app h2,
 .ir-app h3,
 .ir-app .brand {
-  font-family: Manrope, 'Segoe UI', sans-serif;
+  font-family: var(--font-display);
   line-height: 1.5;
 }
 .ir-app button {
@@ -39,7 +39,7 @@
 }
 .ir-app .btn.primary {
   background: var(--brand);
-  color: #fff;
+  color: var(--color-fff);
   border-color: var(--brand);
 }
 .ir-app .btn.ghost {
@@ -51,11 +51,11 @@
   background: white;
 }
 .ir-app .route-stage {
-  border: 1px solid #eeebf4;
-  background: #faf9fc;
+  border: 1px solid var(--color-eeebf4);
+  background: var(--color-faf9fc);
 }
 .ir-app .route-stage:last-child {
-  background: #eff8f3;
+  background: var(--color-eff8f3);
 }
 .ir-app .tab.active {
   border-bottom: 2px solid var(--brand);
@@ -108,14 +108,14 @@
 }
 .ir-app .ir-logout {
   padding: 4px;
-  color: #8e839c;
+  color: var(--color-8e839c);
 }
 .ir-app .side-manifesto strong {
   font-size: 11px;
 }
 .ir-app .side-manifesto .btn {
   margin-top: 7px;
-  color: #947ab2;
+  color: var(--color-947ab2);
 }
 .ir-navigation {
   flex: 1;
@@ -128,7 +128,7 @@
 .ir-app .topbar kbd {
   margin-left: 14px;
   font: inherit;
-  color: #a397af;
+  color: var(--color-a397af);
 }
 .ir-flex {
   display: flex;
@@ -173,7 +173,7 @@
 }
 .ir-app .loop-card .eyebrow {
   font-size: 8px;
-  color: #a08bbd;
+  color: var(--color-a08bbd);
 }
 .ir-app .ir-case-cell {
   display: flex;
@@ -209,7 +209,7 @@
   align-items: center;
   margin-top: 9px;
   font-size: 9px;
-  color: #548774;
+  color: var(--color-548774);
 }
 .ir-result-meta svg {
   width: 14px !important;
@@ -256,7 +256,7 @@
   grid-template-columns: minmax(0, 1fr) 290px;
 }
 .ir-app .crm-detail .crm-detail-actions {
-  background: #faf8fd;
+  background: var(--color-faf8fd);
   border: 1px solid var(--line);
   border-radius: 9px;
 }
@@ -274,20 +274,20 @@
   font-weight: 700;
 }
 .ir-app .crm-detail .case-current {
-  background: #faf8fd;
-  border-color: #e8e0f3;
+  background: var(--color-faf8fd);
+  border-color: var(--color-e8e0f3);
 }
 .ir-app .case-section {
   border-top: 1px solid var(--line);
 }
 .ir-app .crm-outcome {
-  background: #f2f9f5;
-  border-color: #d5e9dc;
+  background: var(--color-f2f9f5);
+  border-color: var(--color-d5e9dc);
 }
 .ir-app .request-text {
   font-size: 13px;
   line-height: 1.9;
-  color: #72647f;
+  color: var(--color-72647f);
 }
 .ir-app .request-history {
   padding: 10px 20px;
@@ -328,8 +328,8 @@
   box-shadow: none;
   border: 1px solid var(--line);
   border-radius: 7px;
-  background: #fff;
-  color: #5d5769;
+  background: var(--color-fff);
+  color: var(--color-5d5769);
   gap: 8px;
 }
 .ir-app .button-primary {
@@ -339,7 +339,7 @@
 }
 .ir-app .request-fields label {
   font-size: 12px;
-  color: #5e536c;
+  color: var(--color-5e536c);
   gap: 7px;
 }
 .ir-app .request-fields input,
@@ -349,9 +349,9 @@
   font:
     400 12px Manrope,
     sans-serif;
-  color: #554d63;
+  color: var(--color-554d63);
   background: white;
-  border: 1px solid #e3dfeb;
+  border: 1px solid var(--color-e3dfeb);
   border-radius: 7px;
   padding: 10px 12px;
 }
@@ -362,7 +362,7 @@
   gap: 22px;
 }
 .ir-app .workspace-panel.request-panel {
-  background: #fff;
+  background: var(--color-fff);
   border: 1px solid var(--line);
   border-radius: 11px;
   padding: 27px;
@@ -377,8 +377,8 @@
   font-size: 11px;
 }
 .ir-app .crm-routing-preview {
-  background: #f8f5fd;
-  border: 1px solid #e7def2;
+  background: var(--color-f8f5fd);
+  border: 1px solid var(--color-e7def2);
   border-radius: 7px;
   padding: 13px;
   font-size: 11px;
@@ -388,7 +388,7 @@
   gap: 21px;
 }
 .ir-app .idea-form-guide {
-  background: #fff;
+  background: var(--color-fff);
   border: 1px solid var(--line);
   border-radius: 11px;
   padding: 21px;
@@ -408,7 +408,7 @@
   color: var(--muted);
 }
 .ir-app .idea-form-guide li strong {
-  color: #5e536c;
+  color: var(--color-5e536c);
 }
 .ir-app .idea-form-guide p {
   font-size: 10px;
@@ -423,12 +423,12 @@
   border: 1px solid var(--line);
   border-radius: 7px;
   padding: 10px 15px;
-  background: #fff;
+  background: var(--color-fff);
 }
 .ir-app .crm-mode-tabs button[aria-pressed='true'] {
   background: var(--brand-soft);
   color: var(--brand);
-  border-color: #d4c5f4;
+  border-color: var(--color-d4c5f4);
 }
 .ir-app .crm-chat {
   background: white;
@@ -437,17 +437,17 @@
 }
 .ir-app .crm-chat-head {
   color: var(--brand);
-  background: #f8f5fd;
+  background: var(--color-f8f5fd);
 }
 .ir-app .crm-bubble {
-  background: #f7f5fb;
+  background: var(--color-f7f5fb);
   border: 1px solid var(--line);
   border-radius: 9px;
   font-size: 12px;
 }
 .ir-app .crm-bubble.user {
-  background: #f0ecfc;
-  border-color: #e3daf8;
+  background: var(--color-f0ecfc);
+  border-color: var(--color-e3daf8);
 }
 .ir-app .idea-metadata {
   font-size: 11px;
@@ -469,10 +469,10 @@
   margin-left: 4px;
 }
 .ir-app .notification {
-  background: #fff;
+  background: var(--color-fff);
 }
 .ir-app .notification.unread {
-  background: #faf7fe;
+  background: var(--color-faf7fe);
 }
 .ir-app .empty p {
   margin-top: 10px;
@@ -532,7 +532,7 @@
     z-index: 40;
     border: 1px solid var(--line);
     border-radius: 8px;
-    background: #fff;
+    background: var(--color-fff);
     display: grid;
     place-items: center;
   }
@@ -540,7 +540,7 @@
     position: fixed;
     inset: 0;
     z-index: 29;
-    background: #28203366;
+    background: var(--color-28203366);
   }
   .ir-app .topbar {
     padding-left: 58px;
@@ -609,9 +609,9 @@
   }
 }
 .ir-app .workspace {
-  background: #f3f3f7;
-  border-color: #eeedf2;
-  color: #282633;
+  background: var(--color-f3f3f7);
+  border-color: var(--color-eeedf2);
+  color: var(--color-282633);
 }
 .ir-app .ir-request-form {
   padding: 27px;
@@ -689,7 +689,7 @@
 }
 .ir-app .request-history li:before {
   background: white;
-  border: 1px solid #e6dcef;
+  border: 1px solid var(--color-e6dcef);
 }
 @media (max-width: 950px) {
   .ir-form-aside {
@@ -757,12 +757,12 @@
   background: white;
 }
 .ir-app .ir-detail .crm-detail-content > .crm-outcome {
-  background: #fcfefd;
-  border-color: #d5e9dc;
+  background: var(--color-fcfefd);
+  border-color: var(--color-d5e9dc);
 }
 .ir-app .ir-detail .crm-detail-content > .case-current {
   padding: 15px 23px;
-  background: #f8f5fd;
+  background: var(--color-f8f5fd);
 }
 .ir-app .ir-detail > .crm-detail-history {
   grid-column: 1;
@@ -806,11 +806,11 @@
   white-space: normal;
 }
 .ir-app .ir-detail .case-ref {
-  color: #81758d;
+  color: var(--color-81758d);
   font-size: 11px;
 }
 .ir-app .ir-detail .case-chip {
-  color: #8465b5;
+  color: var(--color-8465b5);
 }
 .ir-app .ir-detail .case-section h3 {
   font-size: 13px;

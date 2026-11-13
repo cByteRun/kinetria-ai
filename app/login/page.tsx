@@ -1,9 +1,10 @@
+import { LogoMark } from '../../components/logo-mark'
 import { getTheme } from '../../i18n/theme'
 import { Preferences } from '../../components/preferences'
 import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { ArrowLeft, ArrowRight, Route, LockKeyhole, Send, Lightbulb, UsersRound, CircleCheck, Wrench, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, ArrowRight, LockKeyhole, Send, Lightbulb, UsersRound, CircleCheck, Wrench, ShieldCheck } from 'lucide-react'
 import accounts from '../../lib/demo-accounts.json'
 import { getProfile, localPreview } from '../../lib/session'
 import { hasSupabase } from '../../lib/supabase/config'
@@ -33,7 +34,7 @@ export default async function Login({ searchParams }: {
     <main className="entry-page">
       <header className="entry-header">
         <Link className="entry-brand" href="/" aria-label="IdeaRoute">
-          <span className="entry-brand-mark"><Route size={22} /></span>
+          <span className="entry-brand-mark"><LogoMark size={28} /></span>
           <span>Idea<span>Route</span></span>
         </Link>
         <span className="entry-company">{ui('modusTrade')}</span>

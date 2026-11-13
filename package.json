@@ -7,7 +7,8 @@
     "seed:demo": "node --env-file=.env.local scripts/seed-demo.mjs",
     "telegram:webhook": "node --env-file=.env.local scripts/setup-telegram.mjs",
     "telegram:check": "node --env-file=.env.local scripts/check-telegram-connection.mjs",
-    "groq:check": "node --env-file=.env.local scripts/check-groq-live.mjs"
+    "groq:check": "node --env-file=.env.local scripts/check-groq-live.mjs",
+    "styles:landing": "npx --yes --package=tailwindcss@3.4.17 tailwindcss -c styles/landing.tailwind.cjs -i styles/landing.input.css -o app/new-landing.css --minify"
   },
   "dependencies": {
     "@supabase/ssr": "latest",

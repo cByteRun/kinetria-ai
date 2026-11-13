@@ -51,7 +51,7 @@
 .ir-app .shell-profile { position: relative; }
 .ir-app .shell-profile summary { cursor: pointer; list-style: none; display: grid; place-items: center; min-width: 38px; min-height: 38px; }
 .ir-app .shell-profile summary::-webkit-details-marker { display: none; }
-.ir-app .shell-profile-menu { position: absolute; right: 0; top: calc(100% + 14px); width: 230px; max-width: calc(100vw - 40px); padding: 18px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 12px 40px #0002; display: grid; gap: 8px; overflow-wrap: anywhere; }
+.ir-app .shell-profile-menu { position: absolute; right: 0; top: calc(100% + 14px); width: 230px; max-width: calc(100vw - 40px); padding: 18px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 12px 40px var(--color-0002); display: grid; gap: 8px; overflow-wrap: anywhere; }
 .ir-app .shell-profile-menu small { color: var(--muted); }
 .ir-app .shell-profile-menu .btn { margin-top: 8px; }
 .ir-app .content { max-width: none; margin: var(--shell-gap) 0 0; padding: 26px; border: 1px solid var(--line); border-radius: var(--shell-radius); background: color-mix(in srgb, var(--surface) 65%, var(--bg)); box-shadow: var(--shell-shadow); }
@@ -107,5 +107,5 @@
   .ir-app .hero-summary > .hero-progress { grid-column: 1 / -1; }
   .ir-app .hero-stat-icon { display: none; }
   .ir-app .hero-summary small { font-size: 11px; }
-  .ir-app .mobile-tabs { left: 10px; right: 10px; bottom: max(8px, env(safe-area-inset-bottom)); width: auto; border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 4px 24px #0002; }
+  .ir-app .mobile-tabs { left: 10px; right: 10px; bottom: max(8px, env(safe-area-inset-bottom)); width: auto; border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 4px 24px var(--color-0002); }
 }

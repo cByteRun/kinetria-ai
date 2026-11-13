@@ -1,9 +1,9 @@
 /* Shared colors for the live workspace; both themes use the same controls. */
 .ir-app {
-  --panel-soft: #f5f3fa;
-  --control-text: #51485e;
-  --brand-contrast: #fff;
-  --brand-hover: #5941bd;
+  --panel-soft: var(--color-f5f3fa);
+  --control-text: var(--color-51485e);
+  --brand-contrast: var(--color-fff);
+  --brand-hover: var(--color-5941bd);
   --crm-text: var(--ink);
   --crm-muted: var(--muted);
   --crm-border: var(--line);
@@ -11,23 +11,23 @@
 }
 [data-theme='dark'] .ir-app {
   color-scheme: dark;
-  --bg: #14131c;
-  --surface: #201e2b;
-  --panel-soft: #282435;
-  --ink: #f1eef8;
-  --control-text: #e4deef;
-  --muted: #b3aabd;
-  --line: #40394e;
-  --brand: #b7a1ff;
-  --brand-soft: #352a50;
-  --brand-hover: #c9baff;
-  --brand-contrast: #201632;
-  --green: #8fd8b7;
-  --green-bg: #1e3a31;
-  --red: #ffa4ae;
-  --red-bg: #442831;
-  --amber: #f2c579;
-  --amber-bg: #40341f;
+  --bg: var(--color-14131c);
+  --surface: var(--color-201e2b);
+  --panel-soft: var(--color-282435);
+  --ink: var(--color-f1eef8);
+  --control-text: var(--color-e4deef);
+  --muted: var(--color-b3aabd);
+  --line: var(--color-40394e);
+  --brand: var(--color-b7a1ff);
+  --brand-soft: var(--color-352a50);
+  --brand-hover: var(--color-c9baff);
+  --brand-contrast: var(--color-201632);
+  --green: var(--color-8fd8b7);
+  --green-bg: var(--color-1e3a31);
+  --red: var(--color-ffa4ae);
+  --red-bg: var(--color-442831);
+  --amber: var(--color-f2c579);
+  --amber-bg: var(--color-40341f);
 }
 .ir-app
   :is(
@@ -767,8 +767,8 @@
   }
 }
 /* Keyboard navigation shares the workspace colour tokens and native focus trap. */
-.command-dialog { width:min(620px,calc(100vw - 32px)); max-height:80dvh; padding:0; border:1px solid var(--line); border-radius:18px; background:var(--surface); color:var(--ink); box-shadow:0 28px 90px #0005; }
-.command-dialog::backdrop { background:#0f102477; backdrop-filter:blur(7px); }
+.command-dialog { width:min(620px,calc(100vw - 32px)); max-height:80dvh; padding:0; border:1px solid var(--line); border-radius:18px; background:var(--surface); color:var(--ink); box-shadow:0 28px 90px var(--color-0005); }
+.command-dialog::backdrop { background:var(--color-0f102477); backdrop-filter:blur(7px); }
 .command-search { display:flex; align-items:center; gap:12px; padding:16px; border-bottom:1px solid var(--line); }
 .command-search input { flex:1; min-width:0; border:0; background:transparent; color:inherit; outline:none; }
 .command-results { padding:8px; overflow:auto; max-height:55dvh; }

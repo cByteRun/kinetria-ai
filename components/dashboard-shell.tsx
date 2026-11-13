@@ -1,3 +1,4 @@
+import { LogoMark } from './logo-mark'
 import Link from 'next/link'
 import { CommandPalette } from './command-palette'
 import {
@@ -150,10 +151,10 @@ export async function DashboardShell({
       >
         <Link className="brand-lockup" href={base}>
           <span className="brand-mark">
-            <Route />
+            <LogoMark size={28} />
           </span>
           <span>
-            Idea<span style={{ fontWeight: 500 }}> Road</span>
+            IdeaRoute
           </span>
         </Link>
         <div className="workspace">

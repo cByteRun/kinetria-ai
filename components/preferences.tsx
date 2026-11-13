@@ -1,5 +1,6 @@
 'use client'
 
+import { ColorThemeSelect } from './color-theme-select'
 import { Moon, Sun } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useState, useTransition } from 'react'
@@ -99,6 +100,7 @@ export function Preferences({
           ))}
         </div>
       )}
+      <ColorThemeSelect />
       {error && (
         <span className="preferences-error" role="alert">
           {ui('preferenceError')}
