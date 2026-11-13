@@ -1,0 +1,31 @@
+name: CI
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.18.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec tsc --noEmit --noUnusedLocals
+      - run: pnpm test
+      - run: pnpm build
+      - name: Start isolated Supabase and replay migrations
+        run: pnpm db:start
+      - name: Database integration and role isolation
+        run: pnpm test:db
+      - name: Stop test database
+        if: always()
+        run: pnpm exec supabase stop

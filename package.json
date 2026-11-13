@@ -1,6 +1,11 @@
 {
   "private": true,
   "scripts": {
+    "test": "node scripts/check-i18n.mjs && node scripts/check-semantic-topics.mjs && node scripts/check-impact-qvin.mjs && node scripts/check-registry-schema-compat.mjs",
+    "test:db": "node scripts/check-local-db.cjs",
+    "dev:test": "node scripts/start-mobile-test.cjs",
+    "db:start": "supabase start -x realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor",
+    "db:migrate": "supabase migration up --local",
     "dev": "next dev --port 3000",
     "build": "next build",
     "start": "next start",
@@ -25,6 +30,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "supabase": "2.122.1",
     "typescript": "^5"
   },
   "name": "kinetria-ai"

@@ -88,3 +88,30 @@ Telegram: инструкция перед записью разбита на б�
 ## Mobile-First · 13.11.2026
 
 Мобильная приёмка проверяет 360/390/430 px, контрольные 768/1024/1440 px, отсутствие page overflow, размещение переключателей внутри 56 px шапки, полноту нижнего меню и закрытие Escape. Сквозные проверки отделены от layout-матрицы и используют синтетические данные. [Реализация и проверка](MOBILE-FIRST.md).
+
+
+## CI и локальная DB/RLS-проверка · 13.11.2026
+
+Supabase CLI `2.122.1` закреплён в devDependencies и lockfile. Установка: `pnpm install --frozen-lockfile`; Docker должен быть запущен. CLI вызывается через `pnpm exec supabase`; тестовый сервер также находит локальный бинарник без глобальной установки. В config убрана ссылка на отсутствующий seed.sql; синтетические данные подготавливаются явно.
+
+```sh
+pnpm test
+pnpm exec tsc --noEmit --noUnusedLocals
+pnpm build
+pnpm db:start
+pnpm db:migrate
+pnpm test:db
+pnpm dev:test
+```
+
+`test:db` берёт ключи только из локального `supabase status`, проверяет localhost у API/БД, создаёт девять демопрофилей и синтетические карточки/маршруты. SQL-проверки категорий, Telegram, параллельных демовходов и клиентской изоляции выполняются с BEGIN/ROLLBACK; фикстуры остаются в локальной БД. Пароль локальных демоаккаунтов задаётся `LOCAL_TEST_DEMO_PASSWORD` (по умолчанию `Local-ci-demo-123!`); `dev:test` использует тот же пароль и отключает внешние AI/Telegram. Это тестовый контур, не production.
+
+Для отдельного чистого контура скопировать config и migrations в временный каталог, задать уникальные project_id и порты; `SUPABASE_WORKDIR=/absolute/path` поддержан обоими тестовыми runner. `SUPABASE_CLI` переопределяет путь бинарника. Не сбрасывать существующую БД: если схема менялась вручную, `migration up` может остановиться на уже существующей таблице.
+
+GitHub workflow `.github/workflows/ci.yml` запускает TypeScript, i18n/модульные скрипты, production build и чистый Supabase с DB/RLS при push/PR. Hosted-ключи не нужны, миграции рабочих проектов не применяются.
+
+### Отдельная ошибка Supabase Preview
+
+Исторический check на `7aad55c` упал до тестов: `Remote migration versions not found in local migrations directory`. Он связан с прежним проектом, отличным от NEXT_PUBLIC_SUPABASE_URL рабочего приложения. В его истории подтверждены ошибочная миграция `20261113052747` и отмена `20261113052928`. На HEAD `9206601` Vercel успешен; Supabase check отсутствует, GitHub Actions ранее не было.
+
+Владелец должен открыть прежний проект из Details упавшего check → Project Settings → Integrations → GitHub и отключить связь с этим репозиторием. Подключать рабочий проект следует отдельно, после сверки URL приложения. Доступные Supabase MCP-инструменты не меняют GitHub integration; GitHub API управления установками вернул 403. Поэтому отключение и повторный зелёный Supabase check не подтверждены. Не добавлять фиктивные SQL-файлы и не переписывать историю рабочей БД ради старой проверки. [Официальная инструкция](https://supabase.com/docs/guides/deployment/branching/github-integration).
