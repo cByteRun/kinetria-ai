@@ -1,5 +1,7 @@
 # Документация IdeaRoute
 
+Актуальный пакет 13.11.2026: [Tender Brief](TENDER_BRIEF.md), [Audit ТЗ 1–6](TENDER_AUDIT.md), [Business Vision](BUSINESS_VISION.md), [5 E2E GIF и воспроизведение](DEMO_RECORDING.md), [очистка истории Git](SECURITY_CLEANUP.md).
+
 > Развитие 13.11.2026: клиентский портал Web/Telegram, поддержка идей, отдельная публикация/ответ, потенциальный эффект и два режима Qvin реализованы в коде и проверены локально. [Матрица ТЗ, архитектура, запуск и границы проверки](PRODUCT-EXPANSION.md). Production этой итерации не обновлялся; CSAT/NPS и интеграции Б24/1С остаются планом. Более ранние отметки «клиентский канал не реализован» ниже относятся к предыдущему состоянию.
 
 Актуальный пакет 13.11.2026: [TENDER_BRIEF](TENDER_BRIEF.md) — защита; [TENDER_AUDIT](TENDER_AUDIT.md) — матрица ТЗ, код/коммиты и пробелы; [STRATEGIC_EXTENSIONS](STRATEGIC_EXTENSIONS.md) — проект клиента/NPS/RAG/1С/Б24. Новый P0 в [ROADMAP](ROADMAP.md) ещё не реализован; прежние приоритеты ниже — история внутреннего MVP.

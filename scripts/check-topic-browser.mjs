@@ -3,6 +3,7 @@ import {pathToFileURL} from 'node:url'
 import {mkdir,writeFile} from 'node:fs/promises'
 const {chromium}=await import(process.env.PLAYWRIGHT_MODULE?pathToFileURL(process.env.PLAYWRIGHT_MODULE).href:'playwright')
 const {default:pg}=await import(process.env.TOPIC_PG_MODULE?pathToFileURL(process.env.TOPIC_PG_MODULE).href:'pg')
+if(!process.env.PGUSER || !process.env.PGPASSWORD) throw new Error('Set PGUSER and PGPASSWORD for the isolated local database')
 const db=new pg.Client({host:'127.0.0.1',port:54322,user:process.env.PGUSER,password:process.env.PGPASSWORD,database:'postgres'})
 await db.connect()
 const browser=await chromium.launch({headless:true,executablePath:process.env.PLAYWRIGHT_EXECUTABLE_PATH||undefined,args:['--no-sandbox']})

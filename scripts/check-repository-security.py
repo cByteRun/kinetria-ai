@@ -15,6 +15,7 @@ PATTERNS = {
     'supabase-api-key': rb'\bsb_(?:secret|publishable)_[A-Za-z0-9_-]{16,}',
     'telegram-token': rb'\b\d{6,12}:[A-Za-z0-9_-]{30,}\b',
     'jwt': rb'eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}',
+    'hardcoded-db-credentials': rb"(?:user|password)\s*:\s*['\"]postgres['\"]",
     'private-key': rb'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----',
     'database-credentials': rb'(?:postgres(?:ql)?|mysql|redis)://[^\s\x22\x27<>]+:[^\s\x22\x27<>@]+@[^\s\x22\x27<>]+',
     'supabase-project-url': rb'https?://[a-z]{20}\.supabase\.(?:co|com)\b',
@@ -95,7 +96,7 @@ def main():
     values = local_values()
     findings = []
     scanned = 0
-    paths = [p.decode() for p in git('ls-files', '-z').split(b'\0') if p]
+    paths = [p.decode() for p in git('ls-files', '--cached', '--others', '--exclude-standard', '-z').split(b'\0') if p]
     for path in paths:
         if forbidden_path(path):
             findings.append({'location': path, 'kind': 'private-configuration-file'})
@@ -122,7 +123,7 @@ def main():
                 findings.append({'location': 'git-object:' + oid.decode()[:12], 'kind': hit, 'archive_member': member})
         if proc.wait():
             raise RuntimeError('Git object scan failed')
-    print(json.dumps({'mode': 'all-local-git-objects' if args.history else 'tracked-working-files',
+    print(json.dumps({'mode': 'all-local-git-objects' if args.history else 'tracked-and-untracked-working-files',
                       'scanned': scanned, 'findings': findings}, ensure_ascii=False, indent=2))
     return bool(findings)
 

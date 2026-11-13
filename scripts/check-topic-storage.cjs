@@ -2,6 +2,7 @@
 const assert=require('node:assert/strict')
 const fs=require('node:fs')
 const {Client}=require(process.env.TOPIC_PG_MODULE||'pg')
+if(!process.env.PGUSER || !process.env.PGPASSWORD) throw new Error('Set PGUSER and PGPASSWORD for the isolated local database')
 const client=new Client({host:'127.0.0.1',port:54322,user:process.env.PGUSER,password:process.env.PGPASSWORD,database:'postgres'})
 async function main(){
  await client.connect()

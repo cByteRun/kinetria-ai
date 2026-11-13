@@ -77,7 +77,7 @@ try {
     async transcribe() { return 'В каталоге SYN-001 и SYN001 обозначают один товар. Согласовать единый артикул.' },
     async downloadTelegramFile() { return Buffer.from('test') },
     after: task => afterTasks.push(task),
-    deliverOutbox: async () => ({ sent: 0 }),
+    deliverOutbox: async () => globalThis.demoDelivery ? globalThis.demoDelivery() : ({ sent: 0 }),
   }
   process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://synthetic.example'
   process.env.SUPABASE_SECRET_KEY = 'synthetic'
@@ -112,6 +112,9 @@ try {
   const button = prefix => messages.at(-1).buttons.flat().find(b => b.callback_data?.startsWith(prefix))?.callback_data
   const detail = (role, id) => api.bridge(ids[role], 'detail', { id })
 
+  if (process.env.DEMO_TELEGRAM_SERVER === 'true') {
+    await (await import('./demo-telegram-server.mjs')).start({send,click,messages,ids,detail,context,sql,source,compile,toUrl,api,people});
+  } else {
   await send('employee', '/new')
   await send('employee', '', { voice: { file_id: 'synthetic-voice', duration: 15 } })
   let state = (await context('employee')).state
@@ -239,6 +242,7 @@ try {
   assert.equal(operations.filter(o=>o.op==='qvin').length,qvinCalls)
   console.log('PASS client webhook: explicit feedback draft/confirmation/hint, moderation, safe employee projection, idempotent support, admin Qvin scope and client denial; ROLLBACK')
   console.log('PASS webhook + real SQL: voice stub/draft/file/submit, replay, assignment/deadline, full clarification after 9 comments, reply, work, decision/ack, admin reserve, role denial, stale version/dialog, transient DB retry, submit retry without duplicate; ROLLBACK')
+  }
 } finally {
   db.stdin.end('rollback;\n\\q\n')
 }

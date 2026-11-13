@@ -1,0 +1,154 @@
+{
+  "date": "2026-11-13",
+  "sourceHead": "d5bd93e7e560703342b24088cb87e090e841e60a",
+  "workingTreeIncludesDocumentationAndRecordingTools": true,
+  "database": "isolated local Supabase",
+  "liveExternalDeliveryVerified": false,
+  "adapters": [
+    "AI provider",
+    "Telegram API",
+    "Whisper and voice file download"
+  ],
+  "web": {
+    "started": "2026-11-13T03:33:03.139Z",
+    "database": "local Supabase",
+    "ai": "deterministic adapter",
+    "flows": [
+      {
+        "name": "demo-1-submission-and-qvin",
+        "checks": [
+          "AI draft",
+          "attachment and confirmation",
+          "persisted UUID",
+          "scoped Qvin answer"
+        ]
+      },
+      {
+        "name": "demo-3-ai-clustering-topics",
+        "checks": [
+          "four real synthetic records",
+          "generation endpoint",
+          "save HTTP 201",
+          "persist after reload",
+          "recurring analytics"
+        ]
+      },
+      {
+        "name": "demo-5-admin-analytics",
+        "checks": [
+          "overview",
+          "analytics",
+          "routing configuration",
+          "category configuration"
+        ]
+      },
+      {
+        "name": "demo-2-lifecycle-and-feedback",
+        "checks": [
+          "same UUID across roles",
+          "review/work/clarification/reply",
+          "implemented decision",
+          "author acknowledgment"
+        ]
+      }
+    ],
+    "errors": []
+  },
+  "telegram": {
+    "database": "real local PostgreSQL, transaction rollback",
+    "bot": "actual webhook, inbox, bot.ts, delivery.ts",
+    "adapters": [
+      "Telegram API",
+      "voice download",
+      "Whisper transcription",
+      "AI"
+    ],
+    "checks": [
+      "voice draft",
+      "explicit category and submit",
+      "real outbox channel card",
+      "manager clarification",
+      "author reply",
+      "work",
+      "decision",
+      "author notification",
+      "acknowledgment"
+    ],
+    "errors": []
+  },
+  "additionalPass": [
+    "client portal private/public projection, moderation, reply, support and internal-card denial",
+    "TypeScript noEmit",
+    "production build outside sandbox",
+    "UI roles, Drawer, responsive viewports and generation RBAC",
+    "insights",
+    "semantic topics",
+    "impact/Qvin",
+    "Telegram dialogue/API/delivery/webhook/inbox",
+    "ordinary webhook+SQL workflow with ROLLBACK"
+  ],
+  "knownFailure": "check-i18n.mjs: hardcoded JSX text in components/impact-card.tsx; all three locale dictionaries have 1094 messages",
+  "security": {
+    "rewrittenCommits": 14,
+    "totalCommitsAtRewrite": 40,
+    "removedFragmentsAbsentInGitLogS": true,
+    "originRemovedToPreventBackgroundFetch": true,
+    "forcePushPerformed": false,
+    "remainingLocalGitObjects": 1110,
+    "historyFindings": 0
+  },
+  "artifacts": {
+    "decodedAllFrames": true,
+    "infiniteLoopVerified": true,
+    "readmeReferencesAllFive": true,
+    "missingLocalLinks": [],
+    "totalBytes": 29617339,
+    "files": [
+      {
+        "file": "docs/demos/demo-1-submission-and-qvin.gif",
+        "width": 1280,
+        "height": 889,
+        "frames": 94,
+        "durationSeconds": 25.6,
+        "bytes": 5507939,
+        "sha256": "f440427424af768c9be155ee1cedad2fe7f433ba21d8fe6bcc31bf320d4e1116"
+      },
+      {
+        "file": "docs/demos/demo-2-lifecycle-and-feedback.gif",
+        "width": 1280,
+        "height": 889,
+        "frames": 112,
+        "durationSeconds": 33.27,
+        "bytes": 8244356,
+        "sha256": "4ee04afe77daddbce959f3d616ff0fed7984f7d8f6d92702e6a15832400859df"
+      },
+      {
+        "file": "docs/demos/demo-3-ai-clustering-topics.gif",
+        "width": 1280,
+        "height": 889,
+        "frames": 46,
+        "durationSeconds": 17.1,
+        "bytes": 3986871,
+        "sha256": "905af98a37ada15d2a615dc49ffe79632280618507c4fcaed144ca5cff64d6ad"
+      },
+      {
+        "file": "docs/demos/demo-4-telegram-bot-e2e.gif",
+        "width": 1152,
+        "height": 800,
+        "frames": 115,
+        "durationSeconds": 43.35,
+        "bytes": 9633236,
+        "sha256": "a13c104b7ee00542b27cb43512e026fdc5d7ff6a7f73cff26fbaaa3c3e3633af"
+      },
+      {
+        "file": "docs/demos/demo-5-admin-analytics.gif",
+        "width": 1280,
+        "height": 889,
+        "frames": 21,
+        "durationSeconds": 13.6,
+        "bytes": 2244937,
+        "sha256": "2996f29b320fda6f9c5917bbc026dbff1fa86773491a45c696387077b922941f"
+      }
+    ]
+  }
+}

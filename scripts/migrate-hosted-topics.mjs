@@ -6,7 +6,7 @@ import { pathToFileURL } from 'node:url'
 const version = '20261113021538'
 const name = 'registry_topics'
 const ref = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname.split('.')[0]
-if (ref !== '<ENV_VALUE>') throw new Error('Database target mismatch')
+if (!process.env.MIGRATION_PROJECT_REF || ref !== process.env.MIGRATION_PROJECT_REF) throw new Error('Database target mismatch')
 const { default: pg } = await import(pathToFileURL(process.env.MIGRATION_PG_MODULE || '/tmp/idearoute-migration/node_modules/pg/lib/index.js').href)
 const certificate = await fetch('https://supabase-downloads.s3-ap-southeast-1.amazonaws.com/prod/ssl/prod-ca-2021.crt', { signal: AbortSignal.timeout(15000) })
 if (!certificate.ok) throw new Error('Supabase CA unavailable')

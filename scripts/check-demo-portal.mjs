@@ -1,0 +1,14 @@
+// Read/write smoke on the isolated LOCAL demo server; no external messages.
+import assert from 'node:assert/strict'
+import {pathToFileURL} from 'node:url'
+const {chromium}=await import(process.env.PLAYWRIGHT_MODULE?pathToFileURL(process.env.PLAYWRIGHT_MODULE).href:'playwright')
+const base=process.env.DEMO_BASE_URL||'http://localhost:3016';if(!['localhost','127.0.0.1'].includes(new URL(base).hostname))throw Error('Local only')
+const browser=await chromium.launch({executablePath:process.env.PLAYWRIGHT_EXECUTABLE_PATH||undefined,args:['--no-sandbox']})
+const p=await browser.newPage(),title='Синтетический отзыв · проверка '+Date.now(),publicTitle=title+' · опубликовано'
+async function login(role){await p.goto(base+'/login');await p.locator(`[data-account="${role}"]`).click();await p.waitForURL(role==='client'?'**/feedback':'**/workspace/'+role+'**')}
+try{
+ await login('client');await p.locator('[name=title]').fill(title);await p.locator('textarea[name=description]').fill('PRIVATE_DEMO_ONLY. Согласование закупки требует повторной сверки.');await p.locator('select[name=category]').selectOption('catalog');await p.getByRole('button',{name:'Отправить',exact:true}).click();await p.locator('.portal-entry').filter({hasText:title}).waitFor();
+ await login('admin');await p.goto(base+'/feedback');const e=p.locator('.portal-entry').filter({has:p.getByRole('heading',{name:title,exact:true})});await e.locator('summary').click();await e.locator('[name=public_title]').fill(publicTitle);await e.locator('[name=public_description]').fill('Сократить повторные сверки заявок.');await e.locator('[name=response]').fill('Проверяем маршрут согласования.');await e.locator('[name=published]').check();await e.getByRole('button',{name:'Сохранить',exact:true}).click();await p.waitForTimeout(800);const href=await e.getByRole('link',{name:'Открыть внутреннюю карточку'}).getAttribute('href');
+ await login('client');await p.locator('.portal-entry').filter({has:p.getByRole('heading',{name:title,exact:true})}).waitFor();const denied=await p.goto(base+href);assert([200,404].includes(denied.status()));await p.getByRole('heading',{name:'Страница недоступна',exact:true}).waitFor();assert.equal(await p.locator('.crm-request-drawer').count(),0);
+ await login('employee');await p.goto(base+'/feedback');const shared=p.locator('.portal-entry').filter({has:p.getByRole('heading',{name:publicTitle,exact:true})});await shared.waitFor();assert(!(await shared.innerText()).includes('PRIVATE_DEMO_ONLY'));await shared.getByRole('button',{name:/Поддержать/}).click();await p.waitForTimeout(700);assert.equal(await shared.getByRole('button',{name:/Поддержать/}).getAttribute('aria-pressed'),'true');console.log('PASS portal: private client submission, moderated public copy and reply, internal-card denial, employee support without private text')
+}finally{await browser.close()}
