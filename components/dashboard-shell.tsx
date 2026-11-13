@@ -5,6 +5,7 @@ import { LogoMark } from './logo-mark'
 import Link from 'next/link'
 import { CommandPalette } from './command-palette'
 import {
+  UsersRound,
   LayoutDashboard,
   Inbox,
   GitBranch,
@@ -32,7 +33,7 @@ import { createClient } from '../lib/supabase/server'
 import { hasSupabase } from '../lib/supabase/config'
 import { localPreview } from '../lib/session'
 import { terminalStatuses } from '../lib/requests'
-import { Preferences } from './preferences'
+import { GlobalHeader } from './global-header'
 import { MobileNavigation } from './mobile-navigation'
 
 export async function DashboardShell({
@@ -128,7 +129,6 @@ export async function DashboardShell({
       <a href="#main" className="skip-link">
         {ui('skipToContent')}
       </a>
-      <MobileNavigation />
       <WorkspaceLive path={base} />
       <aside
         id="workspace-navigation"
@@ -207,8 +207,7 @@ export async function DashboardShell({
         </div>
       </aside>
       <div className="shell">
-        <header className="topbar">
-          <WorkspaceCrumbs base={base} employee={role === 'employee'} />
+        <GlobalHeader theme={theme} colorTheme={colorTheme} context={<WorkspaceCrumbs base={base} employee={role === 'employee'} />}>
           <div className="header-primary">
             <form className="shell-search" action={base} role="search">
               <input type="hidden" name="view" value="registry" />
@@ -219,7 +218,6 @@ export async function DashboardShell({
             <CommandPalette role={role} />
           </div>
           <div className="top-actions">
-            <Preferences theme={theme} colorTheme={colorTheme} compact />
             <details className="shell-profile">
               <summary aria-label={shell('profile')} title={name || t(role)}><span className="avatar">{initials}</span><span className="profile-context"><strong>{name || t(role)}</strong><small>{t(role)}</small></span></summary>
               <div className="shell-profile-menu"><strong>{name || t(role)}</strong><small>{t(role)}</small>
@@ -237,29 +235,24 @@ export async function DashboardShell({
               {unreadCount > 0 && <span className="notification-dot" />}
             </Link>
           </div>
-        </header>
+        </GlobalHeader>
         <nav className="mobile-tabs" aria-label={ui('workspaceSections')}>
-          {[
-            ...items.filter((item) =>
-              ['overview', 'registry', 'new', 'results'].includes(item.id),
-            ),
-            { id: 'notifications', label: ui('notifications'), icon: Bell },
-          ].map((item) => (
+          {items.filter(item => ['overview', 'registry', 'new', 'results'].includes(item.id)).map(item => (
             <WorkspaceNavLink key={item.id} view={item.id} mobile href={base + '?view=' + item.id}>
-              <item.icon size={20} />
-              <span>
-                {item.id === 'new'
-                  ? ui('create')
-                  : item.id === 'insights'
-                    ? ui('recurrence')
-                    : item.id === 'registry'
-                      ? ui('requests')
-                      : item.id === 'notifications'
-                        ? ui('updates')
-                        : item.label}
-              </span>
+              <item.icon size={20} /><span>{item.id === 'new' ? ui('create') : item.id === 'registry' ? ui('requests') : item.label}</span>
             </WorkspaceNavLink>
           ))}
+          {role !== 'employee' && <WorkspaceNavLink view="notifications" mobile href={base + '?view=notifications'}><Bell size={20} /><span>{ui('updates')}</span></WorkspaceNavLink>}
+          <MobileNavigation>
+            {items.map(nav)}
+            {role === 'admin' && <>{nav({ id: 'categories', label: ui('categories'), icon: Tags })}{nav({ id: 'routing', label: ui('routing'), icon: GitBranch })}</>}
+            {nav({ id: 'notifications', label: ui('notifications'), icon: Bell })}
+            {nav({ id: 'help', label: shell('telegramIntegration'), icon: Send })}
+            {role !== 'client' && <a className="nav-link" href={TELEGRAM_CHANNEL_INVITE_URL} target="_blank" rel="noreferrer"><Radio size={18} /><span>{shell('telegramChannel')}</span></a>}
+            <Link className="nav-link" href={base + '?view=profile'}><UsersRound size={18}/><span>{shell('profile')}</span></Link>
+            {canSwitchRole && <Link className="nav-link" href="/login"><UsersRound size={18}/><span>{entry('switchRole')}</span></Link>}
+            <AuthForm action="/auth/logout" pendingLabel={ui('signingOut')}><button className="nav-link"><LogOut size={18}/>{ui('signOut')}</button></AuthForm>
+          </MobileNavigation>
         </nav>
         <main id="main" className="content">
           {children}

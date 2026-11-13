@@ -18,9 +18,7 @@ export default async function RoleWorkspace({
   params: Promise<{ role: string }>
   searchParams: Promise<{ error?: string; id?: string; view?: string; mode?: string }>
 }) {
-  const [ui, profile] = await Promise.all([
-    getTranslations('ui'), requireProfile(),
-  ])
+  const profile = await requireProfile()
   const { role } = await params
   if (!isRole(role) || role !== profile.role) notFound()
   const { error, id, view: selection } = await searchParams

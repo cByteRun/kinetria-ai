@@ -677,15 +677,15 @@ html .new-landing .bg-slate-900 :is(h3,p) { color: var(--on-primary); }
 .new-landing .border-y { border-top-width: 1px; border-bottom-width: 1px; }
 .new-landing .border-dashed { border-style: dashed; }
 .new-landing .border-\[10px\] { border-width: 10px; }
-.new-landing header > div { gap: 16px; }
+.new-landing header:not(.global-header) > div { gap: 16px; }
 .new-landing .grid > *, .new-landing .flex > * { min-width: 0; }
 .new-landing h1 { overflow-wrap: anywhere; }
 @media (max-width: 767px) {
- .new-landing header > div { gap: 10px; padding-inline: 16px; height: auto; min-height: 64px; flex-wrap: wrap; padding-block: 12px; }
- .new-landing header > div > a:first-child .font-display { display: none; }
- .new-landing header > div > a:last-child { font-size: 12px; padding-inline: 10px; margin-left: auto; }
- .new-landing header select { width: 76px; }
- .new-landing header .preferences { order: 3; width: 100%; justify-content: flex-end; }
+ .new-landing header:not(.global-header) > div { gap: 10px; padding-inline: 16px; height: auto; min-height: 64px; flex-wrap: wrap; padding-block: 12px; }
+ .new-landing header:not(.global-header) > div > a:first-child .font-display { display: none; }
+ .new-landing header:not(.global-header) > div > a:last-child { font-size: 12px; padding-inline: 10px; margin-left: auto; }
+ .new-landing header:not(.global-header) select { width: 76px; }
+ .new-landing header:not(.global-header) .preferences { order: 3; width: 100%; justify-content: flex-end; }
 }
 @media (max-width: 639px) {
  .new-landing #problem [class*="grid-cols-[72px"] { grid-template-columns: minmax(0, 1fr); gap: 6px; }

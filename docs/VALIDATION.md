@@ -294,3 +294,8 @@ Runner сверяет проект API с PostgreSQL URL, проверяет TLS
 - PASS: TypeScript, production build и webhook route/setup tests. Финальный deployment `dpl_71dCnZ29SsZtqQm4BcXTiYyTP7GQ` — READY, promoted в production; `TELEGRAM_DEMO_RESTRICTED=false` установлен локально и в Vercel production. Изменения исходников остаются в рабочем дереве без коммита.
 
 - PASS: production alias разрешается в финальный deployment; `telegram:check` подтвердил webhook, pending updates=0, bot/Supabase ready, приватность канала, post/edit и доступность Groq text/Whisper. Последняя ошибка Telegram в getWebhookInfo историческая (до этого выпуска), новых ожидающих updates нет.
+
+
+## Mobile-First · 13.11.2026
+
+Единая шапка, полная нижняя навигация, вертикальный канбан, полноэкранная карточка, AI-формы и клиентский портал переработаны локально. Playwright: 274 layout-проверки и 74 контрольных после финальной правки, сквозной цикл четырёх внутренних ролей до ознакомления, клиентский цикл, Qvin и текст/голос/вложения. TypeScript, i18n и production build прошли. [Файлы, команды, скриншоты и точные ограничения](MOBILE-FIRST.md). Production не публиковался.

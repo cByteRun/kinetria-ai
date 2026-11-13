@@ -4,14 +4,14 @@ import { pathToFileURL } from 'node:url'
 import { createClient } from '@supabase/supabase-js'
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE ? pathToFileURL(process.env.PLAYWRIGHT_MODULE).href : 'playwright')
 const base = process.env.P0_BASE_URL || 'http://localhost:3000'
-const output = 'docs/evidence/p0'
+const output = process.env.P0_OUTPUT || 'docs/evidence/p0'
 await mkdir(output, { recursive: true })
 const browser = await chromium.launch({ headless: true, ...(process.env.PLAYWRIGHT_EXECUTABLE_PATH ? { executablePath: process.env.PLAYWRIGHT_EXECUTABLE_PATH } : {}) })
 const errors = [], ids = [], report = { base, startedAt: new Date().toISOString(), checks: [], ids, errors }
 const tag = 'p0-' + Date.now()
 async function check(name, fn) { await fn(); report.checks.push(name); console.log('PASS', name) }
 async function login(account, role) {
-  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } })
+  const context = await browser.newContext({ viewport: { width: Number(process.env.TEST_VIEWPORT_WIDTH || 1440), height: 900 } })
   const page = await context.newPage()
   page.on('pageerror', e => errors.push(e.message))
   await page.goto(base + '/login')
@@ -58,16 +58,18 @@ try {
   const id=ids[0], detail=base+'/workspace/manager?id='+id
   await manager.goto(detail)
   await check('Automatic routing exposes request to the relevant manager',async()=>{
-    assert((await manager.locator('main').innerText()).includes('Мария Ким'))
+    await manager.locator('.crm-request-drawer[open]').waitFor()
+    await manager.getByRole('heading',{name:/дубли артикулов 1/}).waitFor()
+    assert((await manager.locator('main').innerText()).includes(process.env.P0_EXPECTED_OWNER || 'Мария Ким'))
   })
   await check('Manager assigns an owner and a deadline',async()=>{
     const select=manager.locator('select[name="assignee"]')
     const options=await select.locator('option').evaluateAll(o=>o.map(x=>({text:x.textContent,value:x.value})))
-    const owner=options.find(o=>o.text.includes('Максим Ли')); assert(owner)
+    const owner=options.find(o=>o.text.includes(process.env.P0_ASSIGN_OWNER || 'Максим Ли')); assert(owner)
     await select.selectOption(owner.value)
     await save(manager, 'Сохранить назначение')
     await manager.waitForURL(url=>!url.searchParams.get('error'))
-    await manager.locator('dd').filter({hasText:'Максим Ли'}).waitFor()
+    await manager.locator('dd').filter({hasText:process.env.P0_ASSIGN_OWNER || 'Максим Ли'}).waitFor()
     await manager.locator('[name="due"]').fill('2026-11-20')
     await manager.locator('[name="priority"]').selectOption('high')
     await save(manager, 'Сохранить параметры')
@@ -78,31 +80,33 @@ try {
     await save(manager, 'Добавить комментарий')
     assert((await manager.locator('.request-history').innerText()).includes('Проверяем повторяемость'))
   })
+  const reviewer = process.env.P0_REVIEW_ACCOUNT ? await login(process.env.P0_REVIEW_ACCOUNT,'handler') : manager
+  await reviewer.goto(base+'/workspace/'+(process.env.P0_REVIEW_ACCOUNT?'handler':'manager')+'?id='+id)
   await check('Review → clarification → employee reply → work → decision',async()=>{
-    await save(manager, 'Взять на рассмотрение')
-    await manager.locator('[name="status"]').waitFor()
-    await manager.locator('[name="status"]').selectOption('clarification')
-    await manager.locator('textarea[name="message"]').first().fill('Уточните пример дубля артикулов.')
-    await save(manager, 'Запросить уточнение')
-    await manager.getByRole('heading',{name:'Запрос уточнения'}).waitFor()
+    await save(reviewer, 'Взять на рассмотрение')
+    await reviewer.locator('[name="status"]').waitFor()
+    await reviewer.locator('[name="status"]').selectOption('clarification')
+    await reviewer.locator('.crm-detail-actions textarea[name="message"]').first().fill('Уточните пример дубля артикулов.')
+    await save(reviewer, 'Запросить уточнение')
+    await reviewer.getByRole('heading',{name:'Запрос уточнения'}).waitFor()
     await employee.goto(base+'/workspace/employee?id='+id)
     const reply=employee.locator('form').filter({has:employee.locator('input[value="replied"]')})
     await reply.locator('textarea').fill('Пример: SYN-001 и SYN001 — один синтетический артикул.')
     await reply.locator('button').click()
     await employee.getByText('Ожидает ответа автора',{exact:true}).waitFor({state:'hidden'})
-    await manager.goto(detail)
-    await manager.locator('[name="status"]').selectOption('in_progress')
-    await manager.locator('[name="nextStep"]').fill('Проверить SYN-001 и утвердить правило записи.')
-    await save(manager, 'Сохранить следующий шаг')
-    await manager.locator('[name="status"]').selectOption('implemented')
-    await manager.locator('textarea[name="message"]').first().fill('На тестовых данных дубли SYN-001 и SYN001 сведены к единому артикулу; правило записи проверено.')
-    await save(manager, 'Опубликовать решение')
-    await manager.getByRole('heading',{name:'Решение для автора',exact:true}).waitFor()
+    await reviewer.goto(base+'/workspace/'+(process.env.P0_REVIEW_ACCOUNT?'handler':'manager')+'?id='+id)
+    await reviewer.locator('[name="status"]').selectOption('in_progress')
+    await reviewer.locator('[name="nextStep"]').fill('Проверить SYN-001 и утвердить правило записи.')
+    await save(reviewer, 'Сохранить следующий шаг')
+    await reviewer.locator('[name="status"]').selectOption('implemented')
+    await reviewer.locator('.crm-detail-actions textarea[name="message"]').first().fill('На тестовых данных дубли SYN-001 и SYN001 сведены к единому артикулу; правило записи проверено.')
+    await save(reviewer, 'Опубликовать решение')
+    await reviewer.getByRole('heading',{name:'Решение для автора',exact:true}).waitFor()
   })
   await check('Employee receives in-app result, downloads attachment and acknowledges',async()=>{
     await employee.goto(base+'/workspace/employee?view=notifications')
     const notice=employee.locator('.notification').filter({hasText:`${tag} · дубли артикулов 1`})
-    assert((await notice.innerText()).includes('Результат доступен'))
+    await notice.getByText('Результат готов',{exact:true}).waitFor()
     await employee.screenshot({path:output+'/notifications.png',fullPage:true})
     await notice.getByRole('link').first().click()
     await employee.getByRole('heading',{name:'Решение для автора',exact:true}).waitFor()
@@ -114,6 +118,7 @@ try {
     for (const text of ['Уточните пример','SYN-001','Автор ознакомился']) assert(history.includes(text))
     await employee.screenshot({path:output+'/closed-loop.png',fullPage:true})
   })
+  if (process.env.P0_CORE_ONLY !== 'true') {
   await check('Operational Insights groups three problems and shows one decision',async()=>{
     await manager.goto(base+'/workspace/manager?view=insights')
     await manager.getByLabel('Период аналитики').selectOption('7')
@@ -155,6 +160,7 @@ try {
       await page.screenshot({path:output+(page===employee?'/mobile-create.png':'/mobile-insights.png'),fullPage:true})
     }
   })
+  }
   assert.deepEqual(errors,[])
   report.status='passed'
 } catch(error) { for (const [i,c] of browser.contexts().entries()) { for (const p of c.pages()) { await p.screenshot({path:output+'/failure-'+i+'.png',fullPage:true}).catch(()=>{}); console.log('FAILED PAGE',p.url(),(await p.locator('main').innerText().catch(()=>'' )).slice(-3500)) } } report.status='failed'; report.failure=error.stack; throw error }

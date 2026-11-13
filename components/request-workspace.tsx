@@ -488,6 +488,10 @@ async function RequestDetail({
           {request.is_demo && (
             <span className="tiny-pill">{ui('demoSyntheticRequest')}</span>
           )}
+          <div className="mobile-case-metadata">
+            <span className="badge">{ui('owner')}: {(people.data?.[0]?.assignee_name === 'Резервная очередь' ? null : people.data?.[0]?.assignee_name) || ui('fallbackQueue')}</span>
+            <span className="badge">{ui('reviewDeadline')}: {dateLabel(request.due_at, locale, ui('notSet'))}</span>
+          </div>
         </header>
         <div className="detail-route" aria-label={ui('reviewStages')}>
           {[

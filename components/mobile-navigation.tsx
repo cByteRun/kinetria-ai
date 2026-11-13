@@ -1,85 +1,30 @@
 'use client'
 import { useTranslations } from 'next-intl'
 import { Menu, X } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
-import { useEffect } from 'react'
-export function MobileNavigation() {
-  const ui = useTranslations('ui')
 
-  const [open, setOpen] = useState(false)
-  const toggle = useRef<HTMLButtonElement>(null)
-  const pathname = usePathname(),
-    params = useSearchParams().toString()
+export function MobileNavigation({ children }: { children: ReactNode }) {
+  const ui = useTranslations('ui')
+  const dialog = useRef<HTMLDialogElement>(null)
+  const pathname = usePathname(), params = useSearchParams().toString()
+  const location = pathname + '?' + params
+  const previousLocation = useRef(location)
   useEffect(() => {
-    setOpen(false)
-  }, [pathname, params])
+    if (previousLocation.current !== location) dialog.current?.close()
+    previousLocation.current = location
+  }, [location])
   useEffect(() => {
-    if (!open) return
-    const previous = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    const sidebar = document.getElementById('workspace-navigation')
-    const focusable = () =>
-      Array.from(
-        sidebar?.querySelectorAll<HTMLElement>(
-          'a[href], button:not([disabled])',
-        ) || [],
-      )
-    focusable()[0]?.focus()
-    function handleKey(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        setOpen(false)
-        toggle.current?.focus()
-      }
-      if (event.key !== 'Tab') return
-      const elements = [toggle.current, ...focusable()].filter(
-        Boolean,
-      ) as HTMLElement[]
-      const index = elements.indexOf(document.activeElement as HTMLElement)
-      if (event.shiftKey && index <= 0) {
-        event.preventDefault()
-        elements.at(-1)?.focus()
-      } else if (!event.shiftKey && index === elements.length - 1) {
-        event.preventDefault()
-        elements[0]?.focus()
-      }
-    }
-    const desktop = window.matchMedia('(min-width: 741px)')
-    const closeOnDesktop = () => {
-      if (desktop.matches) setOpen(false)
-    }
-    desktop.addEventListener('change', closeOnDesktop)
-    document.addEventListener('keydown', handleKey)
-    return () => {
-      document.body.style.overflow = previous
-      document.removeEventListener('keydown', handleKey)
-      desktop.removeEventListener('change', closeOnDesktop)
-    }
-  }, [open])
-  return (
-    <>
-      <button
-        ref={toggle}
-        aria-controls="workspace-navigation"
-        className="ir-mobile-toggle"
-        onClick={() => setOpen(!open)}
-        aria-label={open ? ui('closeMenu') : ui('openMenu')}
-        aria-expanded={open}
-      >
-        {open ? <X /> : <Menu />}
-      </button>
-      {open && (
-        <>
-          <button
-            className="ir-scrim"
-            aria-label={ui('closeMenu')}
-            onClick={() => setOpen(false)}
-          />
-          <style>
-            {'.ir-app .sidebar{visibility:visible;transform:translateX(0)}'}
-          </style>
-        </>
-      )}
-    </>
-  )
+    const media = window.matchMedia('(min-width: 1024px)')
+    const close = () => { if (media.matches) dialog.current?.close() }
+    media.addEventListener('change', close)
+    return () => media.removeEventListener('change', close)
+  }, [])
+  return <>
+    <button className="mobile-more" aria-label={ui('openMenu')} aria-haspopup="dialog" onClick={() => dialog.current?.showModal()}><Menu size={20} /><span>{ui('moreSections')}</span></button>
+    <dialog ref={dialog} className="mobile-nav-sheet" aria-labelledby="mobile-nav-title" onClick={e => { if (e.target === e.currentTarget) dialog.current?.close() }}>
+      <header><strong id="mobile-nav-title">{ui('workspaceSections')}</strong><button aria-label={ui('closeMenu')} onClick={() => dialog.current?.close()}><X size={20} /></button></header>
+      <nav onClick={e => { if ((e.target as HTMLElement).closest('a')) dialog.current?.close() }}>{children}</nav>
+    </dialog>
+  </>
 }

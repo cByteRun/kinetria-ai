@@ -1,0 +1,54 @@
+/* Shared public/workspace header: mobile geometry is the default. */
+.global-header { position:sticky; top:0; z-index:35; display:flex; align-items:center; justify-content:space-between; flex-wrap:nowrap; gap:8px; width:100%; height:56px; min-height:56px; padding:6px 12px; background:var(--panel); color:var(--text); border-bottom:1px solid var(--border); }
+.global-brand { display:flex; align-items:center; gap:7px; flex-shrink:0; font-family:var(--font-display); font-size:15px; font-weight:700; white-space:nowrap; }
+.global-brand svg { width:26px; height:26px; flex-shrink:0; color:var(--primary); }
+.global-header-context { display:none; min-width:0; }
+.global-header-actions { display:flex; align-items:center; flex-wrap:nowrap; gap:4px; min-width:0; margin-left:auto; }
+.global-header .preferences { display:flex; flex-wrap:nowrap; gap:4px; margin:0; padding:0; position:relative; }
+.global-header .preferences :is(select,button) { height:44px; min-height:44px; width:48px; min-width:44px; padding:4px; border:1px solid var(--border); border-radius:9px; background:var(--panel); color:var(--text); font-size:12px; }
+.global-header .preferences .color-theme-select { width:55px; }
+.global-header .preferences-error { position:absolute; top:48px; right:0; width:220px; background:var(--panel); padding:12px; border:1px solid var(--border); }
+.global-header-cta { display:flex; align-items:center; justify-content:center; min-height:44px; padding:6px 10px; border:1px solid var(--border); border-radius:9px; background:var(--panel-tint); color:var(--text); font:inherit; font-size:12px; cursor:pointer; }
+.entry-page > .global-header { margin-bottom:24px; }
+.global-header .header-primary { display:none; }
+.global-header :is(.top-actions) { display:flex; flex-wrap:nowrap; gap:4px; }
+.global-header .profile-context,.global-header .top-actions > .icon-button { display:none; }
+.global-header .shell-profile summary { min-width:44px; min-height:44px; }
+.global-header .shell-profile { position:relative; }
+.global-header :is(a,button,select):focus-visible { outline:2px solid var(--primary); outline-offset:2px; }
+.board-status-filters,.portal-mobile-tabs { display:none; }
+.landing-header-links { display:flex; flex-wrap:wrap; gap:16px; font-size:13px; }
+@media(max-width:1279px) { .landing-header-links { display:none; } }
+@media(min-width:768px) {
+ .global-header { height:72px; padding:12px 24px; gap:20px; }
+ .global-brand { font-size:19px; }
+ .global-header-context { display:flex; align-items:center; gap:16px; flex:1; }
+ .global-header-actions { gap:12px; }
+}
+@media(min-width:1024px) {
+ .global-header .header-primary { display:flex; align-items:center; gap:8px; }
+ .global-header .profile-context,.global-header .top-actions > .icon-button { display:flex; }
+ .global-header .profile-context { flex-direction:column; }
+ .ir-app .global-header { border:1px solid var(--line); border-radius:var(--shell-radius); top:var(--shell-space); }
+}
+@media(max-width:1023px) {
+ .feedback-page { padding-bottom:calc(90px + env(safe-area-inset-bottom)); }
+ .portal-mobile-tabs { position:fixed; z-index:40; bottom:0; left:0; right:0; display:flex; padding:6px 8px calc(6px + env(safe-area-inset-bottom)); background:var(--panel); border-top:1px solid var(--border); }
+ .portal-mobile-tabs a { display:flex; flex:1; flex-direction:column; align-items:center; justify-content:center; min-height:56px; gap:4px; text-align:center; font-size:11px; }
+ .portal-container :is(.btn,input,select,summary) { min-height:44px; }
+ .portal-container .portal-compose .portal-form :is(input,textarea,select) { font-size:16px; }
+ .portal-container :is(#new-feedback,#feedback-list) { scroll-margin-top:80px; }
+}
+@media(max-width:767px) {
+ .global-header .global-brand span { font-size:14px; }
+ .global-header .preferences .color-theme-select { width:44px; }
+ .global-header-cta { max-width:68px; font-size:11px; line-height:1.2; text-align:center; padding:4px; }
+ .global-header .global-header-context { display:none; }
+ .new-landing h1 { font-size:clamp(32px,9vw,56px); overflow-wrap:anywhere; }
+ .entry-page { padding-top:0; }
+ .entry-page > .global-header { margin-inline:0; }
+ .portal-container { padding:16px 12px; }
+ .portal-container .filters { display:grid; grid-template-columns:minmax(0,1fr); }
+ .portal-container .filters :is(select,label) { width:100%; min-width:0; }
+ .portal-container .portal-hero-actions { width:100%; flex-direction:column; }
+}

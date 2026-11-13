@@ -269,3 +269,8 @@ node scripts/check-telegram-webhook-workflow.mjs
 ## Документация
 
 [Business Vision](docs/BUSINESS_VISION.md) · **[Roadmap и чеклист по коммитам](docs/ROADMAP.md)** · [Tender Brief](docs/TENDER_BRIEF.md) · [Audit требований 1–6](docs/TENDER_AUDIT.md) · [Architecture/RBAC](docs/02-architecture.md) · [Домен и метрики](docs/03-domain.md) · [Стек](docs/04-stack.md) · [Пилот](docs/08-pilot.md) · [Запись GIF](docs/DEMO_RECORDING.md) · [Все документы и исходное ТЗ](docs/README.md)
+
+
+### Mobile-First · 13.11.2026
+
+На телефоне все разделы доступны через нижние табы и «Ещё»; карточка открывается на весь экран, канбан становится вертикальным списком. Лендинг, вход, кабинеты и /feedback используют общую шапку. [Аудит, Playwright-проверки 360/390/430 px, сквозные сценарии и повторный запуск](docs/MOBILE-FIRST.md). Изменения проверены локально; внешние AI/Telegram и redeploy отдельно.

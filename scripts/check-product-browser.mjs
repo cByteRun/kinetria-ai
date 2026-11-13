@@ -5,7 +5,7 @@ import {writeFile,mkdir} from 'node:fs/promises'
 const base=process.env.PRODUCT_TEST_BASE_URL||'http://localhost:3012',checks=[],errors=[]
 if(!['localhost','127.0.0.1'].includes(new URL(base).hostname))throw new Error('Run this mutating test only against an isolated local database')
 const browser=await chromium.launch({headless:true,executablePath:process.env.PLAYWRIGHT_EXECUTABLE_PATH||undefined,args:['--no-sandbox']})
-const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage();page.on('pageerror',e=>errors.push(e.message))
+const context=await browser.newContext({viewport:{width:Number(process.env.TEST_VIEWPORT_WIDTH || 1440),height:900}}),page=await context.newPage();page.on('pageerror',e=>errors.push(e.message))
 const pass=s=>{checks.push(s);console.log('PASS',s)}
 const login=async role=>{await page.goto(base+'/login');await page.locator('[data-account="'+role+'"]').click();await page.waitForURL(role==='client'?'**/feedback':'**/workspace/'+role+'**',{timeout:30000})}
 const stamp=Date.now(),title='QA клиентский портал '+stamp,publicTitle='QA опубликованная идея '+stamp
@@ -19,7 +19,7 @@ try{
  await page.locator('input[data-request-search]').fill('no-matches-at-all');await page.waitForTimeout(600);assert.equal(await page.locator('.qvin-panel .ai-markdown').count(),0);pass('filter changes clear the prior conversation')
  await login('employee');await page.goto(base+'/feedback');const shared=page.locator('.portal-entry').filter({has:page.getByRole('heading',{name:publicTitle,exact:true})});await shared.waitFor();assert(!(await shared.innerText()).includes('PRIVATE_QA_ACCOUNT_123'));await shared.getByRole('button',{name:/Поддержать/}).click();await page.waitForTimeout(700);await shared.getByRole('button',{name:/Поддержать/}).getAttribute('aria-pressed').then(x=>assert.equal(x,'true'));pass('employee sees sanitized public copy and persists support')
  for(const locale of ['ru','en','kk']){
-  await page.locator('.preferences button[lang="'+locale+'"]').click();await page.waitForFunction(l=>document.documentElement.lang===l,locale);await page.waitForFunction(()=>document.querySelector('.preferences').getAttribute('aria-busy')==='false')
+  await page.locator('.preferences select').first().selectOption(locale);await page.waitForFunction(l=>document.documentElement.lang===l,locale);await page.waitForFunction(()=>document.querySelector('.preferences').getAttribute('aria-busy')==='false')
   for(const theme of ['light','dark']){
    await page.evaluate(value=>document.documentElement.dataset.theme=value,theme)
    for(const width of [320,768,1440]){await page.setViewportSize({width,height:1000});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1));if(locale==='ru'&&theme==='dark')await page.screenshot({path:`docs/evidence/product-expansion/portal-${width}.png`,fullPage:true})}

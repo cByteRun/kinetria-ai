@@ -1,10 +1,9 @@
-import { LogoMark } from '../../components/logo-mark'
 import { getColorTheme, getTheme } from '../../i18n/theme'
-import { Preferences } from '../../components/preferences'
+import { GlobalHeader } from '../../components/global-header'
 import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { ArrowLeft, ArrowRight, LockKeyhole, Send, Lightbulb, UsersRound, CircleCheck, Wrench, ShieldCheck } from 'lucide-react'
+import { ArrowRight, LockKeyhole, Send, Lightbulb, UsersRound, CircleCheck, Wrench, ShieldCheck } from 'lucide-react'
 import accounts from '../../lib/demo-accounts.json'
 import { getProfile, localPreview } from '../../lib/session'
 import { hasSupabase } from '../../lib/supabase/config'
@@ -32,17 +31,7 @@ export default async function Login({ searchParams }: {
   ])
   return (
     <main className="entry-page">
-      <header className="entry-header">
-        <Link className="entry-brand" href="/" aria-label="IdeaRoute">
-          <span className="entry-brand-mark"><LogoMark size={28} /></span>
-          <span>IdeaRoute</span>
-        </Link>
-        <span className="entry-company">{ui('modusTrade')}</span>
-        <div className="entry-preferences">
-          <Link className="entry-home" href="/"><ArrowLeft size={14} />{ui('backToHome')}</Link>
-          <Preferences theme={theme} colorTheme={colorTheme} compact />
-        </div>
-      </header>
+      <GlobalHeader theme={theme} colorTheme={colorTheme} />
       <div className="login-split">
         <div className="login-story-column">
           <section className="login-story" aria-labelledby="lifecycle-title">

@@ -738,7 +738,8 @@
     "topicComparison": "{current} current / {previous} previous",
     "noSemanticTopics": "No recurring semantic topics found.",
     "topicLimit": "More than 200 problems across both periods. Choose a shorter period.",
-    "topicVolume": "Too much text for one analysis. Choose a shorter period."
+    "topicVolume": "Too much text for one analysis. Choose a shorter period.",
+    "moreSections": "More"
   },
   "categories": {
     "collaboration": "Cross-team collaboration",

@@ -594,9 +594,14 @@ function RegistryFilters({
           )}
         </div>
       ) : mode === 'board' ? (
+        <>
+        <div className="board-status-filters" role="group" aria-label={ui('status')}>
+          <button className="btn" aria-pressed={!status} onClick={() => setStatus('')}>{ui('all')}</button>
+          {statuses.map(s => <button className="btn" key={s} aria-pressed={status === s} onClick={() => setStatus(s)}>{statusText(s)}</button>)}
+        </div>
         <BoardViewport>
           {boardColumns.map(({ status: s, rows: columnRows }) => (
-            <section className="board-col" key={s}>
+            <section className="board-col" key={s} data-empty={!columnRows.length}>
               <strong>
                 {statusText(s)} ·{' '}
                 {columnRows.length}
@@ -618,6 +623,7 @@ function RegistryFilters({
             </section>
           ))}
         </BoardViewport>
+        </>
       ) : (
         <CaseTable rows={sorted} categories={categories} path={path} />
       )}
@@ -635,7 +641,7 @@ function BoardViewport({children}: {children: React.ReactNode}) {
   useEffect(() => {
     const element = ref.current
     if (!element) return
-    const resize = () => { element.style.height = Math.max(280, window.innerHeight - element.getBoundingClientRect().top - 24) + 'px' }
+    const resize = () => { element.style.height = window.innerWidth < 1024 ? 'auto' : Math.max(280, window.innerHeight - element.getBoundingClientRect().top - 24) + 'px' }
     const observer = new ResizeObserver(resize)
     if (element.parentElement) observer.observe(element.parentElement)
     window.addEventListener('resize', resize)

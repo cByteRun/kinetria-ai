@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { getMessages, getTranslations } from 'next-intl/server';
 import { NextIntlClientProvider } from 'next-intl';
-import { Preferences } from '../preferences';
+import { GlobalHeader } from '../global-header';
 import { getColorTheme } from '../../i18n/theme';
 import type { Theme } from '../../i18n/settings';
 import Logo from './Logo';
@@ -19,25 +19,9 @@ export default async function LandingPage({theme}: {theme: Theme}) {
 
   return (
     <div className="new-landing min-h-screen bg-slate-50">
-      <header className="sticky top-0 z-30 border-b border-slate-200/70 bg-slate-50/85 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 lg:px-8">
-          <Link href="/" aria-label={text('copy60')} className="rounded-route">
-            <Logo />
-          </Link>
-          <Preferences theme={theme} colorTheme={colorTheme} compact />
-          <nav className="hidden items-center gap-8 text-sm text-slate-600 xl:flex">
-            <a href="#problem" className="transition-colors hover:text-slate-900">{text('copy61')}</a>
-            <a href="#channels" className="transition-colors hover:text-slate-900">{text('copy62')}</a>
-            <a href="#roles" className="transition-colors hover:text-slate-900">{text('copy63')}</a>
-            <a href="#analytics" className="transition-colors hover:text-slate-900">{text('copy64')}</a>
-            <a href="#roadmap" className="transition-colors hover:text-slate-900">Roadmap</a>
-          </nav>
-          <Link
-            href="/login"
-            className="rounded-route bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors duration-200 hover:bg-slate-800"
-          >{text('copy65')}</Link>
-        </div>
-      </header>
+      <GlobalHeader theme={theme} colorTheme={colorTheme} context={<nav className="landing-header-links">
+        <a href="#problem">{text('copy61')}</a><a href="#channels">{text('copy62')}</a><a href="#roles">{text('copy63')}</a><a href="#analytics">{text('copy64')}</a><a href="#roadmap">Roadmap</a>
+      </nav>}><Link className="global-header-cta" href="/login">{text('copy65')}</Link></GlobalHeader>
 
       <NextIntlClientProvider messages={{newLanding: messages.newLanding}}>
       <main>
