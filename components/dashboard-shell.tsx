@@ -3,7 +3,9 @@ import { getColorTheme } from '../i18n/theme'
 import { WorkspaceNavLink, WorkspaceCrumbs } from './workspace-navigation'
 import { LogoMark } from './logo-mark'
 import Link from 'next/link'
-import { CommandPalette } from './command-palette'
+import { CommandPalette, type SearchRequest } from './command-palette'
+import previewRequests from '../lib/demo-requests.json'
+import previewTopics from '../lib/demo-topic-requests.json'
 import {
   UsersRound,
   LayoutDashboard,
@@ -20,7 +22,6 @@ import {
   LockKeyhole,
   Search,
   ChevronsUpDown,
-  Send,
   Radio,
   Settings2,
 } from 'lucide-react'
@@ -61,6 +62,7 @@ export async function DashboardShell({
       .map((part) => part[0])
       .join('') || t(role)[0]
   const base = '/workspace/' + role
+  let searchRequests: SearchRequest[] = localPreview ? [...previewRequests, ...previewTopics].map((r, i) => ({ id: r.id, title: r.title, number: i + 1, source_ref: r.id })) : []
   let openCount = 0,
     resultCount = 0,
     unreadCount = 0,
@@ -68,9 +70,10 @@ export async function DashboardShell({
   if (hasSupabase && role !== 'client') {
     const db = await createClient()
     const [requests, receipts] = await Promise.all([
-      db.from('requests').select('id,status,version,decision,assignee_id'),
+      db.from('requests').select('id,number,source_ref,title,status,version,decision,assignee_id'),
       db.from('request_receipts').select('request_id,seen_version'),
     ])
+    searchRequests = (requests.data || []).map(({ id, number, source_ref, title }) => ({ id, number, source_ref, title }))
     const seen = new Map(
       (receipts.data || []).map((r) => [r.request_id, r.seen_version]),
     )
@@ -165,7 +168,6 @@ export async function DashboardShell({
           )}
           <div className="nav-group">
             <div className="eyebrow">{shell('integrations')}</div>
-            {nav({ id: 'help', label: shell('telegramIntegration'), icon: Send })}
             {role !== 'client' && <a className="nav-link" href={TELEGRAM_CHANNEL_INVITE_URL} target="_blank" rel="noreferrer"><Radio size={18} aria-hidden="true" /><span>{shell('telegramChannel')}</span><ArrowUpRight size={14} aria-hidden="true" /></a>}
           </div>
           <div className="nav-group">
@@ -178,20 +180,9 @@ export async function DashboardShell({
           </div>
         </nav>
         <div className="side-bottom">
-          <div className="side-manifesto">
-            <strong className="brand">
-              <Route size={15} /> {ui('fromIdeaToOutcome')}
-            </strong>
-            <p>
-              {ui('everyRequestHas')}
-              <br />
-              {ui('anOwnerAndAClearOutcome')}
-            </p>
-            <Link className="btn ghost sm" href={base + '?view=help'}>
-              {ui('howRoutingWorks')}
-              <ArrowUpRight />
-            </Link>
-          </div>
+          <Link className="nav-link side-guide" href={base + '?view=help'}>
+            <Route size={18} /><span>{ui('fromIdeaToOutcome')}</span>
+          </Link>
           <div className="side-user">
             <span className="avatar">{initials}</span>
             <div>
@@ -215,7 +206,8 @@ export async function DashboardShell({
               <input name="q" aria-label={ui('findARequest')} placeholder={ui('findARequest')} />
               <button type="submit" aria-label={ui('findARequest')}><ArrowUpRight size={16} /></button>
             </form>
-            <CommandPalette role={role} />
+            <span className="search-divider" aria-hidden="true" />
+            <CommandPalette role={role} requests={searchRequests} />
           </div>
           <div className="top-actions">
             <details className="shell-profile">
@@ -247,7 +239,7 @@ export async function DashboardShell({
             {items.map(nav)}
             {role === 'admin' && <>{nav({ id: 'categories', label: ui('categories'), icon: Tags })}{nav({ id: 'routing', label: ui('routing'), icon: GitBranch })}</>}
             {nav({ id: 'notifications', label: ui('notifications'), icon: Bell })}
-            {nav({ id: 'help', label: shell('telegramIntegration'), icon: Send })}
+            {nav({ id: 'help', label: ui('fromIdeaToOutcome'), icon: Route })}
             {role !== 'client' && <a className="nav-link" href={TELEGRAM_CHANNEL_INVITE_URL} target="_blank" rel="noreferrer"><Radio size={18} /><span>{shell('telegramChannel')}</span></a>}
             <Link className="nav-link" href={base + '?view=profile'}><UsersRound size={18}/><span>{shell('profile')}</span></Link>
             {canSwitchRole && <Link className="nav-link" href="/login"><UsersRound size={18}/><span>{entry('switchRole')}</span></Link>}

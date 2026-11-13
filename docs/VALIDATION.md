@@ -304,6 +304,20 @@ Runner сверяет проект API с PostgreSQL URL, проверяет TLS
 
 Единая шапка, полная нижняя навигация, вертикальный канбан, полноэкранная карточка, AI-формы и клиентский портал переработаны локально. Playwright: 274 layout-проверки и 74 контрольных после финальной правки, сквозной цикл четырёх внутренних ролей до ознакомления, клиентский цикл, Qvin и текст/голос/вложения. TypeScript, i18n и production build прошли. [Файлы, команды, скриншоты и точные ограничения](MOBILE-FIRST.md). Production не публиковался.
 
+## Поиск и Lifecycle · 13.11.2026
+
+Локально реализованы соседние локальный и глобальный поиски с разделителем, палитра Ctrl/Cmd+K с переходами по ролям и поиском карточек, компактный гайд в footer sidebar/«Ещё», Lifecycle без вычисляемой высоты и вложенных скроллов. [Спецификация](09-dashboard-spec.md#глобальная-навигация-и-lifecycle--13112026).
+
+Проверки:
+
+- `npx tsc --noEmit --noUnusedLocals`, `node scripts/check-i18n.mjs`, `git diff --check` — PASS.
+- Существующие `check-semantic-topics.mjs`, `check-impact-qvin.mjs`, `check-registry-schema-compat.mjs` — PASS.
+- `check-search-lifecycle.mjs` в Chromium: роли employee/handler/manager/admin; RU/EN × light/dark × 1440×900, 1280×800, 390×844, 360×800. Шапка 56 px, глобальный поиск доступен на телефоне, `scrollWidth <= innerWidth`, у колонок нет внутренних scroll-контейнеров. Ctrl/Cmd+K, ↑/↓/Enter, Escape/возврат фокуса, карточка по A-001, пустая выдача, переходы Qvin/AI, смена темы/языка — PASS. Локальный отчёт и скриншоты: `docs/evidence/search-lifecycle/` (gitignored).
+- Существующий `check-workspace-ui.mjs`: 32 сочетания viewport/темы/цветовой палитры, persistent shell, RU/EN/KK, смена темы без RSC, запись голоса, отмена, mocked transcription, ошибка/повтор и освобождение микрофона при переходе — PASS. Эти проверки не доказывают внешний AI/голосовой сервис.
+- Production build в отдельном `.next-search-build` вне sandbox — PASS. В sandbox компиляция прошла, но дочерний TypeScript не вернул корректный `--showConfig`; повтор вне sandbox завершился успешно.
+
+Границы: UI/E2E выполнялись на synthetic local preview без Supabase. Изолированный DB runner `start-mobile-test.cjs` не запустился из-за отсутствующего Supabase CLI (`ENOENT`). Полный DB integration/RLS и внешние AI/Telegram не прогонялись; схема, политики и бизнес-действия не менялись. Карточки поиска в подключённом контуре берутся существующим серверным клиентом текущей сессии; проверено по коду, не выдаётся за живой RLS-тест. Поиск ограничен загруженной выборкой кабинета. Стандартные Next.js warnings: существующие настройки smooth scroll и metadataBase. Финальный прогон без ошибок браузера. Дополнительная проверка подтвердила, что все пункты sidebar помещаются без внутренней прокрутки при 1440×900 и 1280×800 в RU/EN и обеих темах.
+
 
 ## CI и восстановление локальной DB-проверки · 13.11.2026
 
@@ -311,6 +325,12 @@ Runner сверяет проект API с PostgreSQL URL, проверяет TLS
 
 PASS: все 15 миграций с нуля в отдельном локальном Supabase `idearoute_ci`, 9 синтетических профилей, SQL/RLS категорий, внутреннего Telegram Closed-Loop, общего демоаккаунта с изолированными черновиками и клиентского private/public-портала. Все тестовые SQL-изменения откатились; фикстуры сохранены только локально. Существующая локальная БД имеет ручные изменения вне migration history: `migration up` останавливается на `telegram_links already exists`; её история не переписывалась, полный прогон выполнен на чистом отдельном контуре.
 
-PASS: `pnpm test`, строгий TypeScript, `git diff --check`, production build в `.next-ci-check`. Эти проверки выполнены с текущими локальными UI-изменениями. Новый GitHub workflow проверяется отдельно после отправки коммита. Внешние AI/Telegram этим не проверены.
+PASS: `pnpm test`, строгий TypeScript, `git diff --check`, production build в `.next-ci-check`. Эти проверки выполнены с текущими локальными UI-изменениями. GitHub CI для коммита `351ac76` завершился успешно за 1m54s: TypeScript, модульные проверки, production build, все миграции и DB/RLS. [Прогон](https://github.com/cByteRun/kinetria-ai/actions/runs/43382469870). Внешние AI/Telegram этим не проверены.
 
 GitHub: `9206601` — Vercel success, Supabase check отсутствует. Исторический `Supabase Preview` на `7aad55c` — failure из-за миграций прежнего проекта; сопоставлены история и SQL ошибочного применения/отмены. Supabase MCP не предоставляет управление GitHub integration, GitHub installation API вернул 403. Отключение ошибочной привязки требует владельца; зелёный статус старого check не заявляется.
+
+## Проверка перед выпуском поиска/Lifecycle · 13.11.2026
+
+Повторно подтверждены `pnpm test`, `pnpm exec tsc --noEmit --noUnusedLocals` и `git diff --check`. GitHub `351ac76`: CI success, Vercel success; отдельного завершённого Supabase check нет. В check suites остаётся Supabase со статусом queued; это не подтверждает ни работающий preview, ни удаление интеграции. Проверка GitHub installation недоступна (404). Supabase MCP видит только посторонний неактивный проект, CLI для рабочего проекта требует отсутствующий management access token. Отключение GitHub integration по этим данным подтвердить нельзя. Новых миграций в этом UI-выпуске нет.
+
+Живая проверка `.env.local`: Groq text и Whisper HTTP-контракт на синтетической тишине — PASS. Chromium на работающем localhost:3000: вход admin → существующая демокарточка → «Подготовить AI-сводку» → непустая сводка, ошибок нет. Ранее показанное «Не удалось связаться с AI» не воспроизведено. Это общий catch для HTTP-ошибки провайдера, сетевого сбоя/таймаута или неполного ответа; без исходной ошибки нельзя выбрать конкретную причину. Ключ и модель в текущем локальном окружении работоспособны, расхождение localhost/production не подтверждено как постоянное.

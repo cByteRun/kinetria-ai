@@ -7,6 +7,7 @@ import './floating-shell.css'
 import './workspace-updates.css'
 import './ui-refactor.css'
 import './mobile-first.css'
+import './search-lifecycle.css'
 
 export default function WorkspaceRootLayout({ children }: { children: React.ReactNode }) {
   return children

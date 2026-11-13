@@ -803,7 +803,10 @@
     "notifications": "Updates and requests requiring action",
     "categories": "Configure categories and review deadlines",
     "routing": "Assignments, rules and fallback queue",
-    "help": "Workflow, access and Telegram connection"
+    "help": "Workflow, access and Telegram connection",
+    "theme": "Switch theme",
+    "language": "Switch language",
+    "preferences": "Interface preferences"
   },
   "entryFlow": {
     "switchRole": "Switch role"

@@ -4,7 +4,7 @@ import { QvinPanel } from './qvin-panel'
 import { SemanticTopics } from './semantic-topics'
 import { useLocale, useTranslations } from 'next-intl'
 import Link from 'next/link'
-import { memo, useDeferredValue, useMemo, useState, useEffect, useRef } from 'react'
+import { memo, useDeferredValue, useMemo, useState, useEffect } from 'react'
 import {
   normalizeTopic,
   recurringProblems,
@@ -358,6 +358,14 @@ function RegistryFilters({
     return sorted.filter(r => !groupedIds.has(r.id))
   }, [groups, sorted])
   const departments = useMemo(() => [...new Set(rows.map(r => r.department).filter(Boolean))], [rows])
+  useEffect(() => {
+    const action = params.get('action')
+    const target = action === 'qvin' ? document.querySelector<HTMLDetailsElement>('.qvin-panel') : action === 'topic' ? document.querySelector<HTMLElement>('.topic-action-bar') : null
+    if (!target) return
+    if (target instanceof HTMLDetailsElement) target.open = true
+    target.scrollIntoView({ block: 'center' })
+    target.querySelector<HTMLElement>('textarea, input, button')?.focus({ preventScroll: true })
+  }, [params])
   const boardColumns = useMemo(() => statuses.map(status => ({ status, rows: sorted.filter(row => row.status === status) })), [sorted])
   function exportCsv() {
     const q = (v: unknown) => {
@@ -600,7 +608,7 @@ function RegistryFilters({
           {statuses.map(s => <button className="btn" key={s} aria-pressed={status === s} onClick={() => setStatus(s)}>{statusText(s)}</button>)}
         </div>
         <BoardViewport>
-          {boardColumns.map(({ status: s, rows: columnRows }) => (
+          {boardColumns.filter(column => !status || column.status === status).map(({ status: s, rows: columnRows }) => (
             <section className="board-col" key={s} data-empty={!columnRows.length}>
               <strong>
                 {statusText(s)} ·{' '}
@@ -637,18 +645,7 @@ function RegistryFilters({
 }
 
 function BoardViewport({children}: {children: React.ReactNode}) {
-  const ref = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    const element = ref.current
-    if (!element) return
-    const resize = () => { element.style.height = window.innerWidth < 1024 ? 'auto' : Math.max(280, window.innerHeight - element.getBoundingClientRect().top - 24) + 'px' }
-    const observer = new ResizeObserver(resize)
-    if (element.parentElement) observer.observe(element.parentElement)
-    window.addEventListener('resize', resize)
-    resize()
-    return () => { observer.disconnect(); window.removeEventListener('resize', resize) }
-  }, [])
-  return <div ref={ref} className="board">{children}</div>
+  return <div className="board">{children}</div>
 }
 
 export function RequestRegistry(props: Parameters<typeof RegistryFilters>[0]) {

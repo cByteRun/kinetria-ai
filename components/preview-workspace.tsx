@@ -128,6 +128,7 @@ export function PreviewWorkspace({
         </section>
       ) : (
         <RequestRegistry
+          canAskQvin={role === 'admin' || role === 'manager'}
           showRecurrence={canViewInsights(role)}
           path={'/workspace/' + role}
           categories={names}
