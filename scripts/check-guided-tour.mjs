@@ -53,7 +53,7 @@ try {
   pass('first visit auto-start; close persists; reload does not reopen')
   await page.locator('[data-account="employee"]').click()
   await page.waitForURL('**/workspace/employee**')
-  const url = page.url()
+  let url = page.url()
   const postCount = writes.length
   for (const width of [320, 390, 768, 1024, 1280, 1440]) {
     await page.setViewportSize({ width, height: 900 })
@@ -70,6 +70,8 @@ try {
     }
   }
   pass('header controls fit without overlap at 320/390/768/1024/1280/1440')
+  await page.goto(base + '/login')
+  url = page.url()
   for (const width of [1440, 320]) {
     await page.setViewportSize({ width, height: 900 })
     await page.evaluate(width => { document.documentElement.dataset.theme = width === 320 ? 'dark' : 'light' }, width)
@@ -96,19 +98,21 @@ try {
     pass(`full 8-step lifecycle ${width}px, clarification=${width === 320}; no writes or auth/route changes; focus restored`)
   }
   await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto(base + '/workspace/employee?view=registry')
   await page.locator('.sidebar [data-tour="reset"]').click()
   await tour.waitFor()
   await page.keyboard.press('Escape')
   assert.equal(await tour.count(), 0)
   pass('sidebar restart and Escape cleanup')
-  for (let target = 0; target < 8; target++) {
+  for (let target = 0; target < 6; target++) {
     await page.locator('.tour-trigger').click()
-    for (let step = 0; step < target; step++) await advance(step)
+    for (let step = 0; step < target; step++) await button('Далее').click()
     await button('Завершить тур').first().click()
     assert.equal(await tour.count(), 0)
     assert.notEqual(await page.evaluate(() => document.body.style.overflow), 'hidden')
   }
   pass('close at every step removes overlay and restores page scroll')
+  await page.goto(base + '/login')
   for (const [locale, heading] of [['en', 'From message to result in 3 minutes'], ['kk', 'Хабарламадан нәтижеге дейін 3 минутта']]) {
     await context.addCookies([{ name: 'kinetria_locale', value: locale, url: base }])
     await page.reload()

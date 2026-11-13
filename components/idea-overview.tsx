@@ -69,7 +69,7 @@ export function IdeaOverview({
   const filter = (value: string) => path + '?view=registry&filter=' + value
   return (
     <>
-      <section className="lifecycle-hero" aria-labelledby="lifecycle-title">
+      <section data-tour-overview={role} className="lifecycle-hero" aria-labelledby="lifecycle-title">
         <div className="page-heading">
           <div>
             <div className="eyebrow">
@@ -83,6 +83,7 @@ export function IdeaOverview({
             </p>
           </div>
           <Link
+            data-tour="overview-create"
             className="btn primary"
             href={
               employee
@@ -100,7 +101,7 @@ export function IdeaOverview({
             <ArrowUpRight />
           </Link>
         </div>
-        <div className="hero-summary">
+        <div data-tour="overview-pulse" className="hero-summary">
           <Link href={filter('open')}><span className="hero-stat-icon"><Inbox size={18} /></span><span><strong>{active.length}</strong><small>{shell('activeRequests')}</small></span></Link>
           <Link href={filter('clarification')}><span className="hero-stat-icon"><ClockAlert size={18} /></span><span><strong>{rows.filter(r => r.status === 'clarification').length}</strong><small>{ui('clarification')}</small></span></Link>
           <Link href={path + '?view=results'} className="hero-progress">
@@ -127,7 +128,7 @@ export function IdeaOverview({
           )}
         </span>
       </div>
-      <div className="ir-metric-grid">
+      <div data-tour="overview-metrics" className="ir-metric-grid">
         {[
           {
             label: ui('inProgressAndUnderReview'),
@@ -188,7 +189,7 @@ export function IdeaOverview({
         ))}
       </div>
       <div className="overview-route ir-route-grid">
-        <section id="request-lifecycle" className="card route-card">
+        <section data-tour="overview-route" id="request-lifecycle" className="card route-card">
           <div className="card-head">
             <div>
               <h2>{ui('requestRoute')}</h2>
@@ -231,7 +232,7 @@ export function IdeaOverview({
             {ui('theDecisionActionsAndResponseToTheAuthor')}
           </div>
         </section>
-        <section className="card loop-card">
+        <section data-tour="overview-results" className="card loop-card">
           <div>
             <div className="eyebrow">{ui('feedbackLoop')}</div>
             <h2>
@@ -272,7 +273,7 @@ export function IdeaOverview({
         </section>
       </div>
       <div className="overview-bottom ir-bottom-grid">
-        <section className="card">
+        <section data-tour="overview-focus" data-tour-empty={queue.length === 0} className="card">
           <div className="card-head">
             <div>
               <h2>{employee ? ui('yourNextStep') : ui('inFocus')}</h2>

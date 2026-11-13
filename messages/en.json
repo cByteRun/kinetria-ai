@@ -1284,6 +1284,76 @@
     "text109": "Loop closed",
     "text110": "Now try Telegram",
     "text111": "Congratulations! You completed the IdeaRoute web lifecycle. Try the same workflow in the Telegram bot and see request cards in the private company channel. Open /start in the bot; use /login for available demo access and role switching. Thank you!",
-    "goToAction": "Go to highlighted action ↓"
+    "goToAction": "Go to highlighted action ↓",
+    "context": {
+      "personal": "Personal",
+      "back": "Back",
+      "next": "Next",
+      "done": "Done",
+      "admin": {
+        "button": "Tour: Administrator",
+        "welcomeTitle": "Your personal guide",
+        "welcomeText": "You are signed in as Administrator. The button now opens your role’s guide through the live Overview widgets.",
+        "pulseTitle": "Your current workload",
+        "pulseText": "Live totals show accessible active requests, clarifications and recorded decisions. Counts change with your registry.",
+        "queueTitle": "Your next responsibility",
+        "queueText": "Monitor active requests and the unassigned reserve. When no route matches, assign an owner so the request can move forward.",
+        "routeTitle": "The complete request lifecycle",
+        "routeText": "Received → Review → Clarification → Action → Result. Keep routing and ownership clear; the written decision returns to the author.",
+        "focusTitle": "Start with a request",
+        "focusText": "Open the first request in focus, check its category and assign an owner.",
+        "emptyFocus": "No requests currently need attention. Select All active to inspect available requests, owners and due dates. Employees can also create a new request.",
+        "finishTitle": "Close the feedback loop",
+        "finishText": "A written decision is available to the author, who can acknowledge it in the request card. You can explore the remaining features later. Analytics, recurring topics and routing settings can wait; 1C/Bitrix24 integrations are planned. Select Done to start testing real requests."
+      },
+      "manager": {
+        "button": "Tour: Manager",
+        "welcomeTitle": "Your personal guide",
+        "welcomeText": "You are signed in as Manager. The button now opens your role’s guide through the live Overview widgets.",
+        "pulseTitle": "Your current workload",
+        "pulseText": "Live totals show accessible active requests, clarifications and recorded decisions. Counts change with your registry.",
+        "queueTitle": "Your next responsibility",
+        "queueText": "Review requests in your area, assign an owner and due date, and request clarification when needed.",
+        "routeTitle": "The complete request lifecycle",
+        "routeText": "Received → Review → Clarification → Action → Result. Assign ownership and follow progress through to a written decision for the author.",
+        "focusTitle": "Start with a request",
+        "focusText": "Open the first request in focus, review its history, assign an owner and due date.",
+        "emptyFocus": "No requests currently need attention. Select All active to inspect available requests, owners and due dates. Employees can also create a new request.",
+        "finishTitle": "Close the feedback loop",
+        "finishText": "A written decision is available to the author, who can acknowledge it in the request card. You can explore the remaining features later. Select Done to start testing real requests."
+      },
+      "employee": {
+        "button": "Tour: Employee",
+        "welcomeTitle": "Your personal guide",
+        "welcomeText": "You are signed in as Employee. The button now opens your role’s guide through the live Overview widgets.",
+        "pulseTitle": "Your current workload",
+        "pulseText": "Live totals show accessible active requests, clarifications and recorded decisions. Counts change with your registry.",
+        "queueTitle": "Your next responsibility",
+        "queueText": "After the tour, select New request. Choose a category, describe the problem or improvement, attach supporting materials if needed, review the draft and confirm registration.",
+        "routeTitle": "The complete request lifecycle",
+        "routeText": "Received → Review → Clarification → Action → Result. Track your request and answer clarification questions in its card.",
+        "focusTitle": "Start with a request",
+        "focusText": "Open the first request needing your reply and add the missing details to continue its progress.",
+        "emptyFocus": "No requests currently need attention. Select All active to inspect available requests, owners and due dates. Employees can also create a new request.",
+        "finishTitle": "Close the feedback loop",
+        "finishText": "A written decision is available to the author, who can acknowledge it in the request card. You can explore the remaining features later. Select Done, then New request to try the full process."
+      },
+      "handler": {
+        "button": "Tour: Assignee",
+        "welcomeTitle": "Your personal guide",
+        "welcomeText": "You are signed in as Assignee. The button now opens your role’s guide through the live Overview widgets.",
+        "pulseTitle": "Your current workload",
+        "pulseText": "Live totals show accessible active requests, clarifications and recorded decisions. Counts change with your registry.",
+        "queueTitle": "Your next responsibility",
+        "queueText": "Check the priority and due date of your assignments before starting work.",
+        "routeTitle": "The complete request lifecycle",
+        "routeText": "Received → Review → Clarification → Action → Result. Review your assignment, clarify details, do the work and record a written decision.",
+        "focusTitle": "Start with a request",
+        "focusText": "Open the first request in focus, review the history, start work and record your decision.",
+        "emptyFocus": "No requests currently need attention. Select All active to inspect available requests, owners and due dates. Employees can also create a new request.",
+        "finishTitle": "Close the feedback loop",
+        "finishText": "A written decision is available to the author, who can acknowledge it in the request card. You can explore the remaining features later. Select Done to start testing real requests."
+      }
+    }
   }
 }

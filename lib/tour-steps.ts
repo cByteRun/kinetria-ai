@@ -11,3 +11,27 @@ export const tourStepsConfig = [
   { id: 'insights', role: 'text106', route: '/workspace/admin?view=insights', selectors: ['[data-tour="insights"]', '[data-tour="qvin"]'], action: 'insights', title: 'text107', text: 'text108' },
   { id: 'finish', role: 'text109', route: '/workspace?view=help', selectors: [], action: 'finish', title: 'text110', text: 'text111' },
 ] as const
+
+
+export type TourRole = 'admin' | 'manager' | 'employee' | 'handler'
+export function tourRoleFromPath(path: string): TourRole | null {
+  const role = path.split(/[?#]/)[0].split('/')[2]
+  return path.startsWith('/workspace/') && ['admin', 'manager', 'employee', 'handler'].includes(role) ? role as TourRole : null
+}
+
+/** Context steps only target the current role's live Overview. No fixture or cross-role actions. */
+export function generateTourSteps(currentRole: TourRole | null, currentRoute: string) {
+  if (!currentRole || tourRoleFromPath(currentRoute) !== currentRole) return []
+  const step = (id: string, target: string, fallback?: string) => ({
+    id, selector: `[data-tour="${target}"]`, fallback: fallback ? `[data-tour="${fallback}"]` : undefined,
+    title: `context.${currentRole}.${id}Title`, text: `context.${currentRole}.${id}Text`,
+  })
+  return [
+    step('welcome', 'start'),
+    step('pulse', 'overview-pulse'),
+    step('queue', currentRole === 'employee' ? 'overview-create' : 'overview-metrics'),
+    step('route', 'overview-route'),
+    step('focus', 'overview-focus', 'overview-metrics'),
+    step('finish', 'overview-results', 'overview-route'),
+  ]
+}

@@ -83,3 +83,31 @@
  .ir-app .global-header .tour-header-search .command-trigger :is(span,kbd) { display:none; }
 }
 @media(prefers-reduced-motion:reduce) { .tour-trigger { animation:none; } .tour-stage [data-tour] { transition:none; } }
+
+.global-header .tour-header-actions > .tour-trigger-admin { background:linear-gradient(115deg,#1d4ed8,#4338ca); }
+.global-header .tour-header-actions > .tour-trigger-manager { background:linear-gradient(115deg,#047857,#0f766e); }
+.global-header .tour-header-actions > .tour-trigger-employee { background:linear-gradient(115deg,#0369a1,#0e7490); }
+.global-header .tour-header-actions > .tour-trigger-handler { background:linear-gradient(115deg,#92400e,#b45309); }
+.tour-personal-badge { padding:3px 5px; border-radius:5px; background:#ffffff26; font-size:9px; }
+.tour-context-dialog { pointer-events:auto; touch-action:none; }
+.tour-context-coach { touch-action:pan-y; }
+.tour-context-coach { box-sizing:border-box; position:fixed; top:auto; right:24px; bottom:20px; width:min(440px,calc(100vw - 32px)); max-height:46dvh; overflow-y:auto; pointer-events:auto; padding:18px; }
+.tour-context-coach[data-placement=top] { top:76px; bottom:auto; }
+.tour-context-actions { display:flex; gap:12px; }
+.tour-context-actions button { margin-top:4px; }
+.tour-context-coach h2 { font-size:22px; margin:8px 0; }
+.tour-context-coach .tour-role { margin:4px 0; }
+.tour-context-coach .tour-progress { margin:12px 0; }
+@media(max-width:767px) {
+ .tour-context-coach { right:12px; bottom:12px; width:calc(100vw - 24px); max-height:45dvh; }
+ .tour-context-coach .tour-close { position:static; }
+ .tour-context-coach .tour-topline { padding-right:0; }
+ .tour-personal-badge { position:absolute; bottom:-5px; right:-5px; background:#1e293b; font-size:8px; }
+}
+
+[data-tour^="overview-"] { scroll-margin-top:90px; }
+@media(min-width:768px) and (max-width:1439px) {
+ .ir-app .global-header .global-header-context { display:none; }
+ .ir-app .global-header .tour-header-search .shell-search { width:130px; flex-basis:130px; }
+ .ir-app .global-header .tour-header-search .command-trigger :is(span,kbd) { display:none; }
+}
