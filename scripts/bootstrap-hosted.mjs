@@ -46,7 +46,7 @@ try {
  if(!ready)throw new Error('Data API schema reload not ready')
  const seed=spawnSync(process.execPath,['scripts/seed-demo.mjs'],{stdio:'inherit',env:process.env})
  if(seed.status!==0)throw new Error('Demo account provisioning failed')
- for(const file of ['supabase/demo-data.sql','supabase/demo-routing.sql']) {
+ for(const file of ['supabase/demo-data.sql','supabase/demo-routing.sql','supabase/demo-topics.sql']) {
   await client.query(await readFile(file,'utf8'))
   console.log('Applied '+file)
  }

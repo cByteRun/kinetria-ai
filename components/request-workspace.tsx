@@ -203,8 +203,7 @@ export async function RequestWorkspace({
                 <p>{ui('assignAnOwnerInTheRequestCard')}</p>
               </div>
             </div>
-            <RequestRegistry canAskQvin={role === 'admin' || role === 'manager'}
-              showRecurrence={canViewInsights(role)}
+            <RequestRegistry
               rows={list.data.filter((r) => !r.assignee_id && !isDone(r))}
               categories={categoryNames}
               path={path}

@@ -17,6 +17,10 @@ export function telegramDb() {
     global: { fetch: (url, init) => fetch(url, { ...init, signal: AbortSignal.timeout(8000) }) },
   })
 }
+export function bridge(tg:number,op:'topics',data:{op:'list'}):Promise<import('../topics').SavedTopic[]>
+export function bridge(tg:number,op:'topics',data:{op:'rows'}):Promise<import('../topics').TopicRow[]>
+export function bridge(tg:number,op:'topics',data:{op:'save';data:import('../topics').TopicDraft}):Promise<string>
+export function bridge(tg:number,op:'topics',data:{op:'delete';data:{id:string}}):Promise<boolean>
 export function bridge(tg:number,op:'portal',data:{op:'list'}):Promise<import('../feedback').FeedbackRow[]>
 export function bridge(tg:number,op:'portal',data:{op:'submit';data:object}):Promise<{id:string;request_id:string}>
 export function bridge(tg:number,op:'portal',data:{op:'vote';data:object}):Promise<boolean>

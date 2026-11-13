@@ -15,6 +15,7 @@ globalThis.telegramHarness = {
     if (op === 'detail' && globalThis.telegramHarness.detailOverride) return globalThis.telegramHarness.detailOverride()
     if (op === 'state') { states.set(tg,data); return true }
     if (op === 'submit') return {id:'f0000000-0000-4000-8000-000000000000',number:123}
+    if (op === 'topics') return globalThis.telegramHarness.topics(data)
     if (op === 'finish') return true
     if (['list','stats'].includes(op)) return listRows
     throw new Error('Unexpected bridge operation: ' + op)
@@ -28,7 +29,7 @@ const demo = url(`export const demoChoices=${JSON.stringify(accounts)}; export c
 const ai = url(`export const aiConfig=()=>globalThis.telegramHarness.aiEnabled ? {provider:"groq"} : null; export const generateText=()=>{throw new Error('Unexpected model call')};`)
 let source = await readFile(new URL('../lib/telegram/bot.ts', import.meta.url), 'utf8')
 const summary = url(`export const generateRequestSummary=(...args)=>globalThis.telegramHarness.summary(...args);`)
-source = source.replace("'../qvin'", `'${url('export const askQvin=()=>{throw new Error("Unexpected Qvin call")}')}'`).replace("'../enrich-request'", `'${url('export const enrichRequest=async()=>{}')}'`).replace("'../request-summary'", `'${summary}'`).replace("'./demo'", `'${demo}'`).replace("'../ai'", `'${ai}'`).replace("'./api'", `'${api}'`).replace("'../requests'", `'${requests}'`)
+source = source.replace("'../semantic-topics'", `'${url('export const semanticTopics=(...args)=>globalThis.telegramHarness.generateTopics(...args)')}'`).replace("'../insights'", `'${url('export const recurringProblems=rows=>globalThis.telegramHarness.similarTopics(rows)')}'`).replace("'../qvin'", `'${url('export const askQvin=()=>{throw new Error("Unexpected Qvin call")}')}'`).replace("'../enrich-request'", `'${url('export const enrichRequest=async()=>{}')}'`).replace("'../request-summary'", `'${summary}'`).replace("'./demo'", `'${demo}'`).replace("'../ai'", `'${ai}'`).replace("'./api'", `'${api}'`).replace("'../requests'", `'${requests}'`)
 const {handleUpdate} = await import(url(transpile(source)))
 let n=0
 const send = async(text, extra={}) => handleUpdate({update_id:++n,message:{chat:{id:42,type:'private'},from:{id:42},text,...extra}})
@@ -197,3 +198,40 @@ denyDetail=true;const beforeSummary=summaryCalls;await callback('summary:'+summa
 assert.equal(summaryCalls,beforeSummary,'Visibility checked before sending data to AI')
 await callback('summary:invalid');assert.equal(summaryCalls,beforeSummary)
 console.log('PASS AI summary: admin/handler, employee/forged/denied access, plain text and retry')
+
+// Topic dialogue uses mocked Telegram/AI; SQL scope and shared persistence are
+// verified separately by check-topic-storage.cjs and check-topic-browser.mjs.
+const topicRows=[{id:'a',number:1,title:'Дубли артикула',description:'Один товар',created_at:'2026-11-12',category_id:'catalog',tags:['артикул'],kind:'problem',status:'new'},{id:'b',number:2,title:'Два обозначения изделия',description:'Один товар',created_at:'2026-11-11',category_id:'catalog',tags:['артикул'],kind:'problem',status:'review'}]
+let persisted=[],topicCalls=0
+Object.assign(globalThis.telegramHarness,{
+ similarTopics:rows=>rows.length>1?[{tag:'артикул',rows}]:[],
+ generateTopics:async rows=>{topicCalls++;return [{title:'Единый артикул',ids:rows.map(row=>row.id),current:rows.length,previous:0}]},
+ topics:async ({op,data})=>{
+  assert(['admin','manager','handler'].includes(currentRole))
+  if(op==='rows')return topicRows
+  if(op==='list')return persisted
+  if(op==='save'){persisted.push({...data});return data.id}
+  if(op==='delete'){if(currentRole!=='admin')throw new Error('unavailable');persisted=persisted.filter(row=>row.id!==data.id);return true}
+ }
+})
+for(const role of ['handler','manager','admin']){
+ currentRole=role;states.set(42,{})
+ await send('/list');assert(messages.at(-1).buttons.flat().some(b=>b.callback_data==='topics:similar'))
+ await send('/stats');assert(messages.at(-1).buttons.flat().some(b=>b.callback_data==='topics:generate'))
+ await callback('topics:similar');await callback('topics:group:a')
+ assert.deepEqual(states.get(42).topicSelection,['a','b'])
+ await callback('topics:generate');assert(messages.at(-1).text.includes('(2)'));assert(messages.at(-1).text.includes('R-001'))
+ const save=messages.at(-1).buttons.flat().find(b=>b.callback_data?.startsWith('topics:save:')).callback_data
+ await callback('topics:regenerate')
+ const saveNew=messages.at(-1).buttons.flat().find(b=>b.callback_data?.startsWith('topics:save:')).callback_data
+ await callback(save);assert(messages.at(-1).text.includes('устарел'))
+ await callback(saveNew);assert(messages.at(-1).text.includes('сохранена'))
+ await send('/topics');assert.equal(messages.at(-1).buttons.flat().some(b=>b.callback_data?.startsWith('topics:delete:')),role==='admin')
+}
+assert.equal(topicCalls,6)
+currentRole='admin';const deleting=persisted[0].id
+await callback('topics:delete:'+deleting);assert(persisted.some(row=>row.id===deleting))
+await callback('topics:remove:'+deleting);assert(!persisted.some(row=>row.id===deleting))
+for(const role of ['employee','client']){currentRole=role;const before=calls.filter(c=>c.op==='topics').length;await callback('topics:generate');assert.equal(calls.filter(c=>c.op==='topics').length,before)}
+currentRole='handler';await callback('topics:cancel');assert.deepEqual(states.get(42),{})
+console.log('PASS topic dialogue: queue/stats entry points, similar group, generation count/list, regenerate/stale save, save, cancel, Admin-only delete controls, employee/client denied; Telegram/AI mocked')

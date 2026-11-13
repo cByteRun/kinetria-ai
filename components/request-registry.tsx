@@ -280,7 +280,6 @@ function RegistryFilters({
   const filtered = useMemo(() => rows.filter(
     (r) =>
       (!origin || (r.origin || 'employee') === origin) &&
-      (!topicSet || topicSet.has(r.id)) &&
       (!tag ||
         (r.tags || []).some(
           (t) => normalizeTopic(t) === normalizedTag,
@@ -319,18 +318,19 @@ function RegistryFilters({
         .join(' ')
         .toLocaleLowerCase()
         .includes(normalizedQuery),
-  ), [rows, origin, topicSet, categories, tag, normalizedTag, kind, period, status, category, department, deadline, normalizedQuery, day])
+  ), [rows, origin, categories, tag, normalizedTag, kind, period, status, category, department, deadline, normalizedQuery, day])
+  const topicFiltered = useMemo(() => filtered.filter(row => !topicSet || topicSet.has(row.id)), [filtered, topicSet])
   const sorted = useMemo(() =>
     sort === 'newest'
-      ? [...filtered].sort((a, b) =>
+      ? [...topicFiltered].sort((a, b) =>
           (b.created_at || '').localeCompare(a.created_at || '') || b.number - a.number,
         )
       : sort === 'recent'
-        ? [...filtered].sort((a, b) =>
+        ? [...topicFiltered].sort((a, b) =>
             (b.updated_at || '').localeCompare(a.updated_at || ''),
           )
-        : prioritizeRequests(filtered, showRecurrence && sort === 'recurrence'),
-    [filtered, sort, showRecurrence])
+        : prioritizeRequests(topicFiltered, showRecurrence && sort === 'recurrence'),
+    [topicFiltered, sort, showRecurrence])
   const groups = useMemo(() => {
     const groups = showRecurrence && mode === 'groups' ? recurringProblems(sorted) : []
     if (sort === 'priority')
@@ -399,14 +399,13 @@ function RegistryFilters({
     setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
   return (
-    <section className="card">
+    <section className="card registry-card">
       {canAskQvin && <QvinPanel key={sorted.map(r => r.id).join()} ids={sorted.map(r => r.id)} />}
-      {showRecurrence && <SemanticTopics onSelect={setTopicIds} />}
       <div className="card-head">
         <div>
           <h2>{ui('unifiedRequestRegistry')}</h2>
           <p aria-live="polite">
-            {ui('foundCount', { shown: filtered.length, total: rows.length })}
+            {ui('foundCount', { shown: topicFiltered.length, total: rows.length })}
           </p>
         </div>
         <div className="ir-flex">
@@ -546,6 +545,7 @@ function RegistryFilters({
           </button>
         )}
       </div>
+      <SemanticTopics enabled={showRecurrence} rows={filtered} onSelect={setTopicIds}>
       {mode === 'groups' && showRecurrence ? (
         <div className="registry-groups">
           <p className="stat-definition">
@@ -622,9 +622,10 @@ function RegistryFilters({
         <CaseTable rows={sorted} categories={categories} path={path} />
       )}
       <footer className="table-foot">
-        {ui('showingCount', { shown: filtered.length, total: rows.length })}
+        {ui('showingCount', { shown: topicFiltered.length, total: rows.length })}
         <span>{ui('accessIsDeterminedByYourRole')}</span>
       </footer>
+      </SemanticTopics>
     </section>
   )
 }

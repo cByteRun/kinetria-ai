@@ -23,7 +23,7 @@ export function validateTopics(value: unknown, rows: TopicInput[], cutoff: numbe
   }).filter(topic => topic.current > 0).sort((a, b) => b.current - a.current)
 }
 
-export async function semanticTopics(rows: TopicInput[], days: number, locale: string, anchor: number) {
+export async function semanticTopics(rows: TopicInput[], days: number, locale: string, anchor: number, refreshKey = '') {
   const config = aiConfig()
   const serialized = JSON.stringify(rows)
   // Dataset includes only RLS-visible rows. Exact input, period and model form the
@@ -37,5 +37,5 @@ export async function semanticTopics(rows: TopicInput[], days: number, locale: s
       { type: 'object', additionalProperties: false, properties: { topics: { type: 'array', items: { type: 'object', additionalProperties: false, properties: { title: { type: 'string' }, ids: { type: 'array', items: { type: 'string' } } }, required: ['title', 'ids'] } } }, required: ['topics'] },
     ))
     return validateTopics(raw, rows, anchor - days * 86400000)
-  }, ['semantic-topics-v1', hash, String(days), locale, String(anchor), JSON.stringify(config && { provider: config.provider, model: config.model })], { revalidate: 3600 })()
+  }, ['semantic-topics-v1', hash, String(days), locale, String(anchor), refreshKey, JSON.stringify(config && { provider: config.provider, model: config.model })], { revalidate: 3600 })()
 }

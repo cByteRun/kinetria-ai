@@ -1,7 +1,9 @@
 import { useTranslations } from 'next-intl'
 import { DashboardViews } from './dashboard-views'
 import { IdeaOverview } from './idea-overview'
-import samples from '../lib/demo-requests.json'
+import originalSamples from '../lib/demo-requests.json'
+import topicSamples from '../lib/demo-topic-requests.json'
+const samples = [...originalSamples.map(sample=>({...sample,tags:[] as string[]})), ...topicSamples]
 import { RequestDrawer } from './request-drawer'
 import { RequestForm } from './request-form'
 import { RequestRegistry } from './request-registry'
@@ -54,6 +56,7 @@ export function PreviewWorkspace({
     assignee_id: null,
     kind: sample.kind as keyof typeof requestKindLabels,
     sentiment: null,
+    tags: sample.tags,
     is_demo: true,
   }))
   const selected = samples.find((sample) => sample.id === id)
@@ -128,17 +131,7 @@ export function PreviewWorkspace({
           showRecurrence={canViewInsights(role)}
           path={'/workspace/' + role}
           categories={names}
-          rows={samples.map((sample, index) => ({
-            id: sample.id,
-            number: index + 1,
-            source_ref: sample.id,
-            title: sample.title,
-            status: sample.status as RequestStatus,
-            category_id: sample.category,
-            assignee_id: null,
-            kind: sample.kind as keyof typeof requestKindLabels,
-            sentiment: null,
-          }))}
+          rows={rows}
         />
       )}
       {selected && (

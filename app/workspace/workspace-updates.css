@@ -103,3 +103,20 @@
   .ir-app .topbar .color-theme-select { display: none; }
 }
 .qvin-panel{padding:18px;margin:16px;border:1px solid var(--line);border-radius:16px}.qvin-panel summary{cursor:pointer;font-weight:600}.qvin-panel form,.qvin-panel label{display:grid;gap:12px}.qvin-panel textarea{width:100%;padding:12px;background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:10px;font:inherit}.qvin-panel p{margin-block:12px}
+
+/* Registry themes share the table's frame and semantic design tokens. */
+.topic-workbench{padding:16px 24px;border-block:1px solid var(--border);background:var(--panel)}
+.topic-heading,.topic-chips,.topic-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.topic-heading{margin-bottom:12px;justify-content:space-between}.topic-heading small,.topic-action-bar>small{color:var(--text-muted);font-size:12px}
+.topic-chip{display:inline-flex;align-items:center;max-width:100%;gap:2px}.topic-chips .btn{white-space:normal;text-align:left;max-width:100%;height:auto;min-height:36px}
+.topic-chips .btn[aria-pressed=true]{background:var(--panel-tint);border-color:var(--primary);color:var(--primary)}
+.topic-ai{font-size:11px;white-space:nowrap;color:var(--primary)}.topic-draft{border-style:dashed!important}
+.topic-delete{border:0;background:transparent;color:var(--text-muted);cursor:pointer;min-width:36px;min-height:36px;font-size:24px}
+.topic-action-bar{background:var(--panel);border-top:1px solid var(--border);padding:16px 24px;display:grid;gap:10px;border-radius:0 0 16px 16px}
+.topic-actions .btn{white-space:normal;height:auto;min-height:38px}
+@media(max-width:767px){.topic-workbench,.topic-action-bar{padding:14px}.topic-actions{align-items:stretch}.topic-actions .btn{flex:1 1 200px}}
+.registry-card>.table-scroll,.registry-card>.board,.registry-card>.registry-groups{max-height:clamp(240px,38dvh,520px);overflow:auto;overscroll-behavior:contain}
+.registry-card>.table-scroll .case-table thead{position:sticky;top:0;z-index:1;background:var(--panel)}
+.topic-action-bar>.filter-select{width:100%;max-width:420px}
+.ir-app .registry-card{min-height:0}
+@media(max-width:767px){.topic-chips .btn,.topic-delete,.topic-actions .btn{min-height:44px}}

@@ -366,22 +366,24 @@ export async function saveCategory(form: FormData) {
   )
 }
 
-export async function analyzeRecurringTopics(days: number) {
+export async function analyzeRecurringTopics(days: number, ids?: string[]) {
   const ui = await getTranslations('ui')
   if (!hasSupabase || !['admin', 'handler', 'manager'].includes((await getRole()) || '') || ![7, 30, 90].includes(days) || !aiConfig()) return { error: ui('aiSummaryUnavailable') }
   const supabase = await createClient()
   // UTC hour fixes window boundaries and cache keys across repeated page opens.
   const anchor = Math.floor(Date.now() / 3600000) * 3600000
-  const { data, error } = await supabase.from('requests')
-    .select('id,title,description,created_at')
+  if (ids && (ids.length < 2 || ids.length > 200 || new Set(ids).size !== ids.length)) return { error: ui('requestUnavailable') }
+  let query = supabase.from('requests').select('id,title,description,created_at')
+  if (ids) query = query.in('id', ids)
+  else query = query
     .gte('created_at', new Date(anchor - days * 2 * 86400000).toISOString())
     .lt('created_at', new Date(anchor).toISOString())
-    .order('created_at', { ascending: false }).limit(201)
-  if (error || !data) return { error: ui('requestUnavailable') }
+  const { data, error } = await query.order('created_at', { ascending: false }).limit(201)
+  if (error || !data || (ids && data.length !== ids.length)) return { error: ui('requestUnavailable') }
   if (data.length > 200) return { error: ui('topicLimit') }
   if (JSON.stringify(data).length > 120000) return { error: ui('topicVolume') }
   try {
     const { semanticTopics } = await import('../../lib/semantic-topics')
-    return { topics: await semanticTopics(data, days, await getLocale(), anchor), anchor }
+    return { topics: await semanticTopics(data, days, await getLocale(), ids ? Math.min(...data.map(row => Date.parse(row.created_at))) : anchor), anchor }
   } catch { return { error: ui('aiConnectionError') } }
 }

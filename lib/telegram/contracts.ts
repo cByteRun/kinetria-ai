@@ -11,7 +11,7 @@ export type TelegramDetail = {
   files: { id: string; name: string }[]; events: TelegramEvent[]
 }
 export type BridgeResults = {
-  portal: unknown; qvin:QvinRow[];
+  topics: unknown; portal: unknown; qvin:QvinRow[];
   context: Context; detail: TelegramDetail;
   history: { id: string; number: number; events: TelegramEvent[]; more: boolean };
   list: TelegramSummary[]; stats: TelegramSummary[]; reserve: TelegramSummary[];

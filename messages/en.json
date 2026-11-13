@@ -1110,6 +1110,30 @@
     "employee": "Employees",
     "client": "Customers",
     "logout": "Sign out",
-    "listLimit": "The portal shows the latest 200 accessible entries."
+    "listLimit": "The portal shows the latest 200 accessible entries.",
+    "allFeedback": "Feedback",
+    "portalSnapshot": "Visible feedback overview",
+    "supportCount": "Support votes"
+  },
+  "topicWorkbench": {
+    "heading": "Request topics",
+    "hint": "Saved topics are shared by the web and Qvin",
+    "all": "All topics",
+    "delete": "Delete “{title}”",
+    "confirmDelete": "Delete “{title}”? Requests will be kept.",
+    "draft": "draft",
+    "actions": "Topic actions",
+    "similar": "Select similar requests",
+    "generate": "✨ Generate topic with AI",
+    "save": "Save topic to registry",
+    "cancel": "Reset selection",
+    "scope": "Selected: {count}. AI requires 2–200 requests.",
+    "selected": "Similar requests selected: {count}",
+    "noSimilar": "No recurring category/tag groups found. Select a category or refine your search.",
+    "empty": "No recurring topics found in this selection.",
+    "working": "Qvin is working…",
+    "saved": "Topic saved to the shared registry.",
+    "actionError": "Action failed. Check your access and try again.",
+    "storageError": "Topic storage unavailable. Check the database migration and connection."
   }
 }

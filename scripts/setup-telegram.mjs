@@ -30,6 +30,7 @@ const commands = [
   {command:'new',description:'Новое обращение · сотрудник'},
   {command:'draft',description:'Продолжить черновик · сотрудник'},
   {command:'list',description:'Мои обращения / рабочая очередь'},
+  {command:'topics',description:'Темы реестра · ответственный / руководитель / админ'},
   {command:'stats',description:'Сводка доступных обращений'},
   {command:'reserve',description:'Резерв · администратор'},
   {command:'cancel',description:'Отменить текущий шаг'},
