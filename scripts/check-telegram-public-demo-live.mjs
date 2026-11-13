@@ -37,7 +37,7 @@ let source=await read('lib/telegram/bot.ts')
 const modules={
  '../telegram-links':compile(await read('lib/telegram-links.ts')),
  '../requests':compile(await read('lib/requests.ts')),
- '../ai':compile(await read('lib/ai.ts')),
+ '../ai':compile((await read('lib/ai.ts')).replace("'./ai-request'", JSON.stringify(compile(await read('lib/ai-request.ts'))))),
  './demo':compile(demoSource),'./api':api,
  '../semantic-topics':url('export const semanticTopics=()=>{throw Error("unused")};'),
  '../insights':url('export const recurringProblems=()=>{throw Error("unused")};'),

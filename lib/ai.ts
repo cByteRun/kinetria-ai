@@ -1,3 +1,5 @@
+import { requestGroqText } from './ai-request'
+
 export function aiConfig() {
   const provider = process.env.AI_PROVIDER?.trim().toLowerCase()
   if (provider === 'groq' && process.env.GROQ_API_KEY) {
@@ -45,19 +47,11 @@ export async function generateText(instructions: string, input: string, maxToken
     return text
   }
   if (config.provider === 'groq') {
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + config.key },
-      signal: AbortSignal.timeout(60000),
-      body: JSON.stringify({ model: config.model, temperature: 0, max_completion_tokens: maxTokens,
+    return requestGroqText(config.key, { model: config.model, temperature: 0, max_completion_tokens: maxTokens,
         ...(config.model.startsWith('qwen/') && { reasoning_format: 'hidden', reasoning_effort: 'none' }),
         messages: [{ role: 'system', content: instructions + (schema ? '\nReturn JSON matching this schema: ' + JSON.stringify(schema) : '') }, { role: 'user', content: input }],
         ...(schema && { response_format: { type: 'json_object' } }),
-      }),
     })
-    if (!response.ok) throw new Error('Groq unavailable (HTTP ' + response.status + ')')
-    const result = await response.json(), choice = result.choices?.[0]
-    if (choice?.finish_reason !== 'stop' || typeof choice.message?.content !== 'string' || !choice.message.content.trim()) throw new Error('Groq incomplete response')
-    return choice.message.content as string
   }
   const gemini = config.provider === 'gemini'
   const response = await fetch(gemini

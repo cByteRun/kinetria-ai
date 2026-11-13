@@ -739,7 +739,12 @@
     "noSemanticTopics": "No recurring semantic topics found.",
     "topicLimit": "More than 200 problems across both periods. Choose a shorter period.",
     "topicVolume": "Too much text for one analysis. Choose a shorter period.",
-    "moreSections": "More"
+    "moreSections": "More",
+    "aiSummaryRateLimited": "The AI service rate limit was reached. Wait for the countdown, then try again.",
+    "aiSummaryTemporaryError": "The AI service did not respond after a retry. Try again after the countdown.",
+    "aiSummaryServiceError": "The AI service rejected the request. Contact an administrator if this persists.",
+    "aiSummaryRetryIn": "Retry in {seconds}s",
+    "aiSummaryRetry": "Retry summary"
   },
   "categories": {
     "collaboration": "Cross-team collaboration",

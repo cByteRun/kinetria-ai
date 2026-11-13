@@ -297,7 +297,8 @@ console.log('PASS Telegram onboarding: linked /start needs no relinking; closed-
 // Both text and voice must run the actual draft AI path, with retry preserving files.
 currentRole='employee';globalThis.telegramHarness.aiEnabled=true
 if(process.env.TELEGRAM_TEST_LIVE_AI==='true'){
- const live=await import(url(transpile(await readFile(new URL('../lib/ai.ts',import.meta.url),'utf8'))))
+ const transport=url(transpile(await readFile(new URL('../lib/ai-request.ts',import.meta.url),'utf8')))
+ const live=await import(url(transpile((await readFile(new URL('../lib/ai.ts',import.meta.url),'utf8')).replace("'./ai-request'", JSON.stringify(transport)))))
  globalThis.telegramHarness.generateText=live.generateText
 }else globalThis.telegramHarness.generateText=async()=>JSON.stringify({title:'Дубли артикула',category:'catalog',kind:'problem',proposal:'Единый артикул',sentiment:4,tags:['каталог']})
 await send('/new');await send('Синтетическая проверка. SYN-001 и SYN001 обозначают один товар. Приходится сверять вручную. Предлагаю единый артикул.')

@@ -656,7 +656,7 @@ async function RequestDetail({
             )}
           {role !== 'employee' && <ImpactDetail id={id} />}
           <PortalLink />
-          {role !== 'employee' && aiConfig() && <RequestSummary id={id} />}
+          {role !== 'employee' && aiConfig() && <RequestSummary key={id} id={id} />}
           <section className="crm-detail-history">
             <h3>
               <Clock3 size={17} aria-hidden="true" />

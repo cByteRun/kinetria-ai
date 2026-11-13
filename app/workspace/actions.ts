@@ -9,6 +9,7 @@ import { deliverOutbox } from '../../lib/telegram/delivery'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { generateRequestSummary } from '../../lib/request-summary'
 import { aiConfig, generateText } from '../../lib/ai'
+import { AiProviderError } from '../../lib/ai-request'
 import { getRole } from '../../lib/session'
 import { hasSupabase } from '../../lib/supabase/config'
 import { createClient } from '../../lib/supabase/server'
@@ -179,7 +180,7 @@ type DraftResult = { draft: Draft } | { error: 'invalid' | 'aiUnavailable' }
 
 export async function summarizeRequest(
   id: string,
-): Promise<{ text?: string; error?: string }> {
+): Promise<{ text?: string; error?: string; retryAfterSeconds?: number }> {
   const ui = await getTranslations('ui')
   const role = await getRole()
   if (
@@ -199,8 +200,14 @@ export async function summarizeRequest(
   try {
     const text = await generateRequestSummary(data, await getLocale())
     return { text }
-  } catch {
-    return { error: ui('aiConnectionError') }
+  } catch (error) {
+    if (error instanceof AiProviderError) {
+      if (error.reason === 'http' && error.status !== 408 && (error.status ?? 0) < 500)
+        return { error: ui('aiSummaryServiceError') }
+      return { error: ui(error.reason === 'rate_limit' ? 'aiSummaryRateLimited' : 'aiSummaryTemporaryError'), retryAfterSeconds: error.retryAfterSeconds ?? 10 }
+    }
+    console.warn('AI summary failure', { reason: 'unexpected', name: error instanceof Error ? error.name : 'unknown' })
+    return { error: ui('aiSummaryTemporaryError'), retryAfterSeconds: 10 }
   }
 }
 
