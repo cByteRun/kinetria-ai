@@ -162,7 +162,7 @@
   "resolvedHistoricalFailure": "check-i18n.mjs: hardcoded JSX text in components/impact-card.tsx; all three locale dictionaries have 1094 messages",
   "localization": {
     "status": "PASS",
-    "localeMessages": 1096,
+    "localeMessages": 1114,
     "languages": [
       "ru",
       "en",
@@ -196,5 +196,38 @@
     "registrationAndFileVerifiedBeforeNetworkRetry": true
   },
   "productionDeployment": "READY",
-  "publicDemo": "https://kinetria-ai.vercel.app"
+  "publicDemo": "https://kinetria-ai.vercel.app",
+  "realTelegramScreenshots": [
+    {
+      "file": "docs/demos/Снимок экрана 2026-11-13 090320.png",
+      "sha256": "3b165d2760324cfc2d8f242c6976f01b1e8ff4b3f48b1ecef358ce02552f7a61",
+      "width": 578,
+      "height": 901,
+      "source": "user-provided real Telegram screenshot"
+    },
+    {
+      "file": "docs/demos/Снимок экрана 2026-11-13 090241.png",
+      "sha256": "9f8cef643dc4271611bab0849c568a7663bb3a188e3ca464aec46934dbbf57c6",
+      "width": 800,
+      "height": 895,
+      "source": "user-provided real Telegram screenshot"
+    }
+  ],
+  "telegramChannelOnboarding": {
+    "base": "https://kinetria-ai.vercel.app",
+    "checks": [
+      "separate bot/invite/web links; sidebar channel; relinking optional by default",
+      "RU desktop/tablet/mobile 1440/768/390/320 without overflow",
+      "fallback only on demand; authenticated one-time token generated; no Telegram navigation",
+      "EN/KK desktop/mobile, translated onboarding and no overflow"
+    ],
+    "errors": [],
+    "telegramMessagesSent": false,
+    "productionDeployment": "READY",
+    "configuredChannelMatchesProvidedWebId": true,
+    "linkedUserRelinkRequired": false,
+    "closedDemoLoginNeedsWebLink": false,
+    "unknownUserNeedsAccountIdentity": true,
+    "transportAndSqlWorkflow": "PASS"
+  }
 }

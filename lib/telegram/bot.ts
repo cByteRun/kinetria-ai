@@ -1,3 +1,4 @@
+import { TELEGRAM_CHANNEL_INVITE_URL } from '../telegram-links'
 import { semanticTopics } from '../semantic-topics'
 import { recurringProblems } from '../insights'
 import type { TopicDraft } from '../topics'
@@ -143,7 +144,8 @@ ${c.categories.map(x => '• ' + x.name).join('\n') || 'Справочник п�
 
 🔒 Аудио передаётся в Groq. Затем вы проверите карточку. До подтверждения обращение не регистрируется.`
 }
-const channelHint = '📣 Приватный Telegram-канал проекта\nЕдиная лента всех обращений и идей сотрудников в привычном, удобочитаемом формате: история работы в одном месте. Канал предназначен для сотрудников, ответственных, руководителей и администраторов. В ленте — безопасные карточки без пользовательских описаний и файлов; полный текст и вложения доступны по правам в боте и дашборде.'
+const channelHint = `📣 Приватный канал компании\nДля всех внутренних ролей: сотрудники, ответственные, руководители и администраторы. Вступить: ${TELEGRAM_CHANNEL_INVITE_URL}\nВ канале — общая лента безопасных служебных карточек без описаний и файлов. Полный текст, действия и личные уведомления — в боте и веб-кабинете по вашей роли. Участие в канале не заменяет аккаунт и не расширяет доступ.`
+const channelButtons = (): Button[][] => [[{ text: '📣 Вступить в канал компании', url: TELEGRAM_CHANNEL_INVITE_URL }]]
 
 const overview = '💡 IdeaRoute — проблемы и предложения сотрудников с понятным результатом.\n\n📝 Автор подтверждает обращение → 👔 команда назначает ответственного и срок → 🛠 фиксирует решение → ✅ автор получает итог.\n\n🌐 Бот и дашборд работают с одними обращениями и историей. В боте — быстрые действия и уведомления; на сайте — полный реестр, аналитика и настройки. На сайте войдите в тот же аккаунт.'
 function topicButtons(role:string):Button[][] {
@@ -163,7 +165,7 @@ function homeButtons(tg: number, role: string): Button[][] {
   rows.push(...topicButtons(role))
   rows.push([button('📖 Помощь по моей роли', 'help')])
   if (demoAllowed(tg)) rows.push([button('🔄 Сменить демоаккаунт', 'demoMenu')])
-  rows.push(...websiteButtons())
+  rows.push(...websiteButtons(), ...channelButtons())
   return rows
 }
 function commands(tg: number, role: string) {
@@ -177,7 +179,7 @@ async function showInstructions(tg: number, c: Pick<Context, 'role'>) {
   await say(tg, `📖 Доступные сценарии\n\n🎙 Сотрудник: голос или текст → проверка черновика → отправка → номер обращения.\n👔 Руководитель: назначение владельца и срока; администратор разбирает резерв.\n🛠 Ответственный: рассмотрение → уточнение → работа → решение.\n✅ Автор: ответ на уточнение → чтение результата → ознакомление.\n🌐 Общие обращения и история доступны также в дашборде.\n\n${channelHint}\n\n${roleInstructions[c.role] || ''}\n\n${commands(tg, c.role)}\n\nПомощь и главная сохраняют текущий шаг.`, homeButtons(tg, c.role))
 }
 async function demoMenu(tg: number, intro = false) {
-  await say(tg, `${intro ? overview + '\n\n' : ''}🧪 Выберите демоаккаунт\nДля совместного показа каждому нужен отдельный аккаунт. Занятые аккаунты недоступны. Черновики разделены по аккаунтам.\n/login — выбор аккаунта\n/home — главная`, demoChoices.map(account => [button(`${demoRoleNames[account.role]} · ${account.name}`, 'demo:' + account.id)]).concat(websiteButtons()))
+  await say(tg, `${intro ? overview + '\n\n' + channelHint + '\n\n' : ''}🧪 Выберите демоаккаунт\nДля совместного показа каждому нужен отдельный аккаунт. Занятые аккаунты недоступны. Черновики разделены по аккаунтам.\n/login — выбор аккаунта\n/home — главная`, demoChoices.map(account => [button(`${demoRoleNames[account.role]} · ${account.name}`, 'demo:' + account.id)]).concat(websiteButtons(), intro ? channelButtons() : []))
 }
 async function showRole(tg: number, c: Pick<Context, 'role' | 'name'>) {
   const descriptions: Record<string, string> = { client:'Оставляет отзывы, поддерживает опубликованные идеи и получает ответ команды в портале.', employee: 'Подаёт обращения, отвечает на уточнения и знакомится с решением.', handler: 'Рассматривает назначенные обращения, уточняет детали и фиксирует результат.', manager: 'Работает с обращениями своего направления, назначает владельца и срок.', admin: 'Контролирует общий реестр и назначает владельцев обращений из резерва.' }
@@ -451,7 +453,7 @@ async function processUpdate(update: Update) {
     const message = error instanceof Error ? error.message : ''
     if (['conflict', 'unavailable', 'unlinked', 'demoBusy'].includes(message)) {
       try {
-        await say(tg, message === 'demoBusy' ? 'Этот демоаккаунт уже привязан к другому Telegram. Выберите другой аккаунт или сначала отвяжите его через /unlink.' : message === 'unlinked' ? (update.message?.text?.trim() === '/start' ? overview + '\n\n' : '') + '🔗 Откройте на сайте кабинет → «Как работает маршрут» → «Привязать аккаунт» и перейдите по одноразовой ссылке. Каждый участник привязывает свой аккаунт; повторная привязка одного веб-аккаунта заменит предыдущий Telegram.' : message === 'conflict' ? 'Карточка изменилась. Откройте /list и повторите действие с актуальной версией.' : 'Действие недоступно. Проверьте права, поля и срок ссылки. /cancel · /list', websiteButtons())
+        await say(tg, message === 'demoBusy' ? 'Этот демоаккаунт уже привязан к другому Telegram. Выберите другой аккаунт или сначала отвяжите его через /unlink.' : message === 'unlinked' ? (update.message?.text?.trim() === '/start' ? overview + '\n\n' + channelHint + '\n\n' : '') + '🔗 Этот Telegram пока не связан с аккаунтом. Если вам доступен демовход, выберите аккаунт через /login. Иначе откройте на сайте Telegram → «Бот просит связать аккаунт?» → создайте одноразовую ссылку. Повторная привязка не нужна, если меню вашей роли уже работает.' : message === 'conflict' ? 'Карточка изменилась. Откройте /list и повторите действие с актуальной версией.' : 'Действие недоступно. Проверьте права, поля и срок ссылки. /cancel · /list', [...websiteButtons(), ...channelButtons()])
         await bridge(tg, 'finish', { update: update.update_id, done: true })
       } catch (replyError) {
         await bridge(tg, 'finish', { update: update.update_id, done: false })

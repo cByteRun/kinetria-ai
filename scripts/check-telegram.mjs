@@ -11,6 +11,7 @@ globalThis.telegramHarness = {
   async bridge(tg, op, data = {}) {
     calls.push({tg,op,data})
     if (op === 'claim') { if (updates.has(data.update)) return false; updates.add(data.update); return true }
+    if (op === 'context' && globalThis.telegramHarness.unlinked) throw new Error('unlinked')
     if (op === 'context') return {role: currentRole,name:'Synthetic account',state:states.get(tg) || {},categories:[{id:'catalog',name:'Каталог'}]}
     if (op === 'detail' && globalThis.telegramHarness.detailOverride) return globalThis.telegramHarness.detailOverride()
     if (op === 'state') { states.set(tg,data); return true }
@@ -25,12 +26,13 @@ globalThis.telegramHarness = {
   async telegram() {return true}, async transcribe() {throw new Error('Speech unavailable')}, async downloadTelegramFile() {return Buffer.from('test')},
 }
 const api = url(`export const {bridge,say,telegram,transcribe,downloadTelegramFile} = globalThis.telegramHarness;`)
-const accounts = JSON.parse(await readFile(new URL('../lib/demo-accounts.json', import.meta.url), 'utf8')).filter(a=>a.role!=='client')
+const accounts = JSON.parse(await readFile(new URL('../lib/demo-accounts.json', import.meta.url), 'utf8'))
 const demo = url(`export const demoChoices=${JSON.stringify(accounts)}; export const demoAllowed=tg=>Boolean(globalThis.telegramHarness.demoEnabled)&&tg===42; export const switchDemoAccount=(tg,id)=>globalThis.telegramHarness.switchDemo(tg,id);`)
 const ai = url(`export const aiConfig=()=>globalThis.telegramHarness.aiEnabled ? {provider:"groq"} : null; export const generateText=()=>{throw new Error('Unexpected model call')};`)
 let source = await readFile(new URL('../lib/telegram/bot.ts', import.meta.url), 'utf8')
 const summary = url(`export const generateRequestSummary=(...args)=>globalThis.telegramHarness.summary(...args);`)
 source = source.replace("'../semantic-topics'", `'${url('export const semanticTopics=(...args)=>globalThis.telegramHarness.generateTopics(...args)')}'`).replace("'../insights'", `'${url('export const recurringProblems=rows=>globalThis.telegramHarness.similarTopics(rows)')}'`).replace("'../qvin'", `'${url('export const askQvin=(...args)=>globalThis.telegramHarness.askQvin(...args)')}'`).replace("'../enrich-request'", `'${url('export const enrichRequest=async()=>{}')}'`).replace("'../request-summary'", `'${summary}'`).replace("'./demo'", `'${demo}'`).replace("'../ai'", `'${ai}'`).replace("'./api'", `'${api}'`).replace("'../requests'", `'${requests}'`)
+source=source.replace("'../telegram-links'", `'${url(transpile(await readFile(new URL('../lib/telegram-links.ts',import.meta.url),'utf8')))}'`)
 const {handleUpdate} = await import(url(transpile(source)))
 let n=0
 const send = async(text, extra={}) => handleUpdate({update_id:++n,message:{chat:{id:42,type:'private'},from:{id:42},text,...extra}})
@@ -70,9 +72,9 @@ await handleUpdate({update_id:++n,message:{chat:{id:-123,type:'group'},from:{id:
 assert.equal(calls.length,beforeCalls,'No employee data in group chats')
 globalThis.telegramHarness.demoEnabled=true
 globalThis.telegramHarness.switchDemo=async(tg,id)=>{assert.equal(tg,42);const account=accounts.find(a=>a.id===id);assert(account);currentRole=account.role;return {name:account.name,role:account.role}}
-await send('/demo');assert.equal(messages.at(-1).buttons.length,9)
+await send('/demo');assert.equal(messages.at(-1).buttons.length,accounts.length+1)
 await callback('demo:manager-it');assert.equal(currentRole,'manager');assert(messages.at(-1).text.includes('Максим Ли'));assert(messages.at(-1).text.includes('Выбрана роль: Руководитель'));assert.equal(messages.at(-1).messageId,77)
-await callback('demoMenu');assert.equal(messages.at(-1).buttons.length,9)
+await callback('demoMenu');assert.equal(messages.at(-1).buttons.length,accounts.length+1)
 await callback('demo:admin');assert.equal(currentRole,'admin');assert(messages.at(-1).text.includes('/reserve —'))
 await callback('demo:employee');assert.equal(currentRole,'employee');assert(messages.at(-1).text.includes('/draft —'))
 console.log('PASS Telegram demo dialog: website account menu, named greeting, manager/admin/employee actions, return to account picker')
@@ -273,3 +275,15 @@ for(const route of ['menu:qvin','topics:similar','topics:group:a','topics:genera
  assert(messages.at(-1).buttons.flat().some(b=>['menu:home','qvin:exit'].includes(b.callback_data)),route+' must have an exit')
 }
 console.log('PASS Qvin dialogue: two-message colloquial question, follow-up history, AI retry, exit, role guards and topic navigation')
+
+// Fresh /start must explain both destinations without weakening account authorization.
+const {TELEGRAM_CHANNEL_INVITE_URL}=await import(url(transpile(await readFile(new URL('../lib/telegram-links.ts',import.meta.url),'utf8'))))
+currentRole='employee';globalThis.telegramHarness.demoEnabled=false
+const linkCalls=calls.filter(c=>c.op==='link').length
+await send('/start');assert(messages.at(-1).text.includes(TELEGRAM_CHANNEL_INVITE_URL));assert(messages.at(-1).buttons.flat().some(b=>b.url===TELEGRAM_CHANNEL_INVITE_URL));assert.equal(calls.filter(c=>c.op==='link').length,linkCalls)
+globalThis.telegramHarness.unlinked=true
+await send('/start');assert(messages.at(-1).text.includes(TELEGRAM_CHANNEL_INVITE_URL));assert(messages.at(-1).text.includes('одноразовую ссылку'));assert(!messages.at(-1).text.includes('Synthetic account'))
+globalThis.telegramHarness.demoEnabled=true
+await send('/start');assert(messages.at(-1).text.includes('Выберите демоаккаунт'));assert(messages.at(-1).text.includes(TELEGRAM_CHANNEL_INVITE_URL));assert(messages.at(-1).buttons.flat().some(b=>b.url===TELEGRAM_CHANNEL_INVITE_URL))
+globalThis.telegramHarness.unlinked=false;globalThis.telegramHarness.demoEnabled=false
+console.log('PASS Telegram onboarding: linked /start needs no relinking; closed-demo login and unlinked fallback remain distinct; company channel invite in every initial /start')

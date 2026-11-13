@@ -1,3 +1,4 @@
+import { TELEGRAM_CHANNEL_INVITE_URL } from '../lib/telegram-links'
 import { getColorTheme } from '../i18n/theme'
 import { WorkspaceNavLink, WorkspaceCrumbs } from './workspace-navigation'
 import { LogoMark } from './logo-mark'
@@ -19,6 +20,7 @@ import {
   Search,
   ChevronsUpDown,
   Send,
+  Radio,
   Settings2,
 } from 'lucide-react'
 import { AuthForm } from './auth-form'
@@ -164,6 +166,7 @@ export async function DashboardShell({
           <div className="nav-group">
             <div className="eyebrow">{shell('integrations')}</div>
             {nav({ id: 'help', label: shell('telegramIntegration'), icon: Send })}
+            {role !== 'client' && <a className="nav-link" href={TELEGRAM_CHANNEL_INVITE_URL} target="_blank" rel="noreferrer"><Radio size={18} aria-hidden="true" /><span>{shell('telegramChannel')}</span><ArrowUpRight size={14} aria-hidden="true" /></a>}
           </div>
           <div className="nav-group">
             <div className="eyebrow">{ui('personal')}</div>

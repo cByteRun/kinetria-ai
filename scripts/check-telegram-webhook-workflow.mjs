@@ -90,6 +90,7 @@ try {
   const apiUrl = toUrl('export const {bridge,say,telegram,transcribe,downloadTelegramFile,secretMatches,telegramDb}=globalThis.webhookWorkflow')
   const requestsUrl = compile(await source('lib/requests.ts'))
   const botUrl = compile((await source('lib/telegram/bot.ts'))
+    .replace("'../telegram-links'", `'${compile(await source('lib/telegram-links.ts'))}'`)
     .replace("'../semantic-topics'", `'${toUrl('export const semanticTopics=async()=>[]')}'`).replace("'../insights'", `'${toUrl('export const recurringProblems=()=>[]')}'`)
     .replace("'../qvin'", `'${toUrl('export const askQvin=async(q,rows)=>"QVIN_ROWS:"+rows.map(r=>r.id).join(",")')}'`)
     .replace("'../enrich-request'", `'${toUrl('export const enrichRequest=async()=>{}')}'`)

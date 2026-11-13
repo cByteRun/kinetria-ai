@@ -151,3 +151,22 @@
   background: var(--panel-soft);
   color: var(--ink);
 }
+
+/* Telegram has two destinations; linking is an optional recovery step. */
+.telegram-access { display: grid; gap: 18px; min-width: 0; }
+.telegram-access > :is(h2, p) { margin: 0; }
+.telegram-access h2, .telegram-access-panel h3 { display: flex; align-items: center; gap: 9px; }
+.telegram-access-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.telegram-access-panel { padding: 20px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); min-width: 0; }
+.telegram-access-panel h3 { margin: 0 0 12px; font-size: 17px; }
+.telegram-access-panel p { margin: 0 0 16px; line-height: 1.65; }
+.telegram-access-steps { margin: 16px 0 0; padding-inline-start: 22px; line-height: 1.65; }
+.telegram-access-steps li + li { margin-top: 8px; }
+.telegram-access-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+.telegram-access .btn { white-space: normal; overflow-wrap: anywhere; gap: 8px; text-align: center; }
+.telegram-link-fallback { padding: 16px 18px; border: 1px solid var(--line); border-radius: 12px; }
+.telegram-link-fallback summary { cursor: pointer; font-weight: 600; }
+.telegram-link-fallback summary:focus-visible { outline: 2px solid var(--brand); outline-offset: 5px; }
+.telegram-link-fallback p { margin: 14px 0; line-height: 1.65; }
+.telegram-link-ready { margin-top: 14px; }
+@media (max-width: 760px) { .telegram-access-grid { grid-template-columns: minmax(0, 1fr); } .telegram-access-panel { padding: 16px; } }

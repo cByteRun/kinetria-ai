@@ -761,14 +761,31 @@
     "results": "Outcome transparency"
   },
   "telegram": {
-    "description": "Connect Telegram to your account. The single-use link expires in 10 minutes. The bot respects your request permissions.",
+    "description": "Only if the bot has not identified your account: create a one-time link for the current web profile, open it and press Start. It expires after 10 minutes.",
     "connect": "Create connection link",
     "pending": "Preparing…",
     "open": "Open Telegram and confirm connection",
     "error": "Telegram is not configured or your session is unavailable.",
     "sessionError": "Your session expired. Sign in again.",
     "configurationError": "Set a valid Telegram bot username on the server, with or without @.",
-    "databaseError": "Could not create the link. Check the Telegram migration and database connection."
+    "databaseError": "Could not create the link. Check the Telegram migration and database connection.",
+    "title": "Telegram: bot and channel",
+    "intro": "Use the personal bot for requests and actions, and the shared channel to follow the team’s progress.",
+    "botTitle": "Personal bot",
+    "botDescription": "Submit requests by text or voice, reply to questions and receive personal notifications.",
+    "openBot": "Open bot",
+    "startStep": "Open the bot and send /start.",
+    "existingStep": "If your role’s menu appears, you are already signed in. You do not need to link again on the website.",
+    "demoStep": "If the bot offers demo accounts, choose an available account. This option is restricted to authorized demo participants.",
+    "channelTitle": "Company channel",
+    "channelDescription": "A shared space for all internal roles: employees, assignees, managers and administrators. The company workflow includes all these roles in the channel.",
+    "channelSafety": "The channel shows service updates. Descriptions, files and actions remain in the personal bot and web workspace, protected by role permissions.",
+    "joinChannel": "Join channel",
+    "openChannelWeb": "Open in Telegram Web",
+    "channelWebHelp": "Use the invite to join first. Telegram Web opens the channel after you sign in to Telegram and join.",
+    "linkHelpTitle": "Does the bot ask you to link an account?",
+    "linkReady": "The link is ready. Open it and confirm in the bot within 10 minutes.",
+    "accessNote": "Joining the channel does not create an account or grant access to other users’ requests. Telegram is optional for web-only use."
   },
   "command": {
     "title": "Navigation",
@@ -850,7 +867,8 @@
     "heroEyebrow": "REQUEST LIFECYCLE",
     "heroTitle": "From request to resolution",
     "heroDescription": "Keep every step in view: owner, deadline, action and an outcome for the author.",
-    "activeRequests": "Active requests"
+    "activeRequests": "Active requests",
+    "telegramChannel": "Company channel"
   },
   "matrixLanding": {
     "headline": "Every idea",

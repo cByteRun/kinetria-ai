@@ -33,7 +33,7 @@ export function WorkspaceCrumbs({ base, employee }: { base: string; employee: bo
   const labels: Record<string, string> = {
     profile: shell('profile'), overview: ui('overview'), registry: ui(employee ? 'myRequests' : 'requests'), new: ui('newRequest'),
     results: ui('results'), analytics: ui('analytics'), insights: ui('recurringTopics'),
-    routing: ui('routing'), categories: ui('categories'), notifications: ui('notifications'), help: ui('howRoutingWorks'),
+    routing: ui('routing'), categories: ui('categories'), notifications: ui('notifications'), help: shell('telegramIntegration'),
   }
   return <div className="crumbs">
     <Link className="crumb-root" href={base + '?view=overview'}>{ui('workspace')}</Link>
