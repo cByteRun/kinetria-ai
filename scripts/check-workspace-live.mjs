@@ -1,0 +1,24 @@
+import assert from 'node:assert/strict'
+import { pathToFileURL } from 'node:url'
+const { chromium } = await import(process.env.PLAYWRIGHT_MODULE ? pathToFileURL(process.env.PLAYWRIGHT_MODULE).href : 'playwright')
+import {readFile,writeFile,mkdir} from 'node:fs/promises'
+const base=process.env.P0_BASE_URL || 'http://localhost:3000',checks=[],errors=[],timings=[]
+const audioFixture = process.env.VOICE_FIXTURE
+if (!audioFixture) throw new Error('Set VOICE_FIXTURE to a short WAV speech sample')
+const browser=await chromium.launch({headless:true,executablePath:process.env.PLAYWRIGHT_EXECUTABLE_PATH || undefined,args:['--no-sandbox','--use-fake-device-for-media-stream','--use-fake-ui-for-media-stream','--use-file-for-fake-audio-capture=' + audioFixture]})
+const context=await browser.newContext({permissions:['microphone'],viewport:{width:1440,height:1000}}),page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));const pass=s=>{checks.push(s);console.log('PASS',s)}
+await mkdir('docs/evidence/workspace-update',{recursive:true})
+try {
+const anonymous=await browser.newContext();assert.equal((await anonymous.request.post(base+'/api/voice/transcribe',{headers:{origin:base},multipart:{audio:{name:'voice.wav',mimeType:'audio/wav',buffer:await readFile(audioFixture)}}})).status(),401);await anonymous.close();pass('anonymous transcription denied');
+await page.goto(base+'/login');await page.locator('[data-account="employee"]').click();await page.waitForURL('**/workspace/employee**');await page.locator('.sidebar').waitFor();
+assert.equal((await context.request.post(base+'/api/voice/transcribe',{headers:{origin:'https://untrusted.example'}})).status(),403);
+assert.equal((await context.request.post(base+'/api/voice/transcribe',{headers:{origin:base},multipart:{audio:{name:'bad.txt',mimeType:'text/plain',buffer:Buffer.from('test')}}})).status(),415);
+assert.equal((await context.request.post(base+'/api/voice/transcribe',{headers:{origin:base},multipart:{audio:{name:'empty.wav',mimeType:'audio/wav',buffer:Buffer.alloc(0)}}})).status(),400);
+assert.equal((await context.request.post(base+'/api/voice/transcribe',{headers:{origin:base},multipart:{audio:{name:'big.wav',mimeType:'audio/wav',buffer:Buffer.alloc(3*1024*1024+1)}}})).status(),413);
+pass('origin, MIME, empty and oversized audio validation');
+const t=Date.now();const result=await context.request.post(base+'/api/voice/transcribe',{headers:{origin:base},multipart:{audio:{name:'voice.wav',mimeType:'audio/wav',buffer:await readFile(audioFixture)}}});assert.equal(result.status(),200);const transcript=await result.json();assert.ok(transcript.text.length>0);timings.push({action:'actual Groq Whisper, ALSA spoken test fixture',ms:Date.now()-t});pass('real authenticated WAV → Groq Whisper → nonempty transcript');
+await page.locator('.sidebar a.nav-link[href$="?view=new"]').click();await page.getByRole('button',{name:'С помощью AI',exact:true}).click();await page.getByRole('button',{name:'Записать голос',exact:true}).click();await page.locator('.voice-recording').waitFor();await page.waitForTimeout(2500);await page.getByRole('button',{name:'Отправить запись',exact:true}).click();await page.waitForFunction(()=>document.querySelector('textarea[name=description]')?.value.length>0,{},{timeout:45000});await page.waitForFunction(()=>document.querySelector('[name=title]')?.value.length>0,{},{timeout:45000});assert.ok(await page.locator('[name=category]').inputValue());assert.equal(await page.locator('.voice-message audio').count(),1);assert.equal(await page.locator('.voice-error').count(),0);pass('real MediaRecorder → web endpoint → Whisper → prepareDraft → title/category + AI answer; no submission');await page.screenshot({path:'docs/evidence/workspace-update/live-voice.png'});
+await page.goto(base+'/login');await page.locator('[data-account="admin"]').click();await page.waitForURL('**/workspace/admin**');assert.equal((await context.request.post(base+'/api/voice/transcribe',{headers:{origin:base}})).status(),403);pass('administrator cannot use employee transcription endpoint');
+await page.locator('.sidebar a.nav-link[href$="?view=registry"]').click();await page.locator('.case-title').first().click();await page.getByRole('button',{name:'Подготовить AI-сводку',exact:true}).click();await page.locator('.ai-markdown').waitFor({timeout:45000});await page.waitForFunction(()=>document.querySelector('.ai-markdown')?.textContent.length>5,{},{timeout:45000});assert.ok(await page.locator('.ai-markdown h1,.ai-markdown h2,.ai-markdown h3,.ai-markdown ul').count());pass('real administrator summary renders Markdown headings/lists');await page.screenshot({path:'docs/evidence/workspace-update/summary.png'});
+assert.deepEqual(errors,[])
+}finally{await mkdir('docs/evidence/workspace-update',{recursive:true});await writeFile('docs/evidence/workspace-update/live.json',JSON.stringify({checks,timings,errors},null,2));await browser.close()}

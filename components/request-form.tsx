@@ -1,8 +1,9 @@
 'use client'
 
-import { useActionState, useRef, useState, useTransition } from 'react'
+import { useActionState, useEffect, useRef, useState, useTransition } from 'react'
 import { useTranslations } from 'next-intl'
 import { prepareDraft, submitRequest } from '../app/workspace/actions'
+import { VoiceRecorder } from './voice-recorder'
 import { FileUpload } from './file-upload'
 import { requestKinds, type Draft } from '../lib/requests'
 import samples from '../lib/demo-requests.json'
@@ -42,6 +43,7 @@ export function RequestForm({
   routes?: Record<string, string>
   preview?: boolean
 }) {
+  const voice = useTranslations('voice')
   const ui = useTranslations('ui')
 
   const t = useTranslations('requestsMvp')
@@ -51,8 +53,16 @@ export function RequestForm({
   const [mode, setMode] = useState('manual')
   const [message, setMessage] = useState('')
   const [chat, setChat] = useState<
-    ({ text: string; user: true } | { key: string; user?: false })[]
+    ({ text: string; user: boolean; audio?: string; blob?: Blob; transcribing?: boolean; voiceError?: boolean } | { key: string; user?: false })[]
   >([])
+  const [voiceActive, setVoiceActive] = useState(false)
+  const [transcribing, setTranscribing] = useState(false)
+  const audioUrls = useRef<string[]>([])
+  const voiceRequest = useRef<AbortController | null>(null)
+  useEffect(() => () => {
+    voiceRequest.current?.abort()
+    audioUrls.current.forEach(url => URL.revokeObjectURL(url))
+  }, [])
   const [draft, setDraft] = useState<Draft>(emptyDraft)
   const [aiError, setAiError] = useState<'invalid' | 'aiUnavailable'>()
   const [isDrafting, startDraft] = useTransition()
@@ -72,6 +82,8 @@ export function RequestForm({
   }
 
   function loadSample(id: string) {
+    audioUrls.current.forEach(url => URL.revokeObjectURL(url))
+    audioUrls.current = []
     const sample = samples.find((item) => item.id === id)
     if (!sample) return
     setDraft({
@@ -89,9 +101,8 @@ export function RequestForm({
     ])
   }
 
-  function sendMessage() {
-    const text = message.trim()
-    if (!text) return
+  function sendMessage(text = message.trim(), addBubble = true) {
+    if (!text || isDrafting) return
     setAiError(undefined)
     const description = [draft.description, text]
       .filter(Boolean)
@@ -99,7 +110,7 @@ export function RequestForm({
       .slice(0, 4000)
     setDraft((previous) => ({ ...previous, description }))
     setMessage('')
-    setChat((previous) => [...previous, { text, user: true }])
+    if (addBubble) setChat((previous) => [...previous, { text, user: true }])
     startDraft(async () => {
       if (!aiEnabled) {
         setChat((previous) => [
@@ -123,7 +134,7 @@ export function RequestForm({
           setChat((previous) => [
             ...previous,
             {
-              key: 'theCardIsReadyReviewTheDescriptionCategory',
+              text: response.draft.title + (response.draft.proposal ? '\n' + response.draft.proposal : ''), user: false,
             },
           ])
         } else setAiError(response.error)
@@ -133,13 +144,44 @@ export function RequestForm({
     })
   }
 
+  async function sendVoice(blob: Blob, existingUrl?: string) {
+    if (transcribing || isDrafting) return
+    const audio = existingUrl || URL.createObjectURL(blob)
+    if (!existingUrl) {
+      audioUrls.current.push(audio)
+      setChat(previous => [...previous, { user: true, text: '', audio, blob, transcribing: true }])
+    } else setChat(previous => previous.map(item => item.user && item.audio === audio ? { ...item, transcribing: true, voiceError: false } : item))
+    setTranscribing(true)
+    const controller = new AbortController()
+    voiceRequest.current = controller
+    const timeout = setTimeout(() => controller.abort(), 30000)
+    try {
+      const form = new FormData()
+      const extension = blob.type.includes('mp4') ? 'mp4' : blob.type.includes('ogg') ? 'ogg' : 'webm'
+      form.set('audio', blob, 'voice.' + extension)
+      const response = await fetch('/api/voice/transcribe', { method: 'POST', body: form, signal: controller.signal })
+      const result: unknown = await response.json()
+      if (!response.ok || !result || typeof result !== 'object' || !('text' in result) || typeof result.text !== 'string' || !result.text.trim()) throw new Error('Transcription failed')
+      const text = result.text
+      setChat(previous => previous.map(item => item.user && item.audio === audio ? { ...item, text, transcribing: false, voiceError: false } : item))
+      sendMessage(text, false)
+    } catch {
+      setChat(previous => previous.map(item => item.user && item.audio === audio ? { ...item, transcribing: false, voiceError: true } : item))
+    } finally {
+      clearTimeout(timeout)
+      setTranscribing(false)
+      voiceRequest.current = null
+    }
+  }
+
   return (
-    <div>
+    <div data-workspace-busy={isDrafting || transcribing || voiceActive || undefined}>
       <div className="crm-mode-tabs">
-        <button aria-pressed={mode === 'ai'} onClick={() => setMode('ai')}>
+        <button disabled={isDrafting || transcribing || voiceActive} aria-pressed={mode === 'ai'} onClick={() => setMode('ai')}>
           {ui('withAi')}
         </button>
         <button
+          disabled={isDrafting || transcribing || voiceActive}
           aria-pressed={mode === 'manual'}
           onClick={() => setMode('manual')}
         >
@@ -167,7 +209,13 @@ export function RequestForm({
                   key={index}
                   className={'crm-bubble' + (item.user ? ' user' : '')}
                 >
-                  {'text' in item ? item.text : ui(item.key)}
+                  {item.user && item.audio ? <div className="voice-message">
+                    <audio controls src={item.audio} aria-label={voice('playback')} />
+                    {item.text && <p>{item.text}</p>}
+                    {item.transcribing && <span className="voice-status" role="status">{voice('transcribing')}</span>}
+                    {item.voiceError && <><p className="voice-error" role="alert">{voice('transcriptionError')}</p>
+                      <button type="button" className="button button-outline" disabled={transcribing || isDrafting || voiceActive} onClick={() => { if (item.blob) void sendVoice(item.blob, item.audio) }}>{voice('retry')}</button></>}
+                  </div> : 'text' in item ? item.text : ui(item.key)}
                 </div>
               ))}
               {isDrafting && <small>{ui('preparingTheCard')}</small>}
@@ -181,21 +229,15 @@ export function RequestForm({
                 )}
                 rows={3}
                 maxLength={4000}
+                disabled={transcribing || isDrafting || voiceActive}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
               />
               <div className="crm-chat-controls">
-                <button
-                  className="button button-primary"
-                  disabled={isDrafting || !message.trim()}
-                  onClick={sendMessage}
-                >
-                  <Send size={15} />
-                  {ui('send')}
-                </button>
+                {message.trim() ? <button type="button" className="button button-primary" disabled={isDrafting || transcribing || voiceActive} onClick={() => sendMessage()}><Send size={15} />{ui('send')}</button> : <VoiceRecorder disabled={isDrafting || transcribing} onActiveChange={setVoiceActive} onSend={sendVoice} />}
                 <button
                   className="button button-outline"
-                  disabled={isDrafting}
+                  disabled={isDrafting || transcribing || voiceActive}
                   onClick={() =>
                     loadSample(
                       samples[Math.floor(Math.random() * samples.length)].id,
@@ -205,6 +247,7 @@ export function RequestForm({
                   {ui('randomExample')}
                 </button>
                 <select
+                  disabled={isDrafting || transcribing || voiceActive}
                   aria-label={ui('datasetExample')}
                   value=""
                   onChange={(e) => loadSample(e.target.value)}
@@ -224,7 +267,7 @@ export function RequestForm({
           action={submit}
           className="request-fields card form-card ir-request-form"
         >
-          <fieldset disabled={isDrafting || isSubmitting}>
+          <fieldset disabled={isDrafting || transcribing || voiceActive || isSubmitting}>
             <div className="form-step">
               <span className="step-token">01</span>
               {ui('chooseTheRequestTopic')}
@@ -419,6 +462,8 @@ export function RequestForm({
               type="button"
               className="btn ghost sm"
               onClick={() => {
+                audioUrls.current.forEach(url => URL.revokeObjectURL(url))
+                audioUrls.current = []
                 setDraft(emptyDraft)
                 setChat([])
                 setMessage('')

@@ -1,0 +1,63 @@
+/* Persistent workspace styles, loaded by its parent layout. */
+.ir-app .content { animation: none; }
+.ir-app .skip-link:not(:focus-visible) { width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.ir-app .skip-link:focus-visible { top: 12px; background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 10px; }
+.ir-app .topbar { background: color-mix(in srgb, var(--panel) 94%, transparent); backdrop-filter: blur(16px); }
+.ir-app .top-actions :is(.icon-button, .role-select, .telegram-status, .shell-profile summary, .preferences select, .shell-search, .command-trigger) {
+  height: 40px; min-height: 40px; border: 1px solid var(--border); border-radius: 11px;
+  background: color-mix(in srgb, var(--panel) 80%, var(--panel-tint)); color: var(--text-muted);
+  transition: background .15s, border-color .15s;
+}
+.ir-app .top-actions :is(.role-select, .telegram-status) { display: inline-flex; align-items: center; gap: 7px; padding: 0 10px; }
+.ir-app .top-actions :is(.icon-button, .shell-profile summary) { width: 40px; }
+.ir-app .top-actions .preferences { gap: 6px; }
+.ir-app .top-actions .preferences select { padding: 0 7px; font-size: 11px; }
+.ir-app .top-actions :is(a,button,summary,select):hover { border-color: var(--primary); background: var(--panel-tint); }
+.ir-app .crumbs { padding: 8px 0; font-size: 12px; }
+.ir-app .brand-lockup > a { display: inline-flex; align-items: center; }
+.ir-app .nav-link:has(.nav-pending) { color: var(--brand); background: var(--brand-soft); box-shadow: inset 0 0 0 1px var(--border); }
+.ir-app .nav-pending { width: 7px; height: 7px; border-radius: 50%; background: var(--primary); margin-left: auto; animation: workspace-pulse 1s ease-in-out infinite alternate; }
+.ir-app .mobile-tabs a:has(.nav-pending) { color: var(--brand); background: var(--brand-soft); }
+.ai-markdown { color: var(--text); font-size: 14px; line-height: 1.75; overflow-wrap: anywhere; margin-block: 16px; }
+.ir-app .ai-markdown :is(h1,h2,h3,h4,h5,h6) { font-size: 1.08em; line-height: 1.5; margin: 1.1em 0 .45em; font-weight: 700; color: var(--text); }
+.ir-app .ai-markdown p { margin: .6em 0; }
+.ir-app .ai-markdown :is(ul,ol) { padding-left: 1.5em; margin: .6em 0; }
+.ir-app .ai-markdown li { margin: .3em 0; }
+.ir-app .ai-markdown blockquote { margin: 1em 0; padding: .5em 1em; border-left: 3px solid var(--primary); background: var(--panel-tint); color: var(--text-muted); }
+.ir-app .ai-markdown code { font-family: var(--font-mono); font-size: .9em; background: var(--panel-tint); padding: .15em .4em; border-radius: 5px; }
+.ir-app .ai-markdown pre { max-width: 100%; overflow-x: auto; padding: 14px; background: var(--panel-tint); border: 1px solid var(--border); border-radius: 10px; }
+.ir-app .ai-markdown pre code { padding: 0; }
+.ir-app .ai-markdown a { color: var(--primary); text-decoration: underline; }
+.ir-app .ai-markdown table { display: block; overflow-x: auto; border-collapse: collapse; }
+.ir-app .ai-markdown :is(th,td) { padding: 8px; border: 1px solid var(--border); }
+.ir-app .ai-markdown hr { border: 0; border-top: 1px solid var(--border); margin-block: 16px; }
+.ir-app .ai-markdown .task-list-item { list-style: none; }
+.ir-app .ai-markdown input[type='checkbox'] { width: auto; margin-right: .5em; }
+.voice-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; width: 100%; }
+.voice-recording { display: flex; align-items: center; gap: 10px; flex: 1; font-variant-numeric: tabular-nums; color: var(--text); }
+.voice-waves { display: flex; align-items: center; gap: 3px; height: 28px; color: var(--primary); }
+.voice-waves i { display: block; width: 3px; height: 8px; background: currentColor; border-radius: 4px; animation: workspace-pulse .5s infinite alternate; }
+.voice-waves i:nth-child(2n) { height: 23px; animation-delay: -.3s; }
+.voice-waves i:nth-child(3n) { height: 15px; animation-delay: -.15s; }
+.voice-message { display: grid; gap: 8px; }
+.voice-message audio { display: block; width: min(100%, 300px); height: 40px; color-scheme: inherit; }
+.voice-status { font-size: 12px; color: var(--text-muted); }
+.voice-error { color: var(--text); border-left: 3px solid var(--primary); padding-left: 10px; }
+@keyframes workspace-pulse { from { opacity: .4; } to { opacity: 1; } }
+@media (max-width: 1100px) { .ir-app .top-actions { flex-wrap: wrap; justify-content: flex-end; } }
+@media (max-width: 740px) {
+  .ir-app .top-actions { justify-content: flex-start; }
+  .ir-app .top-actions :is(.icon-button, .role-select, .telegram-status, .shell-profile summary, .preferences select, .shell-search, .command-trigger) { min-height: 44px; height: 44px; }
+  .ir-app .top-actions :is(.icon-button, .shell-profile summary) { width: 44px; }
+  .ir-app .shell-search { flex-basis: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .voice-waves i, .ir-app .nav-pending { animation: none; } }
+.ir-app .topbar { flex-wrap: wrap; }
+.ir-app .top-actions { flex: 1 1 650px; flex-wrap: wrap; justify-content: flex-end; }
+.ir-app .topbar .crumbs { flex: 1 1 130px; }
+@media (max-width: 740px) { .ir-app .top-actions { flex-basis: 100%; justify-content: flex-start; } }
+.ir-app, .ir-app :is(input, textarea, select, audio) { color-scheme: inherit; }
+.voice-controls audio { max-width: 100%; width: 260px; height: 40px; }
+.ir-app .crm-bubble { white-space: pre-wrap; }
+.ir-app .crumbs { min-height: 40px; }
+.ir-app .ir-navigation:has(.nav-pending) .nav-link.active:not(:has(.nav-pending)) { background: transparent; color: var(--text-muted); box-shadow: none; }

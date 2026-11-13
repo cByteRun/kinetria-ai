@@ -243,3 +243,8 @@ Runner сверяет проект API с PostgreSQL URL, проверяет TLS
 ## Производительность Next.js (13.11.2026)
 
 Локальные production build, TypeScript/noUnusedLocals, ICU/переводы, auth-flow и расчёты аналитики — PASS. В Chromium проверены клиентские переходы, две темы/палитры, RU/EN/KK, сохранение состояния и 32 viewport/theme-комбинации; тема не вызывает RSC-refresh и откатывается при ошибке сохранения. Read-only Data API проверка пяти ролей подтверждает совпадение аналитики с RLS-выборкой. Новый скрипт — `scripts/check-performance-browser.mjs`, результаты — `docs/evidence/performance-review/`. Методика, локальный benchmark и ограничения — [CODE-REVIEW](CODE-REVIEW.md#оптимизация-nextjs-и-tsx-13112026). Core Web Vitals и нагрузка целевого deployment этим прогоном не измерены; деплой не выполнялся.
+
+
+## Workspace: Markdown, переходы и голос (13.11.2026)
+
+Реализованы постоянный layout кабинета, тематический фон viewport/loading, общие контролы шапки, Markdown-сводки и голосовой черновик сотрудника через общий с Telegram Whisper. Бизнес-правила сохранены; голос не регистрирует обращение автоматически. [Изменения, проверки, настройка и границы измерений](WORKSPACE-UPDATE.md).

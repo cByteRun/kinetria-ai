@@ -1,4 +1,5 @@
 import { getColorTheme } from '../i18n/theme'
+import { WorkspaceNavLink, WorkspaceCrumbs } from './workspace-navigation'
 import { LogoMark } from './logo-mark'
 import Link from 'next/link'
 import { CommandPalette } from './command-palette'
@@ -34,20 +35,16 @@ import { MobileNavigation } from './mobile-navigation'
 
 export async function DashboardShell({
   role,
-  view,
-  mode,
   name,
   theme,
   children,
 }: {
   role: Role
-  view: string
-  mode?: string
   theme: Theme
   name?: string
   children: React.ReactNode
 }) {
-  const [ui, colorTheme] = await Promise.all([getTranslations('ui'), getColorTheme()])
+  const [ui, colorTheme, common] = await Promise.all([getTranslations('ui'), getColorTheme(), getTranslations('common')])
 
   const t = await getTranslations('roles')
   const entry = await getTranslations('entryFlow')
@@ -113,31 +110,17 @@ export async function DashboardShell({
       : []),
   ]
   const nav = (item: (typeof items)[number]) => {
-    const active = item.id === 'lifecycle'
-      ? view === 'registry' && mode === 'board'
-      : view === item.id && !(item.id === 'registry' && mode === 'board')
     return (
-      <Link
-        key={item.id}
-        prefetch={false}
+      <WorkspaceNavLink
+        key={item.id} view={item.id}
         href={item.id === 'lifecycle' ? base + '?view=registry&mode=board' : base + '?view=' + item.id}
-        className={'nav-link ' + (active ? 'active' : '')}
-        aria-current={active ? 'page' : undefined}
       >
         <item.icon />
         <span>{item.label}</span>
         {Boolean(counts[item.id]) && <span className="nav-count">{counts[item.id]}</span>}
-      </Link>
+      </WorkspaceNavLink>
     )
   }
-  const label = mode === 'board' && view === 'registry' ? shell('lifecycle') :
-    [
-      ...items,
-      { id: 'routing', label: ui('routing') },
-      { id: 'categories', label: ui('categories') },
-      { id: 'notifications', label: ui('notifications') },
-      { id: 'help', label: ui('howRoutingWorks') },
-    ].find((i) => i.id === view)?.label || ui('request')
   return (
     <div className="ir-app">
       <a href="#main" className="skip-link">
@@ -150,14 +133,10 @@ export async function DashboardShell({
         className="sidebar"
         aria-label={ui('mainNavigation')}
       >
-        <Link className="brand-lockup" href={base}>
-          <span className="brand-mark">
-            <LogoMark size={28} />
-          </span>
-          <span>
-            IdeaRoute
-          </span>
-        </Link>
+        <div className="brand-lockup">
+          <Link className="brand-mark" href="/" aria-label={common('brand')}><LogoMark size={28} /></Link>
+          <Link href={base + '?view=overview'}>IdeaRoute</Link>
+        </div>
         <div className="workspace">
           <span className="workspace-avatar">{ui('mt')}</span>
           <div>
@@ -226,11 +205,7 @@ export async function DashboardShell({
       </aside>
       <div className="shell">
         <header className="topbar">
-          <div className="crumbs">
-            <span className="crumb-root">{ui('workspace')}</span>
-            <span className="crumb-root">/</span>
-            <strong>{label}</strong>
-          </div>
+          <WorkspaceCrumbs base={base} employee={role === 'employee'} />
           <div className="top-actions">
             <form className="shell-search" action={base} role="search">
               <input type="hidden" name="view" value="registry" />
@@ -270,12 +245,7 @@ export async function DashboardShell({
             ),
             { id: 'notifications', label: ui('notifications'), icon: Bell },
           ].map((item) => (
-            <Link
-              key={item.id}
-              prefetch={false}
-              href={base + '?view=' + item.id}
-              aria-current={view === item.id ? 'page' : undefined}
-            >
+            <WorkspaceNavLink key={item.id} view={item.id} mobile href={base + '?view=' + item.id}>
               <item.icon size={20} />
               <span>
                 {item.id === 'new'
@@ -288,7 +258,7 @@ export async function DashboardShell({
                         ? ui('updates')
                         : item.label}
               </span>
-            </Link>
+            </WorkspaceNavLink>
           ))}
         </nav>
         <main id="main" className="content">

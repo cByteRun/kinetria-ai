@@ -1,7 +1,7 @@
 'use client'
 import { useLocale, useTranslations } from 'next-intl'
 import Link from 'next/link'
-import { useState } from 'react'
+import { memo, useDeferredValue, useMemo, useState } from 'react'
 import {
   normalizeTopic,
   recurringProblems,
@@ -113,7 +113,7 @@ export function DueLabel({ row }: { row: RegistryRow }) {
     </span>
   )
 }
-export function CaseTable({
+export const CaseTable = memo(function CaseTable({
   rows,
   categories,
   path,
@@ -234,7 +234,8 @@ export function CaseTable({
       )}
     </div>
   )
-}
+})
+
 function RegistryFilters({
   rows,
   categories,
@@ -262,9 +263,11 @@ function RegistryFilters({
   const tag = params.get('tag') || ''
   const kind = params.get('kind') || ''
   const period = params.get('period') || 'all'
-  const normalizedQuery = query.trim().toLocaleLowerCase()
+  const deferredQuery = useDeferredValue(query)
+  const normalizedQuery = deferredQuery.trim().toLocaleLowerCase()
+  const day = today()
   const normalizedTag = normalizeTopic(tag)
-  const filtered = rows.filter(
+  const filtered = useMemo(() => rows.filter(
     (r) =>
       (!tag ||
         (r.tags || []).some(
@@ -304,8 +307,8 @@ function RegistryFilters({
         .join(' ')
         .toLocaleLowerCase()
         .includes(normalizedQuery),
-  )
-  const sorted =
+  ), [rows, categories, tag, normalizedTag, kind, period, status, category, department, deadline, normalizedQuery, day])
+  const sorted = useMemo(() =>
     sort === 'newest'
       ? [...filtered].sort((a, b) =>
           (b.created_at || '').localeCompare(a.created_at || '') || b.number - a.number,
@@ -314,28 +317,36 @@ function RegistryFilters({
         ? [...filtered].sort((a, b) =>
             (b.updated_at || '').localeCompare(a.updated_at || ''),
           )
-        : prioritizeRequests(filtered, showRecurrence && sort === 'recurrence')
-  const groups = showRecurrence ? recurringProblems(sorted) : []
-  if (sort === 'priority')
-    groups.sort(
-      (a, b) => b.priority - a.priority || b.rows.length - a.rows.length,
-    )
-  if (sort === 'recent')
-    groups.sort((a, b) =>
-      (
-        b.rows
-          .map((r) => r.updated_at || '')
-          .sort()
-          .at(-1) || ''
-      ).localeCompare(
-        a.rows
-          .map((r) => r.updated_at || '')
-          .sort()
-          .at(-1) || '',
-      ),
-    )
-  const groupedIds = new Set(groups.flatMap((g) => g.rows.map((r) => r.id)))
-  const singles = sorted.filter((r) => !groupedIds.has(r.id))
+        : prioritizeRequests(filtered, showRecurrence && sort === 'recurrence'),
+    [filtered, sort, showRecurrence])
+  const groups = useMemo(() => {
+    const groups = showRecurrence && mode === 'groups' ? recurringProblems(sorted) : []
+    if (sort === 'priority')
+      groups.sort(
+        (a, b) => b.priority - a.priority || b.rows.length - a.rows.length,
+      )
+    if (sort === 'recent')
+      groups.sort((a, b) =>
+        (
+          b.rows
+            .map((r) => r.updated_at || '')
+            .sort()
+            .at(-1) || ''
+        ).localeCompare(
+          a.rows
+            .map((r) => r.updated_at || '')
+            .sort()
+            .at(-1) || '',
+        ),
+      )
+    return groups
+  }, [sorted, showRecurrence, mode, sort])
+  const singles = useMemo(() => {
+    const groupedIds = new Set(groups.flatMap(g => g.rows.map(r => r.id)))
+    return sorted.filter(r => !groupedIds.has(r.id))
+  }, [groups, sorted])
+  const departments = useMemo(() => [...new Set(rows.map(r => r.department).filter(Boolean))], [rows])
+  const boardColumns = useMemo(() => statuses.map(status => ({ status, rows: sorted.filter(row => row.status === status) })), [sorted])
   function exportCsv() {
     const q = (v: unknown) => {
       let s = String(v ?? '')
@@ -475,7 +486,7 @@ function RegistryFilters({
           onChange={(e) => setDepartment(e.target.value)}
         >
           <option value="">{ui('allDepartments')}</option>
-          {[...new Set(rows.map((r) => r.department).filter(Boolean))].map(
+          {departments.map(
             (d) => (
               <option key={d}>{d}</option>
             ),
@@ -568,15 +579,13 @@ function RegistryFilters({
         </div>
       ) : mode === 'board' ? (
         <div className="board">
-          {[...statuses].map((s) => (
+          {boardColumns.map(({ status: s, rows: columnRows }) => (
             <section className="board-col" key={s}>
               <strong>
                 {statusText(s)} ·{' '}
-                {filtered.filter((r) => r.status === s).length}
+                {columnRows.length}
               </strong>
-              {sorted
-                .filter((r) => r.status === s)
-                .map((r) => (
+              {columnRows.map((r) => (
                   <Link
                     className="board-card"
                     key={r.id}

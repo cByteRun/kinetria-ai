@@ -1016,5 +1016,22 @@
     "stageAssigned": "Assigned",
     "stageResolved": "Resolved",
     "stageReceived": "Answer received"
+  },
+  "voice": {
+    "start": "Record voice",
+    "send": "Send recording",
+    "cancel": "Cancel",
+    "recording": "Recording",
+    "permission": "Allow microphone access…",
+    "limit": "up to 2 minutes",
+    "playback": "Play voice message",
+    "transcribing": "Transcribing speech…",
+    "retry": "Retry transcription",
+    "unsupported": "Recording is unavailable. Use HTTPS and a browser with microphone support, or type your message.",
+    "permissionDenied": "Microphone access denied. Allow it in browser settings and try again.",
+    "recordingError": "Could not record audio. Check your microphone or type your message.",
+    "empty": "The recording is too short or empty. Please record again.",
+    "tooLarge": "The recording exceeds 3 MiB. Record a shorter message.",
+    "transcriptionError": "Could not transcribe the recording. Check your connection and retry, or type your message."
   }
 }

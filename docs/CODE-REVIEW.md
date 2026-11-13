@@ -248,3 +248,8 @@ README начинает с трёх вопросов §6 исходного ТЗ
 6. Следующий замер — route timings, LCP/INP/CLS и JS transfer на целевом deployment/мобильной сети с одинаковыми данными до/после. Локальный build и Chromium не доказывают эти показатели. Визуальная геометрия проверена, измеренный нулевой CLS не заявляется.
 
 Подход сверён с [Next.js: навигация](https://nextjs.org/docs/app/getting-started/linking-and-navigating), [loading UI](https://nextjs.org/docs/app/api-reference/file-conventions/loading), [оптимизация шрифтов](https://nextjs.org/learn/dashboard-app/optimizing-fonts-images) и [Supabase select](https://supabase.com/docs/reference/javascript/select).
+
+
+## Workspace: Markdown, переходы и голос (13.11.2026)
+
+Реализованы постоянный layout кабинета, тематический фон viewport/loading, общие контролы шапки, Markdown-сводки и голосовой черновик сотрудника через общий с Telegram Whisper. Бизнес-правила сохранены; голос не регистрирует обращение автоматически. [Изменения, проверки, настройка и границы измерений](WORKSPACE-UPDATE.md).

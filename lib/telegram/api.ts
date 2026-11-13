@@ -1,3 +1,4 @@
+import { transcribeAudio, maxVoiceBytes } from '../speech'
 import type { BridgeResults, TelegramDetail } from './contracts'
 import { apiSlot, waitForApiSlot } from './rate-limit'
 import { timingSafeEqual } from 'node:crypto'
@@ -120,19 +121,6 @@ export async function downloadTelegramFile(fileId: string, limit: number) {
   return Buffer.concat(chunks)
 }
 export async function transcribe(fileId: string) {
-  if (!process.env.GROQ_API_KEY) throw new Error('Speech unavailable')
-  const audio = await downloadTelegramFile(fileId, 3 * 1024 * 1024)
-  const form = new FormData()
-  form.set('file', new Blob([new Uint8Array(audio)], { type: 'audio/ogg' }), 'voice.ogg')
-  form.set('model', process.env.GROQ_WHISPER_MODEL || 'whisper-large-v3-turbo')
-  form.set('response_format', 'json')
-  const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
-    method: 'POST', headers: { Authorization: 'Bearer ' + process.env.GROQ_API_KEY }, body: form, signal: AbortSignal.timeout(15000),
-  })
-  if (!response.ok) throw new Error('Speech unavailable')
-  const value: unknown = await response.json()
-  if (!value || typeof value !== 'object' || !('text' in value)) throw new Error('Invalid transcript')
-  const { text } = value
-  if (typeof text !== 'string' || !text.trim() || text.length > 4000) throw new Error('Invalid transcript')
-  return text.trim() as string
+  const audio = await downloadTelegramFile(fileId, maxVoiceBytes)
+  return transcribeAudio(new Blob([new Uint8Array(audio)], { type: 'audio/ogg' }), 'voice.ogg')
 }

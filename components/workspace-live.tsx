@@ -18,7 +18,7 @@ export function WorkspaceLive({ path }: { path: string }) {
       if (
         !authPending &&
         document.visibilityState === 'visible' &&
-        !document.querySelector('form:focus-within')
+        !document.querySelector('form:focus-within, textarea:focus, [data-workspace-busy="true"]')
       )
         router.refresh()
     }
