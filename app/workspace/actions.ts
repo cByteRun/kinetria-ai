@@ -198,7 +198,11 @@ export async function summarizeRequest(
     .maybeSingle()
   if (error || !data) return { error: ui('requestUnavailable') }
   try {
-    const text = await generateRequestSummary(data, await getLocale())
+    const [{data:metrics},{data:estimate}] = await Promise.all([
+      supabase.from('request_impact_metrics').select('hours_per_month,monthly_value,currency,basis').eq('request_id',id).maybeSingle(),
+      supabase.from('request_enrichments').select('report').eq('request_id',id).maybeSingle(),
+    ])
+    const text = await generateRequestSummary({...data, metrics, estimate:estimate?.report}, await getLocale())
     return { text }
   } catch (error) {
     if (error instanceof AiProviderError) {

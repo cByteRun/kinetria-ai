@@ -16,15 +16,8 @@ export function ColorThemeSelect({ initialTheme }: { initialTheme: ColorTheme })
     document.cookie = `idearoute_color_theme=${value}; Path=/; Max-Age=31536000; SameSite=Lax`
   }
 
-  return (
-    <select
-      className="color-theme-select"
-      aria-label={t('colorTheme')}
-      value={theme}
-      onChange={event => selectTheme(event.target.value)}
-    >
-      <option value="blue">Blue</option>
-      <option value="purple">Purple</option>
-    </select>
-  )
+  const next = theme === 'blue' ? 'purple' : 'blue'
+  return <button type="button" className={'color-theme-swatch swatch-' + theme}
+    aria-label={t('colorTheme') + ': ' + t(theme) + ' → ' + t(next)}
+    title={t('colorTheme') + ': ' + t(theme)} onClick={() => selectTheme(next)} />
 }

@@ -22,7 +22,7 @@ export function RequestSummary({ id }: { id: string }) {
     return () => clearTimeout(timer)
   }, [remaining])
   return (
-    <section className="crm-routing-preview" aria-busy={pending} aria-live="polite">
+    <section className="crm-routing-preview request-ai-summary" aria-busy={pending} aria-live="polite">
       <button
         className="button button-outline"
         disabled={pending || remaining > 0}

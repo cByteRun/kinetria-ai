@@ -19,5 +19,5 @@ function sql(file){
 // Fixtures are synthetic and retained only in this local test database.
 sql('supabase/demo-data.sql')
 sql('supabase/demo-routing.sql')
-for(const file of ['scripts/check-category-i18n.sql','scripts/check-telegram.sql','scripts/check-telegram-demo.sql','scripts/sql/check-client-feedback.sql'])sql(file)
+for(const file of ['scripts/check-category-i18n.sql','scripts/check-telegram.sql','scripts/check-telegram-demo.sql','scripts/sql/check-client-feedback.sql','scripts/sql/check-impact-metrics.sql'])sql(file)
 console.log('PASS local database integration/RLS')

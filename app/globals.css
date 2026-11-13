@@ -1118,3 +1118,18 @@ form[aria-busy='true'] button { pointer-events: none; opacity: .6; }
 .ir-logo-mark .ir-logo-dark { display:none; }
 html[data-theme="dark"] .ir-logo-mark .ir-logo-light { display:none; }
 html[data-theme="dark"] .ir-logo-mark .ir-logo-dark { display:block; }
+
+/* A filled accent disc; shared across public and workspace headers. */
+.color-theme-swatch { --swatch-fill:linear-gradient(145deg,#609cff,#3169d4); }
+.color-theme-swatch.swatch-purple { --swatch-fill:linear-gradient(145deg,#ba91ff,#7950cd); }
+.color-theme-swatch,
+.global-header .preferences .color-theme-swatch {
+  width:30px; min-width:30px; height:30px; min-height:30px; padding:0;
+  flex-shrink:0; border:0; border-radius:50%; background:var(--swatch-fill);
+  box-shadow:inset 0 1px 2px rgb(255 255 255 / .4),0 0 0 3px var(--panel),0 0 0 4px var(--line);
+  cursor:pointer; transition:box-shadow .16s ease,transform .16s ease;
+}
+.color-theme-swatch::after { content:none; }
+.color-theme-swatch:hover { transform:translateY(-1px); }
+.color-theme-swatch:focus-visible { outline:2px solid var(--brand); outline-offset:6px; }
+@media(prefers-reduced-motion:reduce) { .color-theme-swatch { transition:none; } }

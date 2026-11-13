@@ -1,5 +1,7 @@
 'use client'
 
+import type { ImpactMetrics } from '../lib/impact-metrics'
+import { Sparkles, ArrowRight } from 'lucide-react'
 import { QvinPanel } from './qvin-panel'
 import { SemanticTopics } from './semantic-topics'
 import { useLocale, useTranslations } from 'next-intl'
@@ -38,6 +40,7 @@ import {
 } from '../lib/dashboard'
 
 export type RegistryRow = {
+  impact_metrics?: ImpactMetrics | null
   origin?: 'employee' | 'client'
   id: string
   number: number
@@ -129,6 +132,8 @@ export const CaseTable = memo(function CaseTable({
   compact?: boolean
 }) {
   const ui = useTranslations('ui')
+  const effect = useTranslations('productExpansion')
+  const showMetrics = !compact && rows.some(row => row.impact_metrics !== undefined)
 
   return (
     <div className="table-scroll">
@@ -143,6 +148,7 @@ export const CaseTable = memo(function CaseTable({
                 <th>{ui('priority')}</th>
               </>
             )}
+            {showMetrics && <><th>{effect('hoursMetric')}</th><th>{effect('valueMetric')}</th></>}
             <th>{ui('dueDate')}</th>
             <th aria-label={ui('open')} />
           </tr>
@@ -213,6 +219,7 @@ export const CaseTable = memo(function CaseTable({
                   </td>
                 </>
               )}
+              {showMetrics && <><td data-label={effect('hoursMetric')}>{row.impact_metrics?.hours_per_month ?? '—'}</td><td data-label={effect('valueMetric')}>{row.impact_metrics?.monthly_value == null ? '—' : `${row.impact_metrics.monthly_value} ${row.impact_metrics.currency || ''}`}</td></>}
               <td data-label={ui('dueDate')}>
                 <DueLabel row={row} />
               </td>
@@ -268,6 +275,7 @@ function RegistryFilters({
     [sort, setSort] = useState('newest')
   const expansion = useTranslations('productExpansion')
   const [origin, setOrigin] = useState('')
+  const [qvinOpen, setQvinOpen] = useState(false)
   const [topicIds, setTopicIds] = useState<string[] | null>(null)
   const topicSet = useMemo(() => topicIds ? new Set(topicIds) : null, [topicIds])
   const tag = params.get('tag') || ''
@@ -362,7 +370,7 @@ function RegistryFilters({
     const action = params.get('action')
     const target = action === 'qvin' ? document.querySelector<HTMLDetailsElement>('.qvin-panel') : action === 'topic' ? document.querySelector<HTMLElement>('.topic-action-bar') : null
     if (!target) return
-    if (target instanceof HTMLDetailsElement) target.open = true
+    if (target instanceof HTMLDetailsElement) { target.open = true; setQvinOpen(true) }
     target.scrollIntoView({ block: 'center' })
     target.querySelector<HTMLElement>('textarea, input, button')?.focus({ preventScroll: true })
   }, [params])
@@ -382,6 +390,9 @@ function RegistryFilters({
         ui('status'),
         ui('dueDate'),
         ui('decision'),
+        expansion('hoursMetric'),
+        expansion('valueMetric'),
+        expansion('currencyMetric'),
         ui('demo2'),
       ],
       ...sorted.map((r) => [
@@ -392,6 +403,9 @@ function RegistryFilters({
         statusText(r.status),
         r.due_at,
         r.decision,
+        r.impact_metrics?.hours_per_month,
+        r.impact_metrics?.monthly_value,
+        r.impact_metrics?.currency,
         r.is_demo ? ui('yes') : ui('no'),
       ]),
     ]
@@ -408,8 +422,7 @@ function RegistryFilters({
   }
   return (
     <section className={"registry-card registry-" + mode}>
-      <SemanticTopics enabled={showRecurrence} rows={filtered} onSelect={setTopicIds}>
-      {canAskQvin && <QvinPanel key={sorted.map(r => r.id).join()} ids={sorted.map(r => r.id)} />}
+      <SemanticTopics enabled={showRecurrence} rows={filtered} onSelect={setTopicIds} searchQuery={query} onSearch={setQuery}>
       <div className="card-head registry-header">
         <div>
           <h1>{mode === 'board' ? ui('board') : ui('unifiedRequestRegistry')}</h1>
@@ -460,8 +473,7 @@ function RegistryFilters({
           </Link>
         </div>
       )}
-      <div className="filters">
-        <select className="filter-select" aria-label={expansion('origin')} value={origin} onChange={e=>setOrigin(e.target.value)}><option value="">{expansion('allOrigins')}</option><option value="employee">{expansion('employee')}</option><option value="client">{expansion('client')}</option></select>
+      <div className="registry-search-choice">
         <label className="search-input">
           <Search />
           <input
@@ -472,6 +484,12 @@ function RegistryFilters({
             onChange={(e) => setQuery(e.target.value)}
           />
         </label>
+        {canAskQvin && <><span className="registry-search-or">{expansion('orSearch')} <ArrowRight size={16} aria-hidden="true" /></span><button type="button" className="btn primary registry-qvin-trigger" aria-controls="registry-qvin-panel" aria-expanded={qvinOpen} onClick={() => setQvinOpen(value => !value)}><Sparkles size={18} aria-hidden="true" />{expansion('askQvin')}</button></>}
+      </div>
+      {canAskQvin && <QvinPanel key={sorted.map(r => r.id).join()} ids={sorted.map(r => r.id)} open={qvinOpen} onToggle={setQvinOpen} />}
+      <div className="filters">
+        <select className="filter-select" aria-label={expansion('origin')} value={origin} onChange={e=>setOrigin(e.target.value)}><option value="">{expansion('allOrigins')}</option><option value="employee">{expansion('employee')}</option><option value="client">{expansion('client')}</option></select>
+
         <select
           className="filter-select"
           aria-label={ui('filterByStatus')}

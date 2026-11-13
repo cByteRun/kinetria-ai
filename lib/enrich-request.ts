@@ -10,7 +10,8 @@ export async function enrichRequest(id:string,locale='ru') {
     db.from('request_categories').select('id').eq('active',true),
   ])
   if(error || categoryError || !request || !categories?.length) throw new Error('Enrichment input unavailable')
-  const report=await new HybridImpactEstimator().estimate(request,categories.map(c=>c.id),locale)
+  const {data:metrics}=await db.from('request_impact_metrics').select('hours_per_month,monthly_value,currency,basis').eq('request_id',id).maybeSingle()
+  const report=await new HybridImpactEstimator().estimate({...request,metrics},categories.map(c=>c.id),locale)
   const {error:saveError}=await db.from('request_enrichments').upsert({request_id:id,report,created_at:new Date().toISOString()})
   if(saveError) throw new Error('Enrichment save failed')
 }

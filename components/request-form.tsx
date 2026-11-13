@@ -14,7 +14,6 @@ import {
   ArrowRight,
   MessageSquareWarning,
   Lightbulb,
-  HeartHandshake,
   Route,
   Clock3,
   CircleCheck,
@@ -127,6 +126,7 @@ export function RequestForm({
         if ('draft' in response) {
           setDraft((previous) => ({
             ...response.draft,
+            kind: response.draft.kind === 'problem' ? 'problem' : 'idea',
             title: previous.title || response.draft.title,
             description: previous.description,
             category: previous.category || response.draft.category,
@@ -297,7 +297,7 @@ export function RequestForm({
             <div>
               <span className="form-label">{ui('requestType')}</span>
               <div className="choice-grid">
-                {requestKinds.map((kind) => (
+                {requestKinds.filter(kind => kind !== 'praise').map((kind) => (
                   <label className="choice" key={kind}>
                     <input
                       type="radio"
@@ -308,14 +308,10 @@ export function RequestForm({
                     />
                     {kind === 'problem' ? (
                       <MessageSquareWarning />
-                    ) : kind === 'idea' ? (
-                      <Lightbulb />
                     ) : (
-                      <HeartHandshake />
+                      <Lightbulb />
                     )}
-                    {kind === 'praise'
-                      ? ui('positiveFeedback')
-                      : kind === 'idea'
+                    {kind === 'idea'
                         ? ui('suggestion')
                         : ui('problem')}
                   </label>

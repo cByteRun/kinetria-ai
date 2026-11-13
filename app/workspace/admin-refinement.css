@@ -1,0 +1,65 @@
+/* Workspace refinements use the shared light/dark and accent tokens. */
+.ir-app .nav-group + .nav-group { border-top:1px solid var(--line); margin-top:16px; padding-top:18px; }
+.ir-app .side-bottom { border-top:1px solid var(--line); padding-top:16px; }
+.ir-app .nav-group .eyebrow { font-size:11px; letter-spacing:.08em; margin-bottom:10px; }
+.ir-app .registry-search-choice { display:flex; align-items:center; gap:12px; padding:16px; background:var(--panel-tint); border:1px solid var(--line); border-radius:12px; margin:0 16px 16px; }
+.ir-app .registry-search-choice .search-input { flex:1; min-width:0; background:var(--panel); }
+.ir-app .registry-search-or { display:flex; align-items:center; gap:8px; color:var(--muted); }
+.ir-app .registry-qvin-trigger { flex-shrink:0; }
+.ir-app .qvin-panel { margin:0 16px 16px; border:1px solid var(--line); border-radius:12px; background:var(--panel-tint); }
+.ir-app .qvin-panel summary { display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:600; }
+.ir-app .request-ai-summary { border:1px solid var(--line); border-inline-start:3px solid var(--brand); border-radius:12px; padding:20px; background:var(--panel-tint); margin-block:24px; }
+.ir-app .crm-drawer-inner :is(.detail-block,.case-section) { padding-block:24px; }
+.ir-app .crm-drawer-inner :is(p,li) { font-size:15px; line-height:1.7; }
+.ir-app .crm-drawer-inner :is(input,textarea,select), .ir-app .ir-request-form :is(input,textarea,select) { font-size:16px; line-height:1.5; }
+.ir-app .crm-drawer-inner h3 { margin-bottom:14px; }
+.ir-app .impact-metrics-form { margin-block:24px; padding:20px; border:1px solid var(--line); border-radius:12px; background:var(--panel-tint); }
+.ir-app .impact-metrics-form fieldset { display:grid; gap:18px; border:0; padding:0; margin:18px 0 0; min-width:0; }
+.ir-app .impact-metrics-form label { display:grid; gap:8px; font-size:14px; }
+.ir-app .impact-metrics-form :is(input,textarea) { width:100%; min-width:0; }
+.ir-app .ir-form-footer { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px; }
+.ir-app .ir-form-footer .btn { width:100%; justify-content:center; white-space:normal; }
+.ir-app .choice-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+@media(max-width:767px) {
+ .ir-app .registry-search-choice { flex-wrap:wrap; gap:10px; margin-inline:0; padding:12px; }
+ .ir-app .registry-search-choice .search-input { flex-basis:100%; }
+ .ir-app .registry-qvin-trigger { flex:1; white-space:normal; }
+ .ir-app .registry-search-or { font-size:12px; }
+ .ir-app .qvin-panel { margin-inline:0; }
+ .ir-app .ir-form-footer .btn { padding:12px 8px; font-size:14px; }
+}
+
+
+.ir-app .topic-layout > .registry-header { order:-8; }
+.ir-app .topic-layout > .registry-search-choice { order:-7; }
+.ir-app .topic-layout > .qvin-panel { order:-6; padding:18px; border:1px solid var(--line); }
+.ir-app .topic-layout > .filters { order:-5; }
+@media(max-width:360px) { .ir-app .global-header { gap:4px; } .ir-app .global-header .tour-header-controls { gap:4px; } }
+
+/* Give the request text enough space before introducing the property rail. */
+.ir-app .crm-request-drawer { width:min(1160px,calc(100vw - 24px)); container-type:inline-size; container-name:request-detail; }
+.ir-app .crm-drawer-inner article.ir-detail.workspace-panel.request-panel { grid-template-columns:minmax(0,1fr) 270px; }
+.ir-app .crm-drawer-inner .crm-detail-content { min-width:0; }
+.ir-app .crm-drawer-inner .crm-detail-content > * { min-width:0; }
+.ir-app .impact-example { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-block:16px; }
+.ir-app .impact-example small { flex:1 1 220px; line-height:1.6; color:var(--muted); }
+@container request-detail (max-width:960px) {
+ .ir-app .crm-drawer-inner article.ir-detail.workspace-panel.request-panel { display:flex; flex-direction:column; align-items:stretch; gap:20px; }
+ .ir-app .ir-detail > .crm-detail-content { width:100%; }
+ .ir-app .ir-detail > .crm-detail-actions { width:100%; position:static; }
+}
+@container request-detail (min-width:680px) {
+ .ir-app .impact-metrics-form fieldset { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .ir-app .impact-metrics-form label:has([name=basis]), .ir-app .impact-metrics-form fieldset > button { grid-column:1 / -1; }
+ .ir-app .impact-comparison { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:767px) { .ir-app .crm-request-drawer { width:100vw; } }
+
+/* Registry hierarchy: readable dates and values, quieter supporting metadata. */
+.ir-app .registry-card .case-table th { font-size:13px; font-weight:600; line-height:1.45; white-space:normal; padding-block:14px; }
+.ir-app .registry-card .case-table td { font-size:14px; line-height:1.55; padding-block:18px; }
+.ir-app .registry-card .case-title { font-size:15px; line-height:1.5; font-weight:600; }
+.ir-app .registry-card .case-caption { font-size:12px; line-height:1.5; margin-top:6px; }
+.ir-app .registry-card .case-table .badge { font-size:12px; line-height:1.4; }
+.ir-app .registry-card .case-table .due { display:inline-flex; align-items:center; gap:4px; font-size:14px; line-height:1.5; font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap; }
+@media(max-width:767px) { .ir-app .registry-card .case-table td { padding-block:0; } }

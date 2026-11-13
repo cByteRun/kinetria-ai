@@ -8,8 +8,8 @@ import type { SavedTopic, TopicDraft } from '../lib/topics'
 import { createClient } from '../lib/supabase/client'
 import type { SemanticTopic } from '../lib/semantic-topics'
 
-export function SemanticTopics({ rows, onSelect, children, enabled=true, onTopicsChange }: {
- rows:RegistryRow[]; onSelect:(ids:string[]|null)=>void; children:ReactNode; enabled?:boolean; onTopicsChange?:(topics:SavedTopic[])=>void
+export function SemanticTopics({ rows, onSelect, children, enabled=true, onTopicsChange, searchQuery, onSearch }: {
+ rows:RegistryRow[]; onSelect:(ids:string[]|null)=>void; children:ReactNode; enabled?:boolean; onTopicsChange?:(topics:SavedTopic[])=>void; searchQuery?:string; onSearch?:(query:string)=>void
 }) {
  const t=useTranslations('topicWorkbench')
  const [prompt,setPrompt]=useState('')
@@ -63,7 +63,7 @@ export function SemanticTopics({ rows, onSelect, children, enabled=true, onTopic
    {notice&&<p role="status">{notice}</p>}
   </section>}
   {enabled&&<header className="topic-action-bar" aria-label={t('actions')} data-workspace-busy={pending}>
-   <div className="topic-actions"><select className="filter-select" aria-label={t('sampleSize')} value={limit} onChange={e=>setLimit(Number(e.target.value))}><option value={100}>{t('latest',{count:100})}</option><option value={200}>{t('latest',{count:200})}</option></select><input className="filter-select topic-prompt" aria-label={t('prompt')} placeholder={t('prompt')} value={prompt} disabled={pending} maxLength={2000} onChange={e=>setPrompt(e.target.value)}/>
+   <div className="topic-actions"><select className="filter-select" aria-label={t('sampleSize')} value={limit} onChange={e=>setLimit(Number(e.target.value))}><option value={100}>{t('latest',{count:100})}</option><option value={200}>{t('latest',{count:200})}</option></select><input className="filter-select topic-prompt" aria-label={t('prompt')} placeholder={t('prompt')} value={searchQuery ?? prompt} disabled={pending} maxLength={2000} onChange={e=>{setPrompt(e.target.value);onSearch?.(e.target.value)}}/>
     <button className="btn sm" disabled={pending||rows.length<2} onClick={()=>{
      const groups=similarGroups
      const group=groups[0]
@@ -71,7 +71,7 @@ export function SemanticTopics({ rows, onSelect, children, enabled=true, onTopic
      const ids=group.rows.map(row=>row.id);setSelection(ids);setActive(null);setDrafts([]);onSelect(ids);setNotice(t('selected',{count:ids.length}))
     }}>{t('similar')}</button>
     <button className="btn sm primary" disabled={pending||selected.length<2||selected.length>200} onClick={()=>run(async()=>{
-     const response=await fetch('/api/topics/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ids:selected.map(row=>row.id),prompt})})
+     const response=await fetch('/api/topics/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ids:selected.map(row=>row.id),prompt:searchQuery ?? prompt})})
      const data:{topics?:SemanticTopic[];error?:string}=await response.json()
      if(!response.ok){setError(data.error||t('actionError'));return}
      const next=(data.topics||[]).filter(topic=>topic.ids.length>=2).map(topic=>({id:crypto.randomUUID(),title:topic.title,ticketIds:topic.ids,isAiGenerated:true}))

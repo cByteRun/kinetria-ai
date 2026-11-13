@@ -23,7 +23,6 @@ import {
   Search,
   ChevronsUpDown,
   Radio,
-  Settings2,
 } from 'lucide-react'
 import { AuthForm } from './auth-form'
 import { canViewInsights, type Role } from '../lib/roles'
@@ -158,7 +157,7 @@ export async function DashboardShell({
           </div>
           {role === 'admin' && (
             <div className="nav-group">
-              <div className="eyebrow"><Settings2 size={12} /> {shell('settings')}</div>
+              <div className="eyebrow">{shell('settings')}</div>
               {nav({ id: 'categories', label: ui('categories'), icon: Tags })}
               {nav({
                 id: 'routing',

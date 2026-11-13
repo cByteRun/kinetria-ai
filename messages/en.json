@@ -63,7 +63,9 @@
     "title": "IdeaRoute",
     "description": "An employee feedback operations platform that takes requests from submission and assignment to a decision the author can see.",
     "notFound": "Page unavailable",
-    "colorTheme": "Color theme"
+    "colorTheme": "Color theme",
+    "blue": "Blue",
+    "purple": "Purple"
   },
   "landing": {
     "caseStatus": "In progress",
@@ -1142,7 +1144,22 @@
     "allFeedback": "Feedback",
     "portalSnapshot": "Visible feedback overview",
     "supportCount": "Support votes",
-    "roiYear": "ROI (12 months)"
+    "roiYear": "ROI (12 months)",
+    "metricsTitle": "Data for impact estimation",
+    "hoursMetric": "Hours saved per month",
+    "valueMetric": "Potential value per month",
+    "currencyMetric": "Currency (ISO, e.g. KZT)",
+    "basisMetric": "Calculation basis and answers",
+    "saveMetrics": "Save data",
+    "metricsSaved": "Data saved. Refresh the AI estimate to use the new data.",
+    "metricsHelp": "Human-entered potential estimate. Include scope, frequency and before/after time. Empty means unknown.",
+    "questions": "Questions for an accurate estimate",
+    "reasoning": "Realistic scenario reasoning",
+    "orSearch": "or",
+    "metricsUnavailable": "Metrics unavailable. Check that the migration has been applied.",
+    "fillMetricsExample": "Fill example",
+    "metricsExampleHelp": "Training example: 10 h/month × 5,000 KZT/h = 50,000 KZT/month. Save separately.",
+    "metricsExampleBasis": "A team of 10 people performs 20 operations per person per month. Each operation takes 8 minutes now and 5 minutes after the change. Savings: 10 × 20 × (8 − 5) / 60 = 10 hours/month. At an assumed rate of 5,000 KZT/hour, potential value is 50,000 KZT/month. Validate the rate and time reduction in a pilot."
   },
   "topicWorkbench": {
     "heading": "Request topics",

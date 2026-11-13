@@ -39,6 +39,8 @@ import {
   StatusBadge,
   type RegistryRow,
 } from './request-registry'
+import { ImpactMetricsForm } from './impact-metrics-form'
+import type { ImpactMetrics } from '../lib/impact-metrics'
 import { ImpactCard } from './impact-card'
 import type { ImpactReport } from '../lib/impact-estimator'
 import { RequestSummary } from './request-summary'
@@ -99,6 +101,11 @@ export async function RequestWorkspace({
       ? supabase.from('request_receipts').select('request_id,seen_version')
       : { data: [] },
   ])
+  if (role !== 'employee' && list.data?.length) {
+    const {data:metrics} = await supabase.from('request_impact_metrics').select('request_id,hours_per_month,monthly_value,currency,basis').in('request_id',list.data.map(row => row.id))
+    const byId = new Map((metrics || []).map(m => [m.request_id,m]))
+    list.data = list.data.map(row => ({...row,impact_metrics:byId.get(row.id) ?? null}))
+  }
   if (list.error || categoryList.error)
     return <p role="alert">{t('loadError')}</p>
   const categories = categoryList.data
@@ -654,9 +661,8 @@ async function RequestDetail({
                 )}
               </section>
             )}
-          {role !== 'employee' && <ImpactDetail id={id} />}
+          {role !== 'employee' && <ImpactDetail key={'impact-detail:' + id} id={id} />}
           <PortalLink />
-          {role !== 'employee' && aiConfig() && <RequestSummary key={id} id={id} />}
           <section className="crm-detail-history">
             <h3>
               <Clock3 size={17} aria-hidden="true" />
@@ -932,9 +938,30 @@ async function RequestDetail({
   )
 }
 
-async function ImpactDetail({id}:{id:string}) {
- const db=await createClient()
- const {data}=await db.from('request_enrichments').select('report').eq('request_id',id).maybeSingle()
- return <ImpactCard id={id} report={data?.report as ImpactReport|null ?? null}/>
+async function ImpactDetail({ id }: { id: string }) {
+  const db = await createClient()
+  const t = await getTranslations('productExpansion')
+  const [enrichment, metrics] = await Promise.all([
+    db.from('request_enrichments').select('report,created_at').eq('request_id', id).maybeSingle(),
+    db.from('request_impact_metrics').select('hours_per_month,monthly_value,currency,basis,updated_at').eq('request_id', id).maybeSingle(),
+  ])
+  const revision = id + ':' + (metrics.data?.updated_at || '')
+  const estimateIsStale = metrics.data && (
+    !enrichment.data || metrics.data.updated_at > enrichment.data.created_at
+  )
+
+  return (
+    <section className="request-impact-detail" key={'impact-root:' + id}>
+      <ImpactMetricsForm
+        key={'metrics:' + revision}
+        id={id}
+        metrics={metrics.data as ImpactMetrics | null}
+        unavailable={Boolean(metrics.error)}
+      />
+      {estimateIsStale && <p role="status">{t('metricsSaved')}</p>}
+      <ImpactCard id={id} report={enrichment.data?.report as ImpactReport | null ?? null} />
+      {Boolean(aiConfig()) && <RequestSummary key={'summary:' + revision} id={id} />}
+    </section>
+  )
 }
 async function PortalLink(){const t=await getTranslations('productExpansion');return <Link className="btn sm" href="/feedback">{t('portal')}</Link>}

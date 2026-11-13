@@ -105,7 +105,7 @@ export function Preferences({
             changeTheme(currentTheme === 'light' ? 'dark' : 'light')
           }
         >
-          {currentTheme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+          {currentTheme === 'light' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
       ) : (
         <div role="group" aria-label={t('theme')} className="preferences-group">

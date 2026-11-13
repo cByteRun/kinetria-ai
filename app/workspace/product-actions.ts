@@ -1,4 +1,5 @@
 'use server'
+import { parseImpactMetrics } from '../../lib/impact-metrics'
 import { after } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { getLocale } from 'next-intl/server'
@@ -31,7 +32,9 @@ export async function registryQvin(question:string,ids:string[],history:{questio
  const {data:impacts,error:impactError}=await db.from('request_enrichments').select('request_id,report').in('request_id',ids)
  // Impact estimates are optional on databases awaiting the additive migration.
  if(impactError && !['PGRST205','42P01'].includes(impactError.code)) return {error:'unavailable'}
- try { return {text:await askQvin(question,rows.map(r=>({...r,report:impacts?.find(i=>i.request_id===r.id)?.report})),await getLocale(),false,history)} } catch{return {error:'aiUnavailable'}}
+ const {data:metrics}=await db.from('request_impact_metrics').select('request_id,hours_per_month,monthly_value,currency,basis').in('request_id',ids)
+ const metricMap=new Map((metrics || []).map(m=>[m.request_id,m]))
+ try { return {text:await askQvin(question,rows.map(r=>({...r,metrics:metricMap.get(r.id),report:impacts?.find(i=>i.request_id===r.id)?.report})),await getLocale(),false,history)} } catch{return {error:'aiUnavailable'}}
 }
 export async function retryImpact(id:string) {
  if(!['admin','manager','handler'].includes((await getRole())||'') || !uuidPattern.test(id)) return {error:'unavailable'}
@@ -39,4 +42,16 @@ export async function retryImpact(id:string) {
  const {data,error}=await db.from('requests').select('id').eq('id',id).maybeSingle()
  if(error || !data) return {error:'unavailable'}
  try{await enrichRequest(id,await getLocale()); revalidatePath('/workspace','layout');return {ok:true}}catch{return {error:'aiUnavailable'}}
+}
+
+export async function saveImpactMetrics(id: string, input: unknown) {
+ if (!hasSupabase || !uuidPattern.test(id) || !['admin','manager','handler'].includes((await getRole()) || '')) return {error:'unavailable'}
+ let metrics
+ try { metrics = parseImpactMetrics(input) } catch { return {error:'saveError'} }
+ const db = await createClient()
+ // The authenticated client's RLS checks both role and visibility of the request.
+ const {error} = await db.from('request_impact_metrics').upsert({request_id:id,...metrics,updated_at:new Date().toISOString()})
+ if (error) return {error: ['42P01','PGRST205'].includes(error.code) ? 'metricsUnavailable' : 'saveError'}
+ revalidatePath('/workspace','layout')
+ return {ok:true}
 }
