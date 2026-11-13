@@ -838,5 +838,21 @@
     "heroTitle": "From request to resolution",
     "heroDescription": "Keep every step in view: owner, deadline, action and an outcome for the author.",
     "activeRequests": "Active requests"
+  },
+  "matrixLanding": {
+    "headline": "Every idea",
+    "accent": "has a route.",
+    "lead": "Turn employee problems and suggestions into decisions. One workflow, a clear owner, and a result that returns to its author.",
+    "demo": "Explore the full route",
+    "demoNote": "Interactive demo · No sign-up",
+    "idea": "Feedback",
+    "owner": "Owner",
+    "result": "Decision",
+    "return": "The author sees the outcome. The loop closes.",
+    "login": "Sign in",
+    "skip": "Skip to content",
+    "pause": "Pause animation",
+    "play": "Resume animation",
+    "baseline": "From feedback to change"
   }
 }
