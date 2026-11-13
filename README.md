@@ -21,7 +21,7 @@
 
 Для одновременной проверки берите разные демоаккаунты; один Telegram-профиль нельзя одновременно привязать нескольким людям. Бот и веб используют одну карточку. **[Вступить в канал компании](https://t.me/+SN0L5X4t6RkzZWJi)** · [открыть канал в Telegram Web](https://web.telegram.org/k/#-4328792903). По плану в канале участвуют все внутренние роли: сотрудники, ответственные, руководители и администраторы. Участие в канале не заменяет аккаунт и не расширяет права. [Краткая инструкция жюри и диагностика](docs/JUDGES_GUIDE.md). Локальная установка ниже нужна только для самостоятельного запуска исходников.
 
-[Запустить ↓](#setup) · [6 сценариев](#scenarios) · [Tender Brief](docs/TENDER_BRIEF.md) · [Audit](docs/TENDER_AUDIT.md) · [Architecture](docs/02-architecture.md)
+[Запустить ↓](#setup) · [6 сценариев](#scenarios) · [Tender Brief](docs/TENDER_BRIEF.md) · [Audit](docs/TENDER_AUDIT.md) · [Architecture](docs/02-architecture.md) · **[Roadmap: сделано → зачем → дальше](docs/ROADMAP.md)**
 
 ## Продукт в действии
 
@@ -222,9 +222,9 @@ node scripts/check-telegram-webhook-workflow.mjs
 
 Ключи и пароли хранятся в окружении; `.env.example` пустой. В браузер передаются только публичные настройки Supabase, привилегированные ключи остаются на сервере. Подтверждение формы атомарно сохраняет карточку, историю и файлы; RLS ограничивает чтение, а SQL проверяет действия.
 
-Локальная история очищена и собрана заново с удалением прежних объектов. [Что проверено и что остаётся вне локального Git](docs/SECURITY_CLEANUP.md). `origin` отключён: фоновый fetch возвращал старые объекты; адрес и порядок восстановления есть в отчёте. Force push не выполнялся. Опубликованный действующий секрет нужно отозвать: очистка истории его не отключает.
+Локальная история очищена и собрана заново с удалением прежних объектов. [Что проверено и что остаётся вне локального Git](docs/SECURITY_CLEANUP.md). `origin` восстановлен 13.11.2026 на `https://github.com/cByteRun/kinetria-ai.git` по запросу владельца. На GitHub остаётся прежняя история; после fetch сканер снова находит пять старых объектов с конфигурационными/тестовыми значениями. Публикация очищенной истории остаётся отдельным действием; push/force push не выполнялись. Опубликованный действующий секрет нужно отозвать: очистка истории его не отключает.
 
 <a id="docs"></a>
 ## Документация
 
-[Business Vision](docs/BUSINESS_VISION.md) · [Tender Brief](docs/TENDER_BRIEF.md) · [Audit требований 1–6](docs/TENDER_AUDIT.md) · [Architecture/RBAC](docs/02-architecture.md) · [Домен и метрики](docs/03-domain.md) · [Стек](docs/04-stack.md) · [Пилот](docs/08-pilot.md) · [Запись GIF](docs/DEMO_RECORDING.md) · [Все документы и исходное ТЗ](docs/README.md)
+[Business Vision](docs/BUSINESS_VISION.md) · **[Roadmap и чеклист по коммитам](docs/ROADMAP.md)** · [Tender Brief](docs/TENDER_BRIEF.md) · [Audit требований 1–6](docs/TENDER_AUDIT.md) · [Architecture/RBAC](docs/02-architecture.md) · [Домен и метрики](docs/03-domain.md) · [Стек](docs/04-stack.md) · [Пилот](docs/08-pilot.md) · [Запись GIF](docs/DEMO_RECORDING.md) · [Все документы и исходное ТЗ](docs/README.md)
