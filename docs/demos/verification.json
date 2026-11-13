@@ -266,6 +266,27 @@
       "width": 584,
       "height": 893,
       "source": "user-provided real Telegram screenshot"
+    },
+    {
+      "file": "docs/demos/telegram-request-draft-attachment.png",
+      "sha256": "502a7595b7655ce626f9b8e8b8f13b00c6df198421414fbe2e05a1404b8063b0",
+      "width": 586,
+      "height": 903,
+      "source": "user-provided real Telegram screenshot"
+    },
+    {
+      "file": "docs/demos/telegram-request-registered-list.png",
+      "sha256": "b029a7a8ab7c0f00f8e28e849ea63904f928594760d377144b4564bcf26c11ae",
+      "width": 596,
+      "height": 903,
+      "source": "user-provided real Telegram screenshot"
+    },
+    {
+      "file": "docs/demos/telegram-request-history-resolution.png",
+      "sha256": "54982100f1868b2c49346c2770a7393a2895fd51f48eba817e8e2be5191d5b5e",
+      "width": 585,
+      "height": 492,
+      "source": "user-provided real Telegram screenshot"
     }
   ],
   "telegramChannelOnboarding": {
