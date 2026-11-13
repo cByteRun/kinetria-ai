@@ -29,8 +29,15 @@ export async function deliverOutbox() {
     if (!lease) continue
     const delivered: Record<string, boolean> = job.delivered || {}
     try {
-      const { data: r, error: readError } = await db.from('requests').select('id,number,category_id,status,assignee_id,author_id,due_at').eq('id', job.request_id).single()
+      const { data: r, error: readError } = await db.from('requests').select('id,number,category_id,status,assignee_id,author_id,due_at,is_demo,source_ref').eq('id', job.request_id).single()
       if (readError || !r) throw new Error('Request unavailable')
+      // Dataset imports are historical examples, not new employee submissions.
+      // Keep later workflow notifications, including actions on demo cards.
+      if (job.event === 'created' && r.is_demo && /^(?:A-\d+|SYN-\d+-\d+)$/.test(r.source_ref || '')) {
+        const { error } = await db.from('telegram_outbox').update({ done: true, leased_until: null }).eq('id', job.id)
+        if (error) throw new Error('Import receipt failed')
+        continue
+      }
       const { data: category } = await db.from('request_categories').select('name_ru').eq('id', r.category_id).maybeSingle()
       const {data:feedback,error:feedbackError}=await db.from('feedback').select('id,author_id,status,published').eq('request_id',r.id).maybeSingle()
       if(feedbackError) throw new Error('Feedback unavailable')

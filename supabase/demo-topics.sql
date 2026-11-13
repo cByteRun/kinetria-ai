@@ -19,4 +19,10 @@ with samples as (
 )
 insert into public.request_events(request_id,actor_role,event_type,status,message,created_at)
  select id,'employee','created',status,'Синтетическая вариация датасета заказчика для проверки повторяющихся тем.',created_at from imported;
+-- INSERT triggers also enqueue Telegram notifications. Complete only import
+-- creation jobs before COMMIT, so a button press cannot replay the dataset.
+update public.telegram_outbox o set done=true,leased_until=null
+from public.requests r
+where o.request_id=r.id and o.event='created' and not o.done
+  and r.is_demo and r.source_ref ~ '^SYN-[0-9]+-[0-9]+$';
 commit;

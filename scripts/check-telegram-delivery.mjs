@@ -77,3 +77,25 @@ assert.equal(calls.filter(c=>c.chat===12).length,beforeHandler+1,'Successful ass
 assert.equal(rows.telegram_outbox[1].done,true)
 console.log('PASS Telegram delivery: safe channel fields, assignment event, author/current-assignee-only, partial receipts, backoff, retry without repeating successful sends')
 console.log('PASS independent destinations: channel/author failures do not block assignee; retries preserve successful receipts')
+// Import creation jobs must never look like fresh employee submissions.
+for (const source_ref of ['A-001','SYN-012-02']) {
+ rows.requests[0].is_demo=true;rows.requests[0].source_ref=source_ref
+ const job={id:rows.telegram_outbox.length+1,request_id:'r',event:'created',snapshot:{},done:false,delivered:{},attempts:0,next_attempt_at:'2020-01-01',leased_until:null}
+ rows.telegram_outbox.push(job)
+ const before=calls.length
+ assert.deepEqual(await deliverOutbox(),{sent:0})
+ assert.equal(job.done,true)
+ assert.equal(calls.length,before,'Imported creation must not send to channel, author or assignee')
+}
+// Actual workflow actions on imported cards still notify participants.
+const action={id:rows.telegram_outbox.length+1,request_id:'r',event:'status',snapshot:{},done:false,delivered:{},attempts:0,next_attempt_at:'2020-01-01',leased_until:null}
+rows.telegram_outbox.push(action)
+assert.deepEqual(await deliverOutbox(),{sent:1})
+assert(action.delivered.author && action.delivered.handler)
+// A demo flag alone is insufficient to discard an interactive submission.
+rows.requests[0].source_ref=null
+const interactive={...action,id:rows.telegram_outbox.length+1,event:'created',done:false,delivered:{},attempts:0}
+rows.telegram_outbox.push(interactive)
+assert.deepEqual(await deliverOutbox(),{sent:1})
+assert(interactive.delivered.author && interactive.delivered.handler)
+console.log('PASS import creation suppression; demo workflow and interactive submissions still deliver')
