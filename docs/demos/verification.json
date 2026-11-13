@@ -199,17 +199,24 @@
   "publicDemo": "https://kinetria-ai.vercel.app",
   "realTelegramScreenshots": [
     {
-      "file": "docs/demos/Снимок экрана 2026-11-13 090320.png",
+      "file": "docs/demos/telegram-bot-menu.png",
+      "sha256": "9f8cef643dc4271611bab0849c568a7663bb3a188e3ca464aec46934dbbf57c6",
+      "width": 800,
+      "height": 895,
+      "source": "user-provided real Telegram screenshot"
+    },
+    {
+      "file": "docs/demos/telegram-request-submission.png",
       "sha256": "3b165d2760324cfc2d8f242c6976f01b1e8ff4b3f48b1ecef358ce02552f7a61",
       "width": 578,
       "height": 901,
       "source": "user-provided real Telegram screenshot"
     },
     {
-      "file": "docs/demos/Снимок экрана 2026-11-13 090241.png",
-      "sha256": "9f8cef643dc4271611bab0849c568a7663bb3a188e3ca464aec46934dbbf57c6",
-      "width": 800,
-      "height": 895,
+      "file": "docs/demos/telegram-company-channel.png",
+      "sha256": "9470d33381ab4254a6409d66aaeb7d2173460944f497a280c9fd3e262452ac86",
+      "width": 584,
+      "height": 893,
       "source": "user-provided real Telegram screenshot"
     }
   ],
