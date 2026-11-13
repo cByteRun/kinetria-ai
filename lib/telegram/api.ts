@@ -30,6 +30,15 @@ export async function bridge(tg: number, op: keyof BridgeResults, data: object =
   // client reads events. No new privileged SQL endpoint is needed.
   const { data: rawResult, error } = await telegramDb().rpc('telegram_bridge', { p_tg: tg, p_op: op === 'history' ? 'detail' : op, p_data: data })
   if (error) {
+    // Older hosted bridges treat the new qvin operation as a request lookup and
+    // return PT404. Reuse the authorized topic reader instead of widening scope
+    // with a service-role table query. Keep genuine provider failures retryable.
+    if (op === 'qvin' && error.code === 'PT404') {
+      const context = await bridge(tg, 'context')
+      if (!['admin', 'manager'].includes(context.role)) throw new Error('unavailable')
+      const rows = await bridge(tg, 'topics', { op: 'rows' })
+      return rows.slice(0, 100).map(({ id, title, description, status, created_at, category_id }) => ({ id, title, description, status, created_at, category_id }))
+    }
     if (error.code === 'PT409') throw new Error('conflict')
     if (error.code === '42501') throw new Error('unlinked')
     // Only deterministic domain rejections may acknowledge the update. Network,

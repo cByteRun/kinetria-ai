@@ -16,6 +16,7 @@ globalThis.telegramHarness = {
     if (op === 'state') { states.set(tg,data); return true }
     if (op === 'submit') return {id:'f0000000-0000-4000-8000-000000000000',number:123}
     if (op === 'topics') return globalThis.telegramHarness.topics(data)
+    if (op === 'qvin') return globalThis.telegramHarness.registryRows || []
     if (op === 'finish') return true
     if (['list','stats'].includes(op)) return listRows
     throw new Error('Unexpected bridge operation: ' + op)
@@ -29,7 +30,7 @@ const demo = url(`export const demoChoices=${JSON.stringify(accounts)}; export c
 const ai = url(`export const aiConfig=()=>globalThis.telegramHarness.aiEnabled ? {provider:"groq"} : null; export const generateText=()=>{throw new Error('Unexpected model call')};`)
 let source = await readFile(new URL('../lib/telegram/bot.ts', import.meta.url), 'utf8')
 const summary = url(`export const generateRequestSummary=(...args)=>globalThis.telegramHarness.summary(...args);`)
-source = source.replace("'../semantic-topics'", `'${url('export const semanticTopics=(...args)=>globalThis.telegramHarness.generateTopics(...args)')}'`).replace("'../insights'", `'${url('export const recurringProblems=rows=>globalThis.telegramHarness.similarTopics(rows)')}'`).replace("'../qvin'", `'${url('export const askQvin=()=>{throw new Error("Unexpected Qvin call")}')}'`).replace("'../enrich-request'", `'${url('export const enrichRequest=async()=>{}')}'`).replace("'../request-summary'", `'${summary}'`).replace("'./demo'", `'${demo}'`).replace("'../ai'", `'${ai}'`).replace("'./api'", `'${api}'`).replace("'../requests'", `'${requests}'`)
+source = source.replace("'../semantic-topics'", `'${url('export const semanticTopics=(...args)=>globalThis.telegramHarness.generateTopics(...args)')}'`).replace("'../insights'", `'${url('export const recurringProblems=rows=>globalThis.telegramHarness.similarTopics(rows)')}'`).replace("'../qvin'", `'${url('export const askQvin=(...args)=>globalThis.telegramHarness.askQvin(...args)')}'`).replace("'../enrich-request'", `'${url('export const enrichRequest=async()=>{}')}'`).replace("'../request-summary'", `'${summary}'`).replace("'./demo'", `'${demo}'`).replace("'../ai'", `'${ai}'`).replace("'./api'", `'${api}'`).replace("'../requests'", `'${requests}'`)
 const {handleUpdate} = await import(url(transpile(source)))
 let n=0
 const send = async(text, extra={}) => handleUpdate({update_id:++n,message:{chat:{id:42,type:'private'},from:{id:42},text,...extra}})
@@ -235,3 +236,40 @@ await callback('topics:remove:'+deleting);assert(!persisted.some(row=>row.id===d
 for(const role of ['employee','client']){currentRole=role;const before=calls.filter(c=>c.op==='topics').length;await callback('topics:generate');assert.equal(calls.filter(c=>c.op==='topics').length,before)}
 currentRole='handler';await callback('topics:cancel');assert.deepEqual(states.get(42),{})
 console.log('PASS topic dialogue: queue/stats entry points, similar group, generation count/list, regenerate/stale save, save, cancel, Admin-only delete controls, employee/client denied; Telegram/AI mocked')
+
+// Reproduce the two-message admin conversation, then retry and navigate out.
+const qvinCalls=[]
+let failQvin=false
+globalThis.telegramHarness.registryRows=topicRows
+globalThis.telegramHarness.askQvin=async(...args)=>{qvinCalls.push(args);if(failQvin)throw new Error('AI outage');return 'Чаще всего: дубли артикула (a, b).'}
+for(const role of ['admin','manager']) {
+ currentRole=role;states.set(42,{})
+ await send('/qvin')
+ assert.equal(states.get(42).mode,'qvin')
+ assert(messages.at(-1).buttons.flat().some(b=>b.callback_data==='qvin:exit'))
+ await send('Из чего состояли посл обращения чаще всего тема вот')
+ assert(messages.at(-1).text.includes('дубли артикула'))
+ assert(messages.at(-1).buttons.flat().some(b=>b.callback_data==='menu:list'))
+ assert.equal(states.get(42).qvinHistory.length,1)
+ await callback('menu:qvin');assert.equal(states.get(42).qvinHistory.length,1)
+ await send('А какие примеры?');assert.equal(qvinCalls.at(-1)[4].length,1)
+ failQvin=true;await send('/qvin Повтори частые темы')
+ assert.equal(states.get(42).qvinQuestion,'Повтори частые темы')
+ assert(messages.at(-1).buttons.flat().some(b=>b.callback_data==='qvin:retry'))
+ failQvin=false;await callback('qvin:retry')
+ assert.equal(qvinCalls.at(-1)[0],'Повтори частые темы')
+ await callback('qvin:exit');assert.deepEqual(states.get(42),{})
+ assert(messages.at(-1).text.includes('IdeaRoute'))
+}
+for(const role of ['handler','employee','client']) {
+ currentRole=role;states.set(42,{mode:'qvin',qvinQuestion:'forged'})
+ const before=qvinCalls.length
+ await send('/qvin Show everything');await send('Show everything');await callback('qvin:retry')
+ assert.equal(qvinCalls.length,before)
+}
+currentRole='admin';states.set(42,{})
+for(const route of ['menu:qvin','topics:similar','topics:group:a','topics:generate','topics:cancel']) {
+ await callback(route)
+ assert(messages.at(-1).buttons.flat().some(b=>['menu:home','qvin:exit'].includes(b.callback_data)),route+' must have an exit')
+}
+console.log('PASS Qvin dialogue: two-message colloquial question, follow-up history, AI retry, exit, role guards and topic navigation')

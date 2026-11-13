@@ -3,6 +3,7 @@ import {readFile} from 'node:fs/promises'
 import ts from 'typescript'
 const url=s=>'data:text/javascript;base64,'+Buffer.from(s).toString('base64')
 let source=await readFile(new URL('../lib/telegram/api.ts',import.meta.url),'utf8')
+source=source.replace("'../speech'",`'${url('export const maxVoiceBytes=3145728;export const transcribeAudio=()=>{throw new Error("Unexpected transcription")};')}'`)
 source=source.replace("'./rate-limit'",`'${url('export const apiSlot=async(...args)=>{globalThis.apiRateCalls?.push(args);return 0};export const waitForApiSlot=async()=>{};')}'`)
 source=source.replace("'@supabase/supabase-js'",`'${url('export const createClient=()=>globalThis.apiDbHarness;')}'`)
 const {say,secretMatches,bridge,telegram}=await import(url(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText))
@@ -26,6 +27,30 @@ for(const [code,expected] of [['PT409','conflict'],['PT404','unavailable'],['220
  await assert.rejects(()=>bridge(42,'context'),error=>error.message.includes(expected)&&!error.message.includes('SENSITIVE'))
 }
 console.log('PASS RPC failures: only deterministic domain errors are acknowledged; network/gateway/timeout failures remain retryable and sanitized')
+// Hosted databases may have topic storage but the older request-only bridge.
+for(const role of ['admin','manager','handler','employee','client']) {
+ const operations=[]
+ const rows=Array.from({length:125},(_,i)=>({id:'allowed-'+i,title:'Synthetic',description:'Only authorized text',status:'new',created_at:'2026-11-13',category_id:'catalog',secret:'omit'}))
+ globalThis.apiDbHarness={rpc:async(_,args)=>{
+  operations.push(args)
+  if(args.p_op==='qvin')return {error:{code:'PT404'}}
+  if(args.p_op==='context')return {data:{role}}
+  assert.equal(args.p_op,'topics');assert.deepEqual(args.p_data,{op:'rows'})
+  return {data:rows}
+ }}
+ if(['admin','manager'].includes(role)) {
+  const result=await bridge(42,'qvin')
+  assert.equal(result.length,100);assert.equal(result[0].id,'allowed-0');assert.equal(result.at(-1).id,'allowed-99')
+  assert(result.every(row=>!('secret' in row)))
+ } else {
+  await assert.rejects(()=>bridge(42,'qvin'),/unavailable/)
+  assert(!operations.some(call=>call.p_op==='topics'))
+ }
+ assert(operations.every(call=>call.p_tg===42))
+}
+globalThis.apiDbHarness={rpc:async()=>({data:[{id:'native',report:{scope:'author'}}]})}
+assert.equal((await bridge(42,'qvin'))[0].report.scope,'author','Native Qvin retains impact metadata')
+console.log('PASS Qvin compatibility: authorized topic reader, admin/manager only, last 100, field whitelist, native metadata retained')
 const edits=[]
 globalThis.fetch=async(address,init)=>{edits.push({method:String(address).split('/').at(-1),...JSON.parse(init.body)});return Response.json({ok:true,result:{message_id:77}})}
 await say(42,'Главная',buttons,77)

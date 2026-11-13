@@ -16,7 +16,7 @@ const navigation = new AsyncLocalStorage<{ messageId?: number }>()
 const say = (tg: number, text: string, buttons: Button[][] = []) => sendMessage(tg, text, buttons, navigation.getStore()?.messageId)
 
 type FileData = { name: string; size: number; content: string }
-type State = { topicDrafts?: TopicDraft[]; topicSelection?: string[]; topicNonce?: string; qvinHistory?: {question:string;answer:string}[]; hint?: string; feedbackTitle?: string; feedbackText?: string; feedbackCategory?: string; feedbackKind?: 'problem'|'idea'|'praise'; source?: 'voice' | 'text'; mode?: string; key?: string; draft?: Draft; files?: FileData[]; id?: string; number?: number; version?: number; assignee?: string; assigneeName?: string; due?: string; field?: string; status?: string }
+type State = { topicDrafts?: TopicDraft[]; topicSelection?: string[]; topicNonce?: string; qvinQuestion?: string; qvinHistory?: {question:string;answer:string}[]; hint?: string; feedbackTitle?: string; feedbackText?: string; feedbackCategory?: string; feedbackKind?: 'problem'|'idea'|'praise'; source?: 'voice' | 'text'; mode?: string; key?: string; draft?: Draft; files?: FileData[]; id?: string; number?: number; version?: number; assignee?: string; assigneeName?: string; due?: string; field?: string; status?: string }
 export type Context = { role: string; name: string; state: State; categories: { id: string; name: string }[] }
 type Message = { message_id?: number; chat: { id: number; type: string }; from?: { id: number }; text?: string; voice?: { file_id: string; duration: number; file_size?: number }; document?: { file_id: string; file_name?: string; file_size?: number }; photo?: { file_id: string; file_size?: number }[] }
 export type Update = { update_id: number; message?: Message; callback_query?: { id: string; from: { id: number }; message?: Message; data?: string } }
@@ -31,6 +31,8 @@ function button(text: string, callback_data: string): Button {
 }
 const backToDraft = () => [[button('⬅️ Назад', 'menu:draft')]]
 const backToDetail = (id: string) => [[button('⬅️ Назад', 'open:' + id)]]
+const backToTopics = () => [[button('⬅️ К темам реестра', 'topics:list')], [button('🏠 Главная', 'menu:home')]]
+const qvinNavigation = () => [[button('⬅️ К реестру', 'menu:list')], [button('🏠 Завершить диалог', 'qvin:exit')]]
 const state = (tg: number, value: State) => bridge(tg, 'state', value)
 const ref = (n: number) => 'R-' + String(n).padStart(3, '0')
 const statusNames: Record<string, string> = { new: 'Новое', review: 'На рассмотрении', clarification: 'Нужно уточнение', in_progress: 'В работе', implemented: 'Реализовано', rejected: 'Отклонено', closed: 'Закрыто' }
@@ -147,6 +149,9 @@ const overview = '💡 IdeaRoute — проблемы и предложения 
 function topicButtons(role:string):Button[][] {
  return ['admin','manager','handler'].includes(role)?[[button('🔍 Подобрать похожие обращения','topics:similar')],[button('✨ Сгенерировать тему (AI)','topics:generate')],[button('Темы реестра','topics:list')]]:[]
 }
+function topicScreenButtons(role: string): Button[][] {
+ return [...topicButtons(role), [button('🏠 Главная', 'menu:home')]]
+}
 function homeButtons(tg: number, role: string): Button[][] {
   if (role === 'client') return [[button('💬 Портал фидбэков / Отзывы','menu:feedback')],...websiteButtons()]
   const rows = role === 'employee'
@@ -212,6 +217,7 @@ async function processUpdate(update: Update) {
       else if (text === '/cancel' || cb === 'cancel') { await state(tg, {}); await say(tg, 'Действие отменено. /new · /list') }
       else if (text === '/start' || text === '/home') await showHome(tg, c)
       else if (text === '/help' || cb === 'help') await showInstructions(tg, c)
+      else if (cb === 'qvin:exit') { await state(tg, {}); await showHome(tg, c) }
       else if (['/demo', '/login', '/switch'].includes(text)) await say(tg, 'Демовход доступен только участникам закрытого показа. /home — меню вашего аккаунта.', websiteButtons())
       else if (text === '/feedback') await showFeedback(tg,c)
       else if (cb === 'fb:new' && ['client','employee'].includes(c.role)) {
@@ -240,43 +246,43 @@ async function processUpdate(update: Update) {
             ...topics.map(topic=>[button(topic.title.slice(0,35)+' ('+topic.ticketIds.length+')','topics:open:'+topic.id),...(c.role==='admin'?[button('🗑 Удалить тему','topics:delete:'+topic.id)]:[])]),...topicButtons(c.role),...websiteButtons()])
         } else if(cb.startsWith('topics:open:')) {
           const topics=await bridge(tg,'topics',{op:'list'}),topic=topics.find(item=>item.id===cb.slice(12))
-          if(!topic) {await say(tg,'Тема недоступна.',topicButtons(c.role));return}
+          if(!topic) {await say(tg,'Тема недоступна.',topicScreenButtons(c.role));return}
           // Resolve each member again: do not rely on saved conversational state.
           const members=await Promise.all(topic.ticketIds.map(id=>bridge(tg,'detail',{id})))
-          await say(tg,(topic.isAiGenerated?'✨ AI · ':'')+topic.title+' ('+members.length+')\n\n'+members.map(row=>ref(row.number)+' · '+row.title).join('\n'),members.map(row=>[button(ref(row.number)+' · '+row.title.slice(0,35),'open:'+row.id)]).concat(topicButtons(c.role)))
+          await say(tg,(topic.isAiGenerated?'✨ AI · ':'')+topic.title+' ('+members.length+')\n\n'+members.map(row=>ref(row.number)+' · '+row.title).join('\n'),members.map(row=>[button(ref(row.number)+' · '+row.title.slice(0,35),'open:'+row.id)]).concat(topicScreenButtons(c.role)))
         } else if(cb.startsWith('topics:delete:')) {
           if(c.role!=='admin') {await say(tg,'Удаление доступно только администратору.');return}
           const id=cb.slice(14)
-          await say(tg,'Удалить тему? Обращения и их история сохранятся.',[[button('🗑 Подтвердить удаление','topics:remove:'+id),button('❌ Отмена','topics:list')]])
+          await say(tg,'Удалить тему? Обращения и их история сохранятся.',[[button('🗑 Подтвердить удаление','topics:remove:'+id),button('❌ Отмена','topics:list')],...backToTopics()])
         } else if(cb.startsWith('topics:remove:')) {
           await bridge(tg,'topics',{op:'delete',data:{id:cb.slice(14)}})
-          await say(tg,'Тема удалена. Обращения сохранены.',topicButtons(c.role))
+          await say(tg,'Тема удалена. Обращения сохранены.',topicScreenButtons(c.role))
         } else if(cb==='topics:cancel') {
-          await state(tg,{});await say(tg,'Выбор темы отменён.',topicButtons(c.role))
+          await state(tg,{});await say(tg,'Выбор темы отменён.',topicScreenButtons(c.role))
         } else if(cb==='topics:similar') {
           const rows=await bridge(tg,'topics',{op:'rows'})
           const groups=recurringProblems(rows)
           const next={...s,mode:'topics',topicDrafts:undefined,topicNonce:randomUUID()}
           await state(tg,next)
-          await say(tg,groups.length?'Выберите группу по категории и общему тегу. Это сигнал сходства, а не подтверждённый дубликат.':'Повторяющихся групп по категории и тегам не найдено.',groups.slice(0,15).map(group=>[button(group.tag+' ('+group.rows.length+')','topics:group:'+group.rows[0].id)]).concat(topicButtons(c.role)))
+          await say(tg,groups.length?'Выберите группу по категории и общему тегу. Это сигнал сходства, а не подтверждённый дубликат.':'Повторяющихся групп по категории и тегам не найдено.',groups.slice(0,15).map(group=>[button(group.tag+' ('+group.rows.length+')','topics:group:'+group.rows[0].id)]).concat(topicScreenButtons(c.role)))
         } else if(cb.startsWith('topics:group:')) {
           const rows=await bridge(tg,'topics',{op:'rows'}),id=cb.slice(13)
           const group=recurringProblems(rows).find(item=>item.rows[0].id===id)
-          if(!group){await say(tg,'Группа изменилась. Повторите подбор.',topicButtons(c.role));return}
+          if(!group){await say(tg,'Группа изменилась. Повторите подбор.',topicScreenButtons(c.role));return}
           await state(tg,{mode:'topics',topicSelection:group.rows.map(row=>row.id)})
-          await say(tg,group.tag+' ('+group.rows.length+')\n'+group.rows.map(row=>ref(row.number)+' · '+row.title).join('\n'),[[button('✨ Сгенерировать тему (AI)','topics:generate'),button('❌ Отмена','topics:cancel')]])
+          await say(tg,group.tag+' ('+group.rows.length+')\n'+group.rows.map(row=>ref(row.number)+' · '+row.title).join('\n'),[[button('✨ Сгенерировать тему (AI)','topics:generate'),button('❌ Отмена','topics:cancel')],...backToTopics()])
         } else if(cb.startsWith('topics:save:')) {
           const [nonce,index]=cb.slice(12).split(':')
           const draft=s.topicNonce===nonce?s.topicDrafts?.[Number(index)]:undefined
-          if(!draft){await say(tg,'Черновик устарел. Повторите генерацию.',topicButtons(c.role));return}
+          if(!draft){await say(tg,'Черновик устарел. Повторите генерацию.',topicScreenButtons(c.role));return}
           await bridge(tg,'topics',{op:'save',data:draft})
           await state(tg,{mode:'topics'})
-          await say(tg,'💾 Тема сохранена в общем реестре: '+draft.title+' ('+draft.ticketIds.length+'). Доступна в вебе и боте.',topicButtons(c.role))
+          await say(tg,'💾 Тема сохранена в общем реестре: '+draft.title+' ('+draft.ticketIds.length+'). Доступна в вебе и боте.',topicScreenButtons(c.role))
         } else if(cb==='topics:generate' || cb==='topics:regenerate') {
           const rows=await bridge(tg,'topics',{op:'rows'})
           const selected=s.topicSelection?rows.filter(row=>s.topicSelection?.includes(row.id)):rows
-          if(selected.length<2 || (s.topicSelection && selected.length!==s.topicSelection.length)){await say(tg,'Нужно минимум два доступных обращения. Повторите выбор.',topicButtons(c.role));return}
-          if(JSON.stringify(selected).length>120000){await say(tg,'Выборка слишком большая. Сначала подберите похожие обращения.',topicButtons(c.role));return}
+          if(selected.length<2 || (s.topicSelection && selected.length!==s.topicSelection.length)){await say(tg,'Нужно минимум два доступных обращения. Повторите выбор.',topicScreenButtons(c.role));return}
+          if(JSON.stringify(selected).length>120000){await say(tg,'Выборка слишком большая. Сначала подберите похожие обращения.',topicScreenButtons(c.role));return}
           try {
             const topics=await semanticTopics(selected,90,'ru',Math.min(...selected.map(row=>Date.parse(row.created_at))),cb==='topics:regenerate'?randomUUID():undefined)
             const drafts=topics.filter(topic=>topic.ids.length>=2).map(topic=>({id:randomUUID(),title:topic.title,ticketIds:topic.ids,isAiGenerated:true}))
@@ -284,14 +290,15 @@ async function processUpdate(update: Update) {
             await state(tg,{mode:'topics',topicSelection:selected.map(row=>row.id),topicDrafts:drafts,topicNonce:nonce})
             await say(tg,drafts.length?drafts.map((topic,index)=>(index+1)+'. ✨ '+topic.title+' ('+topic.ticketIds.length+')\n'+topic.ticketIds.map(id=>{const row=selected.find(item=>item.id===id)!;return ref(row.number)+' · '+row.title}).join('\n')).join('\n\n'):'Повторяющихся тем не найдено.',[
               ...drafts.map((topic,index)=>[button('💾 Сохранить тему в реестре · '+(index+1),'topics:save:'+nonce+':'+index)]),
-              [button('🔄 Перегенерировать','topics:regenerate'),button('❌ Отмена','topics:cancel')]])
-          } catch {await say(tg,'Qvin сейчас недоступен. Попробуйте позже.',topicButtons(c.role))}
+              [button('🔄 Перегенерировать','topics:regenerate'),button('❌ Отмена','topics:cancel')],...backToTopics()])
+          } catch {await say(tg,'Qvin сейчас недоступен. Попробуйте позже.',topicScreenButtons(c.role))}
         }
       }
       else if((text==='/qvin' || text.startsWith('/qvin ')) && ['admin','manager'].includes(c.role)) {
-        if(text==='/qvin'){await state(tg,{mode:'qvin'});await say(tg,'Задайте вопрос по последним 100 доступным обращениям. Qvin не меняет записи. /cancel — выход.')}
+        if(text==='/qvin'){await state(tg,{mode:'qvin',qvinHistory:s.qvinHistory});await say(tg,'Задайте вопрос по последним 100 доступным обращениям. Например: «Какие темы встречаются чаще всего? Приведи примеры обращений». Qvin не меняет записи. /cancel — выход.',qvinNavigation())}
         else await answerRegistry(tg,text.slice(6),c)
       }
+      else if(cb==='qvin:retry' && s.mode==='qvin' && s.qvinQuestion && ['admin','manager'].includes(c.role)) await answerRegistry(tg,s.qvinQuestion,c)
       else if(s.mode==='qvin' && text && !text.startsWith('/') && ['admin','manager'].includes(c.role)) await answerRegistry(tg,text,c)
       else if (text === '/draft') {
         if (c.role === 'employee' && s.draft) {
@@ -471,7 +478,15 @@ async function showFeedback(tg:number,c:Context,id?:string){
  ...rows.slice(0,30).map(f=>[button((f.own?'Мой · ':'')+(statusNames[f.status]||f.status)+' · '+f.title.slice(0,35),'fbopen:'+f.id)]),...websiteButtons()])
 }
 async function answerRegistry(tg:number,question:string,c:Context){
+ if(!question.trim() || question.length>2000){await say(tg,'Напишите вопрос до 2000 символов.',qvinNavigation());return}
+ const history=c.state.qvinHistory||[]
+ // A one-line /qvin question must also remain retryable after an AI outage.
+ await state(tg,{mode:'qvin',qvinQuestion:question,qvinHistory:history})
  const rows=await bridge(tg,'qvin')
- try{const history=c.state.qvinHistory||[];const answer=await askQvin(question,rows,'ru',true,history.slice(-6));await state(tg,{mode:'qvin',qvinHistory:[...history,{question,answer}].slice(-6)});await say(tg,answer+'\n\nВыборка: последние '+rows.length+' доступных записей. Гипотезы требуют проверки.',[[button('✨ Ещё вопрос','menu:qvin')],...websiteButtons()])}
- catch{await say(tg,'Qvin сейчас недоступен. Повторите вопрос позже.',[[button('✨ Повторить','menu:qvin')],...websiteButtons()])}
+ let answer:string
+ try{answer=await askQvin(question,rows,'ru',true,history.slice(-6))}
+ catch{await say(tg,'Qvin сейчас недоступен. Вопрос сохранён — повторите его кнопкой ниже.',[[button('🔄 Повторить вопрос','qvin:retry')],...qvinNavigation()]);return}
+ await state(tg,{mode:'qvin',qvinHistory:[...history,{question,answer}].slice(-6)})
+ // Delivery failures must reach the durable inbox; they are not AI failures.
+ await say(tg,answer+'\n\nВыборка: последние '+rows.length+' доступных записей. Гипотезы требуют проверки.\nМожно написать следующий вопрос.',[[button('✨ Ещё вопрос','menu:qvin')],...qvinNavigation()])
 }

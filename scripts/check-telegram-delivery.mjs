@@ -4,6 +4,7 @@ import ts from 'typescript'
 const toUrl=s=>'data:text/javascript;base64,'+Buffer.from(s).toString('base64')
 const calls=[]
 const rows={
+ feedback:[],feedback_votes:[],
  request_categories:[{id:'catalog',name_ru:'Каталог'}],
  telegram_demo_sessions:[],telegram_tokens:[],telegram_sessions:[],telegram_updates:[],telegram_channel_messages:[],
  telegram_outbox:[{id:1,request_id:'r',version:2,event:'assigned',actor_id:'manager',snapshot:{assignee_id:'handler',due_at:'2026-12-01'},done:false,delivered:{},attempts:0,next_attempt_at:'2020-01-01',leased_until:null}],
