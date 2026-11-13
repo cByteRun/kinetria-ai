@@ -43,5 +43,14 @@
     "durationSeconds": 13.6,
     "bytes": 2244937,
     "sha256": "2996f29b320fda6f9c5917bbc026dbff1fa86773491a45c696387077b922941f"
+  },
+  {
+    "file": "docs/demos/demo-6-admin-routing.gif",
+    "width": 1280,
+    "height": 889,
+    "frames": 72,
+    "durationSeconds": 54.77,
+    "bytes": 7508574,
+    "sha256": "0183ecfa619f30d38f65d3d4332a33b3725fcaf3b69cc27eb194db9bfe17b081"
   }
 ]

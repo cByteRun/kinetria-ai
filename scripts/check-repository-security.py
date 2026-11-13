@@ -23,9 +23,12 @@ PATTERNS = {
     'deployment-id': rb'\b(?:dpl|prj|team|org)_[A-Za-z0-9]{10,}',
     'telegram-channel-id': rb'(?<!\d)-100\d{8,}(?!\d)',
 }
+# Public demo links are intentionally published at the user's request.
+PUBLIC_DEMO_URL = b'https://kinetria-ai.vercel.app'
+PUBLIC_BOT_HANDLES = {b'@VoiceChatGpt_Custom_bot', b'VoiceChatGpt_Custom_bot'}
 # Deliberate synthetic examples in transport checks and setup documentation.
 EXAMPLES = {
-    b'https://example.vercel.app', b'-1001234567890', b'-1000000000000',
+    PUBLIC_DEMO_URL, b'https://example.vercel.app', b'-1001234567890', b'-1000000000000',
 }
 SENSITIVE_NAME = re.compile(r'KEY|TOKEN|SECRET|PASSWORD|ALLOWED_IDS|CHANNEL_ID|APP_URL|SUPABASE_URL|BOT_USERNAME')
 
@@ -45,6 +48,8 @@ def local_values():
             if not match or not SENSITIVE_NAME.search(match[1]):
                 continue
             value = match[2].strip().strip('\x22\x27')
+            if (match[1] == 'APP_URL' and value.encode() == PUBLIC_DEMO_URL) or (match[1] == 'TELEGRAM_BOT_USERNAME' and value.encode() in PUBLIC_BOT_HANDLES):
+                continue
             if len(value) < 8 or value.startswith(('<', 'http://localhost', 'http://127.0.0.1')):
                 continue
             values.add(value.encode())

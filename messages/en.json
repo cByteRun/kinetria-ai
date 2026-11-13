@@ -49,7 +49,8 @@
     "created": "Request submitted",
     "assigned": "Assignment changed",
     "reviewed": "Status updated",
-    "replied": "Author replied"
+    "replied": "Author replied",
+    "schemaUnavailable": "The service is temporarily unavailable. Tell the administrator that request registration needs an update. Your entries remain in the form."
   },
   "common": {
     "loading": "Loading…",
@@ -1113,7 +1114,8 @@
     "listLimit": "The portal shows the latest 200 accessible entries.",
     "allFeedback": "Feedback",
     "portalSnapshot": "Visible feedback overview",
-    "supportCount": "Support votes"
+    "supportCount": "Support votes",
+    "roiYear": "ROI (12 months)"
   },
   "topicWorkbench": {
     "heading": "Request topics",

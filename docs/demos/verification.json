@@ -87,7 +87,6 @@
     "Telegram dialogue/API/delivery/webhook/inbox",
     "ordinary webhook+SQL workflow with ROLLBACK"
   ],
-  "knownFailure": "check-i18n.mjs: hardcoded JSX text in components/impact-card.tsx; all three locale dictionaries have 1094 messages",
   "security": {
     "rewrittenCommits": 14,
     "totalCommitsAtRewrite": 40,
@@ -100,9 +99,8 @@
   "artifacts": {
     "decodedAllFrames": true,
     "infiniteLoopVerified": true,
-    "readmeReferencesAllFive": true,
     "missingLocalLinks": [],
-    "totalBytes": 29617339,
+    "totalBytes": 37125913,
     "files": [
       {
         "file": "docs/demos/demo-1-submission-and-qvin.gif",
@@ -148,7 +146,55 @@
         "durationSeconds": 13.6,
         "bytes": 2244937,
         "sha256": "2996f29b320fda6f9c5917bbc026dbff1fa86773491a45c696387077b922941f"
+      },
+      {
+        "file": "docs/demos/demo-6-admin-routing.gif",
+        "width": 1280,
+        "height": 889,
+        "frames": 72,
+        "durationSeconds": 54.77,
+        "bytes": 7508574,
+        "sha256": "0183ecfa619f30d38f65d3d4332a33b3725fcaf3b69cc27eb194db9bfe17b081"
       }
-    ]
-  }
+    ],
+    "readmeReferencesAllSix": true
+  },
+  "resolvedHistoricalFailure": "check-i18n.mjs: hardcoded JSX text in components/impact-card.tsx; all three locale dictionaries have 1094 messages",
+  "localization": {
+    "status": "PASS",
+    "localeMessages": 1096,
+    "languages": [
+      "ru",
+      "en",
+      "kk"
+    ],
+    "jsxLiterals": "PASS"
+  },
+  "adminRouting": {
+    "database": "local Supabase",
+    "checks": [
+      "saved rule 1 → request 1 owned by Алексей Волков",
+      "saved rule 2 → request 2 owned by Максим Ли",
+      "changing rule does not silently reassign existing request"
+    ],
+    "originalRuleRestored": true,
+    "errors": []
+  },
+  "productionRegistration": {
+    "base": "https://kinetria-ai.vercel.app",
+    "started": "2026-11-13T03:57:42.322Z",
+    "checks": [
+      "public demo login",
+      "resume previously verified real registration",
+      "persisted attachment download and content",
+      "persist after reload",
+      "same request visible to administrator",
+      "client portal and existing saved topics still available"
+    ],
+    "errors": [],
+    "id": "c0d38de6-db95-421b-8849-3312f09d15c9",
+    "registrationAndFileVerifiedBeforeNetworkRetry": true
+  },
+  "productionDeployment": "READY",
+  "publicDemo": "https://kinetria-ai.vercel.app"
 }

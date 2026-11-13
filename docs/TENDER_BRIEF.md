@@ -1,6 +1,8 @@
 # Tender Brief · ГК «Модус Трейд»
 
-**IdeaRoute · Monogram IR — Dynamic Path**
+**Готовое демо для жюри:** [IdeaRoute](https://kinetria-ai.vercel.app) · [выбрать роль](https://kinetria-ai.vercel.app/login). Устанавливать проект для просмотра не нужно. [Инструкция, Telegram-привязка и Troubleshooting](JUDGES_GUIDE.md).
+
+**IdeaRoute**
 Работающий MVP системы обратной связи и предложений. Срез 13.11.2026: Qvin, сохраняемые AI-темы, веб/Telegram и клиентский портал входят в код. Источник требований — [ТЗ, разделы 1–6](TZ/ТЗ_на_разработку_системы_обратной_связи_и_предложений_сотрудников.docx).
 
 ## 1. Бизнес-ось

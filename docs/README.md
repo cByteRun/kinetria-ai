@@ -1,6 +1,8 @@
 # Документация IdeaRoute
 
-Актуальный пакет 13.11.2026: [Tender Brief](TENDER_BRIEF.md), [Audit ТЗ 1–6](TENDER_AUDIT.md), [Business Vision](BUSINESS_VISION.md), [5 E2E GIF и воспроизведение](DEMO_RECORDING.md), [очистка истории Git](SECURITY_CLEANUP.md).
+**Готовое демо для жюри:** [IdeaRoute](https://kinetria-ai.vercel.app) · [выбрать роль](https://kinetria-ai.vercel.app/login). Устанавливать проект для просмотра не нужно. [Инструкция, Telegram-привязка и Troubleshooting](JUDGES_GUIDE.md).
+
+Актуальный пакет 13.11.2026: [Tender Brief](TENDER_BRIEF.md), [Audit ТЗ 1–6](TENDER_AUDIT.md), [Business Vision](BUSINESS_VISION.md), [6 E2E GIF и воспроизведение](DEMO_RECORDING.md), [очистка истории Git](SECURITY_CLEANUP.md).
 
 > Развитие 13.11.2026: клиентский портал Web/Telegram, поддержка идей, отдельная публикация/ответ, потенциальный эффект и два режима Qvin реализованы в коде и проверены локально. [Матрица ТЗ, архитектура, запуск и границы проверки](PRODUCT-EXPANSION.md). Production этой итерации не обновлялся; CSAT/NPS и интеграции Б24/1С остаются планом. Более ранние отметки «клиентский канал не реализован» ниже относятся к предыдущему состоянию.
 

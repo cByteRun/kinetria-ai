@@ -1,6 +1,8 @@
 # 07 — Подача и защита
 
-Актуальный срез 13.11.2026: **IdeaRoute**, айдентика **Monogram IR — Dynamic Path**. Qvin, сохраняемые AI-темы и клиентский портал Web/Telegram реализованы; CSAT/NPS, SSO, RAG и 1С/Б24 — план. [Единый статус и ограничения](TENDER_AUDIT.md) · [Шесть сценариев](../README.md#scenarios) · [Свежие записи](DEMO_RECORDING.md). Исторические результаты ниже относятся к указанным в них прогонам.
+**Готовое демо для жюри:** [IdeaRoute](https://kinetria-ai.vercel.app) · [выбрать роль](https://kinetria-ai.vercel.app/login). Устанавливать проект для просмотра не нужно. [Инструкция, Telegram-привязка и Troubleshooting](JUDGES_GUIDE.md).
+
+Актуальный срез 13.11.2026: **IdeaRoute**. Qvin, сохраняемые AI-темы и клиентский портал Web/Telegram реализованы; CSAT/NPS, SSO, RAG и 1С/Б24 — план. [Единый статус и ограничения](TENDER_AUDIT.md) · [Шесть сценариев](../README.md#scenarios) · [Свежие записи](DEMO_RECORDING.md). Исторические результаты ниже относятся к указанным в них прогонам.
 
 ## Комплект по ТЗ
 

@@ -1,6 +1,6 @@
 # Business Vision · IdeaRoute
 
-**Monogram IR — Dynamic Path** — выбранная айдентика IdeaRoute. Срез кода: 13.11.2026, после исправления Telegram Qvin и сохраняемых тем. [Бриф](TENDER_BRIEF.md) · [Аудит](TENDER_AUDIT.md).
+**IdeaRoute** — система обратной связи и предложений сотрудников. Срез кода: 13.11.2026, после исправления Telegram Qvin и сохраняемых тем. [Бриф](TENDER_BRIEF.md) · [Аудит](TENDER_AUDIT.md).
 
 ## Проблема и ценность для ГК «Модус Трейд»
 

@@ -107,11 +107,14 @@ export async function submitRequest(form: FormData) {
     p_proposal: proposal,
   })
   if (error || typeof data !== 'string') {
+    console.error('Request registration failed', { code: error?.code || 'unexpected_response' })
     return {
       error:
         error?.code === 'PT409'
           ? ('conflict' as const)
-          : ('saveError' as const),
+          : ['PGRST202', 'PGRST204', 'PGRST205', '42703'].includes(error?.code || '')
+            ? ('schemaUnavailable' as const)
+            : ('saveError' as const),
     }
   }
   after(async () => {
